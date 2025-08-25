@@ -61,17 +61,66 @@
         </div>
     </noscript>
     
-    <!-- Application Scripts -->
-    <script type="module">
-        // Import all modules
-        import { CONFIG } from './src/js/config.js';
-        import { initializeApp } from './src/js/app.js';
-        
-        // Wait for DOM to be ready
+    <!-- 
+    ================================================================
+    IMPORTANT: MODULE LOADING APPROACH
+    ================================================================
+    Since we're using CDN libraries (React, Chart.js, etc.) alongside 
+    ES6 modules, we need a hybrid approach. The modular files need to
+    be bundled or we need to use a different loading strategy.
+    
+    For immediate deployment without a build step, we'll use an 
+    inline script that loads everything properly.
+    ================================================================
+    -->
+    
+    <!-- Load all modules as regular scripts first -->
+    <script src="src/data/initialData.js"></script>
+    <script src="src/js/utils/formatters.js"></script>
+    <script src="src/js/utils/dateUtils.js"></script>
+    <script src="src/js/utils/validators.js"></script>
+    <script src="src/js/services/dataService.js"></script>
+    <script src="src/js/services/supabaseService.js"></script>
+    <script src="src/js/components/KPICards.js"></script>
+    <script src="src/js/components/ChannelPerformance.js"></script>
+    <script src="src/js/components/Charts.js"></script>
+    <script src="src/js/components/Dashboard.js"></script>
+    <script src="src/js/components/Settings.js"></script>
+    <script src="src/js/components/Upload.js"></script>
+    <script src="src/js/components/Navigation.js"></script>
+    <script src="src/js/components/Sidebar.js"></script>
+    <script src="src/js/config.js"></script>
+    <script src="src/js/app.js"></script>
+    
+    <!-- Initialize Application -->
+    <script>
+        // Wait for all scripts and DOM to be ready
         window.addEventListener('DOMContentLoaded', () => {
             console.log('🚀 Initializing Chai Vision Dashboard...');
             
-            // Hide loading spinner after a short delay
+            // Check if all required globals are loaded
+            if (typeof React === 'undefined') {
+                console.error('React is not loaded!');
+                return;
+            }
+            if (typeof ReactDOM === 'undefined') {
+                console.error('ReactDOM is not loaded!');
+                return;
+            }
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js is not loaded!');
+                return;
+            }
+            if (typeof Papa === 'undefined') {
+                console.error('PapaParse is not loaded!');
+                return;
+            }
+            if (typeof XLSX === 'undefined') {
+                console.error('XLSX is not loaded!');
+                return;
+            }
+            
+            // Hide loading spinner
             setTimeout(() => {
                 const loadingEl = document.getElementById('loading');
                 if (loadingEl) {
@@ -79,8 +128,16 @@
                 }
             }, 500);
             
-            // Initialize the application
-            initializeApp(CONFIG);
+            // Check if the app module loaded properly
+            if (typeof window.ChaiVision !== 'undefined' && typeof window.ChaiVision.initializeApp === 'function') {
+                // Initialize the application using the global namespace
+                window.ChaiVision.initializeApp();
+            } else {
+                console.error('Application modules did not load properly. Falling back to inline initialization...');
+                
+                // Fallback: Initialize inline if modules didn't load
+                initializeAppInline();
+            }
         });
         
         // Error boundary for production
@@ -88,6 +145,101 @@
             console.error('Application error:', event.error);
             // You could send this to an error tracking service
         });
+        
+        // Fallback inline initialization
+        function initializeAppInline() {
+            const { useState, useEffect, useMemo, useRef, createElement: h } = React;
+            
+            // If modules didn't load, we'll create a minimal app
+            function App() {
+                const [loading, setLoading] = useState(false);
+                const [error, setError] = useState(null);
+                
+                useEffect(() => {
+                    console.log('App mounted - modules may need to be configured');
+                }, []);
+                
+                if (error) {
+                    return h('div', { 
+                        style: { 
+                            padding: '40px', 
+                            textAlign: 'center',
+                            fontFamily: 'sans-serif'
+                        } 
+                    },
+                        h('h2', { style: { color: '#ef4444' } }, 'Error Loading Dashboard'),
+                        h('p', null, 'Please ensure all JavaScript files are in the correct locations.'),
+                        h('p', null, 'Check the browser console for specific errors.'),
+                        h('button', {
+                            onClick: () => window.location.reload(),
+                            style: {
+                                padding: '10px 20px',
+                                background: '#667eea',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                marginTop: '20px'
+                            }
+                        }, 'Reload Page')
+                    );
+                }
+                
+                return h('div', { 
+                    style: { 
+                        padding: '40px', 
+                        textAlign: 'center',
+                        fontFamily: 'sans-serif'
+                    } 
+                },
+                    h('h1', { 
+                        style: { 
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text'
+                        } 
+                    }, 'Chai Vision Dashboard'),
+                    h('p', null, 'Dashboard is initializing...'),
+                    h('p', { style: { color: '#6b7280', marginTop: '20px' } }, 
+                        'If the dashboard doesn\'t load, please check that all files are in the correct locations.'
+                    )
+                );
+            }
+            
+            // Render the fallback app
+            ReactDOM.render(React.createElement(App), document.getElementById('root'));
+        }
     </script>
+    
+    <!-- 
+    ================================================================
+    ALTERNATIVE: ES6 Module Approach (Recommended for modern setups)
+    ================================================================
+    If you want to use ES6 modules properly, you'll need to:
+    
+    1. Update all your JS files to properly export/import
+    2. Use a local development server (not file://)
+    3. Uncomment the script below and remove the regular script tags above
+    
+    <script type="module">
+        import { CONFIG } from './src/js/config.js';
+        import { initializeApp } from './src/js/app.js';
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Initializing Chai Vision Dashboard...');
+            
+            setTimeout(() => {
+                const loadingEl = document.getElementById('loading');
+                if (loadingEl) {
+                    loadingEl.style.display = 'none';
+                }
+            }, 500);
+            
+            initializeApp(CONFIG);
+        });
+    </script>
+    ================================================================
+    -->
 </body>
 </html>
