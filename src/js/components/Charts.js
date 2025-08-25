@@ -188,3 +188,6 @@ export function Charts(props) {
         )
     );
 }
+
+// At the end of the file, add:
+window.Dashboard = Dashboard;  // or window.Settings = Settings, etc.
