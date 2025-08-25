@@ -75,3 +75,5 @@ export function Navigation(props) {
         )
     );
 }
+// At the end of the file, add:
+window.Dashboard = Dashboard;  // or window.Settings = Settings, etc.
