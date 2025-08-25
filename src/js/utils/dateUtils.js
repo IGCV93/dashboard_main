@@ -70,3 +70,5 @@ export function getTwoBusinessDaysAgo() {
     today.setDate(today.getDate() - 2);
     return today;
 }
+// At the end of dateUtils.js:
+window.dateUtils = { getCurrentQuarter, getCurrentMonth, getCurrentYear, ... };
