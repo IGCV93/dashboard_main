@@ -62,25 +62,30 @@
     </noscript>
     
     <!-- 
-    ================================================================
-    IMPORTANT: MODULE LOADING APPROACH
-    ================================================================
-    Since we're using CDN libraries (React, Chart.js, etc.) alongside 
-    ES6 modules, we need a hybrid approach. The modular files need to
-    be bundled or we need to use a different loading strategy.
+    ====================================================================
+    MODULE LOADING STRATEGY
+    ====================================================================
+    For immediate deployment without build tools, we load the modules
+    as regular scripts in the correct dependency order.
     
-    For immediate deployment without a build step, we'll use an 
-    inline script that loads everything properly.
-    ================================================================
+    First: Data and utilities
+    Then: Services
+    Then: Components
+    Finally: App initialization
+    ====================================================================
     -->
     
-    <!-- Load all modules as regular scripts first -->
+    <!-- Step 1: Load Initial Data and Utilities -->
     <script src="src/data/initialData.js"></script>
     <script src="src/js/utils/formatters.js"></script>
     <script src="src/js/utils/dateUtils.js"></script>
     <script src="src/js/utils/validators.js"></script>
+    
+    <!-- Step 2: Load Services -->
     <script src="src/js/services/dataService.js"></script>
     <script src="src/js/services/supabaseService.js"></script>
+    
+    <!-- Step 3: Load Components -->
     <script src="src/js/components/KPICards.js"></script>
     <script src="src/js/components/ChannelPerformance.js"></script>
     <script src="src/js/components/Charts.js"></script>
@@ -89,34 +94,52 @@
     <script src="src/js/components/Upload.js"></script>
     <script src="src/js/components/Navigation.js"></script>
     <script src="src/js/components/Sidebar.js"></script>
+    
+    <!-- Step 4: Load Configuration -->
     <script src="src/js/config.js"></script>
+    
+    <!-- Step 5: Load Module Bridge -->
+    <script src="src/js/module-bridge.js"></script>
+    
+    <!-- Step 6: Load Main App -->
     <script src="src/js/app.js"></script>
     
-    <!-- Initialize Application -->
+    <!-- Step 7: Initialize Application -->
     <script>
-        // Wait for all scripts and DOM to be ready
+        // Configuration
+        const APP_CONFIG = {
+            DEBUG_MODE: true,  // Set to false in production
+            AUTO_INIT: true    // Auto-initialize on load
+        };
+        
+        // Wait for all scripts to load
         window.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 Initializing Chai Vision Dashboard...');
+            console.log('🚀 DOM Content Loaded - Checking dependencies...');
             
-            // Check if all required globals are loaded
-            if (typeof React === 'undefined') {
-                console.error('React is not loaded!');
-                return;
+            // Check dependencies
+            const dependencies = {
+                'React': typeof React !== 'undefined',
+                'ReactDOM': typeof ReactDOM !== 'undefined',
+                'Chart.js': typeof Chart !== 'undefined',
+                'PapaParse': typeof Papa !== 'undefined',
+                'XLSX': typeof XLSX !== 'undefined',
+                'Supabase': typeof supabase !== 'undefined'
+            };
+            
+            // Log dependency status
+            if (APP_CONFIG.DEBUG_MODE) {
+                console.log('📦 Dependency Status:');
+                Object.entries(dependencies).forEach(([name, loaded]) => {
+                    console.log(`  ${loaded ? '✅' : '❌'} ${name}`);
+                });
             }
-            if (typeof ReactDOM === 'undefined') {
-                console.error('ReactDOM is not loaded!');
-                return;
-            }
-            if (typeof Chart === 'undefined') {
-                console.error('Chart.js is not loaded!');
-                return;
-            }
-            if (typeof Papa === 'undefined') {
-                console.error('PapaParse is not loaded!');
-                return;
-            }
-            if (typeof XLSX === 'undefined') {
-                console.error('XLSX is not loaded!');
+            
+            // Check if all required dependencies are loaded
+            const allDepsLoaded = Object.values(dependencies).every(v => v === true);
+            
+            if (!allDepsLoaded) {
+                console.error('❌ Not all dependencies loaded. Please check CDN links.');
+                showErrorScreen('Dependencies failed to load. Please refresh the page.');
                 return;
             }
             
@@ -126,120 +149,170 @@
                 if (loadingEl) {
                     loadingEl.style.display = 'none';
                 }
-            }, 500);
+            }, 300);
             
-            // Check if the app module loaded properly
-            if (typeof window.ChaiVision !== 'undefined' && typeof window.ChaiVision.initializeApp === 'function') {
-                // Initialize the application using the global namespace
-                window.ChaiVision.initializeApp();
-            } else {
-                console.error('Application modules did not load properly. Falling back to inline initialization...');
-                
-                // Fallback: Initialize inline if modules didn't load
-                initializeAppInline();
+            // Initialize the app
+            if (APP_CONFIG.AUTO_INIT) {
+                initializeApplication();
             }
         });
         
-        // Error boundary for production
-        window.addEventListener('error', (event) => {
-            console.error('Application error:', event.error);
-            // You could send this to an error tracking service
-        });
+        // Initialize Application
+        function initializeApplication() {
+            try {
+                // Check if ChaiVision namespace exists
+                if (typeof window.ChaiVision !== 'undefined' && 
+                    typeof window.ChaiVision.initializeApp === 'function') {
+                    console.log('✅ Initializing via ChaiVision namespace...');
+                    window.ChaiVision.initializeApp();
+                } 
+                // Check if global initializeApp exists
+                else if (typeof window.initializeApp === 'function') {
+                    console.log('✅ Initializing via global function...');
+                    window.initializeApp();
+                }
+                // Fallback to inline initialization
+                else {
+                    console.warn('⚠️ No initialization function found. Using fallback...');
+                    initializeFallbackApp();
+                }
+            } catch (error) {
+                console.error('❌ Failed to initialize application:', error);
+                showErrorScreen('Failed to initialize. Error: ' + error.message);
+            }
+        }
         
-        // Fallback inline initialization
-        function initializeAppInline() {
-            const { useState, useEffect, useMemo, useRef, createElement: h } = React;
+        // Fallback initialization
+        function initializeFallbackApp() {
+            const { useState, useEffect, createElement: h } = React;
             
-            // If modules didn't load, we'll create a minimal app
-            function App() {
-                const [loading, setLoading] = useState(false);
-                const [error, setError] = useState(null);
+            function FallbackApp() {
+                const [initialized, setInitialized] = useState(false);
                 
                 useEffect(() => {
-                    console.log('App mounted - modules may need to be configured');
+                    console.log('Fallback app mounted');
+                    // Try to load the actual app after a delay
+                    setTimeout(() => {
+                        if (window.ChaiVision && window.ChaiVision.initializeApp) {
+                            window.location.reload();
+                        }
+                    }, 2000);
                 }, []);
                 
-                if (error) {
-                    return h('div', { 
-                        style: { 
-                            padding: '40px', 
-                            textAlign: 'center',
-                            fontFamily: 'sans-serif'
-                        } 
+                return h('div', {
+                    style: {
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minHeight: '100vh',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                        padding: '40px'
+                    }
+                },
+                    h('h1', {
+                        style: {
+                            fontSize: '48px',
+                            marginBottom: '20px',
+                            textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                        }
+                    }, '☕ Chai Vision'),
+                    h('p', {
+                        style: {
+                            fontSize: '20px',
+                            marginBottom: '40px',
+                            opacity: '0.9'
+                        }
+                    }, 'Sales Performance Dashboard'),
+                    h('div', {
+                        style: {
+                            background: 'rgba(255,255,255,0.2)',
+                            borderRadius: '12px',
+                            padding: '30px',
+                            maxWidth: '500px',
+                            textAlign: 'center'
+                        }
                     },
-                        h('h2', { style: { color: '#ef4444' } }, 'Error Loading Dashboard'),
-                        h('p', null, 'Please ensure all JavaScript files are in the correct locations.'),
-                        h('p', null, 'Check the browser console for specific errors.'),
+                        h('p', {
+                            style: {
+                                marginBottom: '20px',
+                                fontSize: '16px'
+                            }
+                        }, 'Dashboard modules are loading...'),
+                        h('p', {
+                            style: {
+                                fontSize: '14px',
+                                opacity: '0.8'
+                            }
+                        }, 'If this message persists, please check that all JavaScript files are in the correct locations.'),
                         h('button', {
                             onClick: () => window.location.reload(),
                             style: {
-                                padding: '10px 20px',
-                                background: '#667eea',
-                                color: 'white',
+                                marginTop: '20px',
+                                padding: '12px 24px',
+                                background: 'white',
+                                color: '#667eea',
                                 border: 'none',
                                 borderRadius: '8px',
+                                fontSize: '16px',
+                                fontWeight: '600',
                                 cursor: 'pointer',
-                                marginTop: '20px'
-                            }
-                        }, 'Reload Page')
-                    );
-                }
-                
-                return h('div', { 
-                    style: { 
-                        padding: '40px', 
-                        textAlign: 'center',
-                        fontFamily: 'sans-serif'
-                    } 
-                },
-                    h('h1', { 
-                        style: { 
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text'
-                        } 
-                    }, 'Chai Vision Dashboard'),
-                    h('p', null, 'Dashboard is initializing...'),
-                    h('p', { style: { color: '#6b7280', marginTop: '20px' } }, 
-                        'If the dashboard doesn\'t load, please check that all files are in the correct locations.'
+                                transition: 'transform 0.2s'
+                            },
+                            onMouseOver: (e) => e.target.style.transform = 'scale(1.05)',
+                            onMouseOut: (e) => e.target.style.transform = 'scale(1)'
+                        }, 'Reload Dashboard')
                     )
                 );
             }
             
-            // Render the fallback app
-            ReactDOM.render(React.createElement(App), document.getElementById('root'));
+            ReactDOM.render(React.createElement(FallbackApp), document.getElementById('root'));
         }
-    </script>
-    
-    <!-- 
-    ================================================================
-    ALTERNATIVE: ES6 Module Approach (Recommended for modern setups)
-    ================================================================
-    If you want to use ES6 modules properly, you'll need to:
-    
-    1. Update all your JS files to properly export/import
-    2. Use a local development server (not file://)
-    3. Uncomment the script below and remove the regular script tags above
-    
-    <script type="module">
-        import { CONFIG } from './src/js/config.js';
-        import { initializeApp } from './src/js/app.js';
         
-        window.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 Initializing Chai Vision Dashboard...');
-            
-            setTimeout(() => {
-                const loadingEl = document.getElementById('loading');
-                if (loadingEl) {
-                    loadingEl.style.display = 'none';
-                }
-            }, 500);
-            
-            initializeApp(CONFIG);
+        // Show error screen
+        function showErrorScreen(message) {
+            const root = document.getElementById('root');
+            root.innerHTML = `
+                <div style="
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 100vh;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                    color: white;
+                    padding: 40px;
+                    text-align: center;
+                ">
+                    <h1 style="font-size: 48px; margin-bottom: 20px;">⚠️ Error</h1>
+                    <p style="font-size: 20px; margin-bottom: 20px; max-width: 600px;">${message}</p>
+                    <button onclick="window.location.reload()" style="
+                        padding: 12px 24px;
+                        background: white;
+                        color: #ef4444;
+                        border: none;
+                        border-radius: 8px;
+                        font-size: 16px;
+                        font-weight: 600;
+                        cursor: pointer;
+                    ">Reload Page</button>
+                </div>
+            `;
+        }
+        
+        // Error boundary for production
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+            if (APP_CONFIG.DEBUG_MODE) {
+                console.error('Stack trace:', event.error?.stack);
+            }
         });
+        
+        // Log successful load
+        console.log('✅ Index.html loaded successfully');
     </script>
-    ================================================================
-    -->
 </body>
 </html>
