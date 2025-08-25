@@ -337,3 +337,5 @@ export default {
     truncateText,
     formatPlural
 };
+// At the end of formatters.js:
+window.formatters = { formatCurrency, formatPercent, formatNumber, ... };
