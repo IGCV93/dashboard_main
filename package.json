@@ -1,0 +1,47 @@
+{
+  "name": "chai-vision-dashboard",
+  "version": "1.0.0",
+  "description": "Production-ready sales performance dashboard with multi-channel tracking and KPI monitoring",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "serve": "npx serve",
+    "deploy": "echo 'Deploy to your preferred hosting service'",
+    "test": "echo 'No tests configured yet'"
+  },
+  "keywords": [
+    "dashboard",
+    "sales",
+    "kpi",
+    "analytics",
+    "react",
+    "chartjs",
+    "supabase"
+  ],
+  "author": "Your Company Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/chai-vision-dashboard.git"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "chart.js": "^4.4.0",
+    "papaparse": "^5.4.1",
+    "xlsx": "^0.18.5",
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {
+    "serve": "^14.2.1"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ],
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  }
+}
