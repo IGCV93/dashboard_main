@@ -378,3 +378,6 @@ export const INITIAL_DATA = {
 };
 
 export default INITIAL_DATA;
+
+window.ChaiVision = window.ChaiVision || {};
+window.ChaiVision.INITIAL_DATA = INITIAL_DATA;
