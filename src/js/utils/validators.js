@@ -511,3 +511,5 @@ export default {
     sanitizeInput,
     sanitizeFileName
 };
+// At the end of validators.js:
+window.validators = { validateSalesRecord, validateSalesData, ... };
