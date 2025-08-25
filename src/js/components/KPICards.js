@@ -67,3 +67,5 @@ export function KPICards({ kpis }) {
         )
     );
 }
+// At the end of the file, add:
+window.Dashboard = Dashboard;  // or window.Settings = Settings, etc.
