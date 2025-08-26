@@ -154,14 +154,21 @@
             
             // Get initial data
             const INITIAL_DATA = window.ChaiVision?.INITIAL_DATA || {};
-            const brands = INITIAL_DATA.brands || ['LifePro', 'PetCove'];
-            const targets = INITIAL_DATA.targets || {};
             const channels = INITIAL_DATA.channels || ['Amazon', 'TikTok', 'DTC-Shopify', 'Retail'];
+            
+            // IMPORTANT: Lift brand and target state to App level for sharing
+            const [dynamicBrands, setDynamicBrands] = useState(INITIAL_DATA.brands || ['LifePro', 'PetCove']);
+            const [dynamicTargets, setDynamicTargets] = useState(INITIAL_DATA.targets || {});
             
             // Load initial data
             useEffect(() => {
                 loadInitialData();
             }, []);
+            
+            // Re-generate sample data when brands change
+            useEffect(() => {
+                regenerateSampleData();
+            }, [dynamicBrands]);
             
             async function loadInitialData() {
                 try {
@@ -178,14 +185,91 @@
                 }
             }
             
-            // Handle settings update
+            // Regenerate sample data for new brands
+            function regenerateSampleData() {
+                const data = [];
+                const startDate = new Date('2025-01-01');
+                const endDate = new Date();
+                endDate.setDate(endDate.getDate() - 2); // Two days ago
+                
+                // Generate sample data for all brands including new ones
+                for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                    const dayOfWeek = d.getDay();
+                    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                    
+                    dynamicBrands.forEach(brand => {
+                        channels.forEach(channel => {
+                            // Generate different patterns for different channels and brands
+                            let baseRevenue = 0;
+                            const brandMultiplier = brand === 'LifePro' ? 1 : 
+                                                   brand === 'PetCove' ? 0.12 : 0.08;
+                            
+                            switch(channel) {
+                                case 'Amazon':
+                                    baseRevenue = 250000 * brandMultiplier;
+                                    break;
+                                case 'TikTok':
+                                    baseRevenue = 30000 * brandMultiplier;
+                                    break;
+                                case 'DTC-Shopify':
+                                    baseRevenue = 55000 * brandMultiplier;
+                                    break;
+                                case 'Retail':
+                                    baseRevenue = 11000 * brandMultiplier;
+                                    break;
+                                case 'CA International':
+                                    baseRevenue = 27000 * brandMultiplier;
+                                    break;
+                                case 'UK International':
+                                    baseRevenue = 8200 * brandMultiplier;
+                                    break;
+                                case 'Wholesale':
+                                    baseRevenue = 5500 * brandMultiplier;
+                                    break;
+                                case 'Omnichannel':
+                                    baseRevenue = 8200 * brandMultiplier;
+                                    break;
+                            }
+                            
+                            const weekendMultiplier = isWeekend ? 1.3 : 1;
+                            const variance = (Math.random() - 0.5) * baseRevenue * 0.3;
+                            
+                            if (Math.random() > 0.3) {
+                                data.push({
+                                    date: d.toISOString().split('T')[0],
+                                    channel,
+                                    brand,
+                                    revenue: Math.max(0, baseRevenue * weekendMultiplier + variance),
+                                    timestamp: new Date().toISOString()
+                                });
+                            }
+                        });
+                    });
+                }
+                
+                setSalesData(data);
+            }
+            
+            // Handle settings update - This is the key function that receives updates from Settings
             const handleSettingsUpdate = async (updatedData) => {
                 try {
+                    // Update the brands and targets in App state
+                    if (updatedData.brands) {
+                        setDynamicBrands(updatedData.brands);
+                    }
+                    if (updatedData.targets) {
+                        setDynamicTargets(updatedData.targets);
+                    }
+                    
+                    // Save to data service if available
                     if (APP_STATE.dataService) {
                         await APP_STATE.dataService.updateSettings(updatedData);
                     }
-                    // Reload data if needed
-                    await loadInitialData();
+                    
+                    // Save to localStorage for persistence
+                    localStorage.setItem('chai_vision_brands', JSON.stringify(updatedData.brands || dynamicBrands));
+                    localStorage.setItem('chai_vision_targets', JSON.stringify(updatedData.targets || dynamicTargets));
+                    
                     showSuccessMessage('Settings updated successfully');
                 } catch (err) {
                     console.error('Failed to update settings:', err);
@@ -225,7 +309,7 @@
                 setSelectedYear,
                 selectedBrand,
                 setSelectedBrand,
-                brands,
+                brands: dynamicBrands,  // Pass dynamic brands
                 activeSection
             }) : null;
             
@@ -257,6 +341,17 @@
                 
                 switch (activeSection) {
                     case 'dashboard':
+                        // Get INITIAL_DATA and create enhanced config
+                        const INITIAL_DATA = window.ChaiVision?.INITIAL_DATA || {};
+                        const enhancedConfig = {
+                            ...config,
+                            INITIAL_DATA: {
+                                ...INITIAL_DATA,
+                                brands: dynamicBrands,  // Pass dynamic brands
+                                targets: dynamicTargets  // Pass dynamic targets
+                            }
+                        };
+                        
                         return Dashboard ? h(Dashboard, {
                             view,
                             selectedPeriod,
@@ -264,29 +359,54 @@
                             selectedYear,
                             selectedBrand,
                             salesData,
-                            config,
-                            dataService: APP_STATE.dataService
+                            config: enhancedConfig,
+                            dataService: APP_STATE.dataService,
+                            dynamicBrands,  // Pass as prop
+                            dynamicTargets  // Pass as prop
                         }) : h('div', null, 'Dashboard component not found');
                         
                     case 'settings':
                         return Settings ? h(Settings, {
-                            brands,
-                            targets,
+                            brands: dynamicBrands,  // Pass current brands
+                            targets: dynamicTargets,  // Pass current targets
                             channels,
-                            onUpdate: handleSettingsUpdate
+                            onUpdate: handleSettingsUpdate  // Pass update handler
                         }) : h('div', null, 'Settings component not found');
                         
                     case 'upload':
                         return Upload ? h(Upload, {
                             dataService: APP_STATE.dataService,
                             onUploadComplete: handleUploadComplete,
-                            config
+                            config,
+                            brands: dynamicBrands  // Pass dynamic brands for validation
                         }) : h('div', null, 'Upload component not found');
                         
                     default:
                         return h('div', null, 'Section not found');
                 }
             };
+            
+            // Load saved brands and targets on mount
+            useEffect(() => {
+                const savedBrands = localStorage.getItem('chai_vision_brands');
+                const savedTargets = localStorage.getItem('chai_vision_targets');
+                
+                if (savedBrands) {
+                    try {
+                        setDynamicBrands(JSON.parse(savedBrands));
+                    } catch (e) {
+                        console.error('Failed to load saved brands:', e);
+                    }
+                }
+                
+                if (savedTargets) {
+                    try {
+                        setDynamicTargets(JSON.parse(savedTargets));
+                    } catch (e) {
+                        console.error('Failed to load saved targets:', e);
+                    }
+                }
+            }, []);
             
             // Main render
             return h('div', { className: 'app-wrapper' },
