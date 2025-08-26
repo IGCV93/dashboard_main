@@ -22,6 +22,22 @@
         // Get formatters from window
         const { formatCurrency } = window.formatters || {};
         
+        // Seasonal distribution percentages
+        const SEASONAL_DISTRIBUTIONS = {
+            'LifePro': {
+                Q1: 0.278,  // 27.8% - New Year fitness surge
+                Q2: 0.176,  // 17.6%
+                Q3: 0.176,  // 17.6%
+                Q4: 0.370   // 37.0% - Holiday season
+            },
+            'default': {
+                Q1: 0.182,  // 18.2%
+                Q2: 0.182,  // 18.2%
+                Q3: 0.273,  // 27.3% - Back to school/fall
+                Q4: 0.363   // 36.3% - Holiday season
+            }
+        };
+        
         // State - Initialize with props
         const [settingsYear, setSettingsYear] = useState('2025');
         const [editingBrand, setEditingBrand] = useState(null);
@@ -58,11 +74,73 @@
         
         const [newBrand, setNewBrand] = useState(getEmptyBrandData());
         
+        // Smart auto-distribute based on brand and seasonal patterns
+        const autoDistributeToQuarters = (brandName = null) => {
+            const brand = brandName || newBrand.name;
+            const distribution = SEASONAL_DISTRIBUTIONS[brand] || SEASONAL_DISTRIBUTIONS['default'];
+            
+            const updatedBrand = { ...newBrand };
+            ALL_CHANNELS.forEach(channel => {
+                const annualValue = updatedBrand.annual[channel] || 0;
+                // Distribute based on seasonal percentages
+                updatedBrand.Q1[channel] = annualValue * distribution.Q1;
+                updatedBrand.Q2[channel] = annualValue * distribution.Q2;
+                updatedBrand.Q3[channel] = annualValue * distribution.Q3;
+                updatedBrand.Q4[channel] = annualValue * distribution.Q4;
+            });
+            setNewBrand(updatedBrand);
+        };
+        
+        // Smart auto-distribute for editing
+        const autoDistributeEditingToQuarters = () => {
+            const distribution = SEASONAL_DISTRIBUTIONS[editingBrand] || SEASONAL_DISTRIBUTIONS['default'];
+            
+            const updatedValues = { ...editingValues };
+            ALL_CHANNELS.forEach(channel => {
+                const annualValue = updatedValues.annual?.[channel] || 0;
+                // Distribute based on seasonal percentages
+                if (!updatedValues.Q1) updatedValues.Q1 = {};
+                if (!updatedValues.Q2) updatedValues.Q2 = {};
+                if (!updatedValues.Q3) updatedValues.Q3 = {};
+                if (!updatedValues.Q4) updatedValues.Q4 = {};
+                
+                updatedValues.Q1[channel] = annualValue * distribution.Q1;
+                updatedValues.Q2[channel] = annualValue * distribution.Q2;
+                updatedValues.Q3[channel] = annualValue * distribution.Q3;
+                updatedValues.Q4[channel] = annualValue * distribution.Q4;
+            });
+            setEditingValues(updatedValues);
+        };
+        
+        // Get distribution display text
+        const getDistributionText = (brandName) => {
+            const dist = SEASONAL_DISTRIBUTIONS[brandName] || SEASONAL_DISTRIBUTIONS['default'];
+            return `Q1: ${(dist.Q1 * 100).toFixed(1)}% | Q2: ${(dist.Q2 * 100).toFixed(1)}% | Q3: ${(dist.Q3 * 100).toFixed(1)}% | Q4: ${(dist.Q4 * 100).toFixed(1)}%`;
+        };
+        
         // Handle adding new brand
         const handleAddBrand = () => {
             if (!newBrand.name) {
                 alert('Please enter a brand name');
                 return;
+            }
+            
+            // Check if quarterly values are set
+            const hasQuarterlyValues = ['Q1', 'Q2', 'Q3', 'Q4'].some(quarter => 
+                ALL_CHANNELS.some(channel => (newBrand[quarter][channel] || 0) > 0)
+            );
+            
+            // If no quarterly values and annual values exist, auto-distribute
+            const hasAnnualValues = ALL_CHANNELS.some(channel => (newBrand.annual[channel] || 0) > 0);
+            
+            if (!hasQuarterlyValues && hasAnnualValues) {
+                // Automatically distribute based on brand patterns
+                autoDistributeToQuarters(newBrand.name);
+                
+                // Show notification
+                const distribution = SEASONAL_DISTRIBUTIONS[newBrand.name] || SEASONAL_DISTRIBUTIONS['default'];
+                const distType = SEASONAL_DISTRIBUTIONS[newBrand.name] ? 'custom' : 'default';
+                console.log(`Auto-distributed using ${distType} seasonal pattern for ${newBrand.name}`);
             }
             
             const updatedBrands = [...dynamicBrands, newBrand.name];
@@ -73,6 +151,7 @@
                 updatedTargets[settingsYear] = { brands: {} };
             }
             
+            // Use the auto-distributed values if they were calculated
             updatedTargets[settingsYear].brands[newBrand.name] = {
                 annual: { ...newBrand.annual },
                 Q1: { ...newBrand.Q1 },
@@ -108,6 +187,23 @@
         // Handle saving edited brand
         const handleSaveEdit = () => {
             if (!editingBrand) return;
+            
+            // Check if quarterly values are set
+            const hasQuarterlyValues = ['Q1', 'Q2', 'Q3', 'Q4'].some(quarter => 
+                ALL_CHANNELS.some(channel => (editingValues[quarter]?.[channel] || 0) > 0)
+            );
+            
+            // If no quarterly values and annual values exist, auto-distribute
+            const hasAnnualValues = ALL_CHANNELS.some(channel => (editingValues.annual?.[channel] || 0) > 0);
+            
+            if (!hasQuarterlyValues && hasAnnualValues) {
+                if (!confirm(`No quarterly targets are set. Would you like to auto-distribute using ${editingBrand === 'LifePro' ? 'LifePro seasonal' : 'standard seasonal'} patterns?\n\n${getDistributionText(editingBrand)}`)) {
+                    alert('Please set quarterly targets or use auto-distribute before saving.');
+                    return;
+                }
+                autoDistributeEditingToQuarters();
+                return;
+            }
             
             const updatedTargets = { ...dynamicTargets };
             if (!updatedTargets[settingsYear]) {
@@ -213,10 +309,48 @@
                         )
                     ),
                     h('div', { style: { marginTop: '20px' } },
-                        h('h4', { style: { marginBottom: '12px' } }, 'Quarterly Breakdown'),
+                        h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' } },
+                            h('h4', { style: { margin: 0 } }, 'Quarterly Breakdown'),
+                            h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' } },
+                                h('button', {
+                                    className: 'btn btn-secondary',
+                                    onClick: () => autoDistributeToQuarters(newBrand.name),
+                                    style: { padding: '6px 12px', fontSize: '12px' }
+                                }, '⚡ Auto-distribute (Seasonal)'),
+                                h('small', { 
+                                    style: { 
+                                        fontSize: '11px', 
+                                        color: '#6B7280',
+                                        fontStyle: 'italic'
+                                    }
+                                }, 
+                                    newBrand.name ? getDistributionText(newBrand.name) : 'Enter brand name to see distribution'
+                                )
+                            )
+                        ),
                         ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter =>
                             h('div', { key: quarter, style: { marginBottom: '24px' } },
-                                h('h5', { style: { marginBottom: '12px', fontWeight: '600', fontSize: '16px' } }, quarter),
+                                h('h5', { 
+                                    style: { 
+                                        marginBottom: '12px', 
+                                        fontWeight: '600', 
+                                        fontSize: '16px',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center'
+                                    }
+                                }, 
+                                    h('span', null, quarter),
+                                    newBrand.name && h('span', { 
+                                        style: { 
+                                            fontSize: '12px', 
+                                            color: '#6B7280',
+                                            fontWeight: '400'
+                                        }
+                                    }, 
+                                        `(${((SEASONAL_DISTRIBUTIONS[newBrand.name] || SEASONAL_DISTRIBUTIONS['default'])[quarter] * 100).toFixed(1)}% of annual)`
+                                    )
+                                ),
                                 h('div', { style: { marginBottom: '12px' } },
                                     h('div', { className: 'channel-inputs' },
                                         ALL_CHANNELS.slice(0, 4).map(channel =>
@@ -328,10 +462,45 @@
                         )
                     ),
                     h('div', { style: { marginTop: '24px' } },
-                        h('h4', { style: { marginBottom: '16px' } }, 'Quarterly Breakdown'),
+                        h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' } },
+                            h('h4', { style: { margin: 0 } }, 'Quarterly Breakdown'),
+                            h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' } },
+                                h('button', {
+                                    className: 'btn btn-secondary',
+                                    onClick: autoDistributeEditingToQuarters,
+                                    style: { padding: '6px 12px', fontSize: '12px' }
+                                }, '⚡ Auto-distribute (Seasonal)'),
+                                h('small', { 
+                                    style: { 
+                                        fontSize: '11px', 
+                                        color: '#6B7280',
+                                        fontStyle: 'italic'
+                                    }
+                                }, getDistributionText(editingBrand))
+                            )
+                        ),
                         ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter =>
                             h('div', { key: quarter, style: { marginBottom: '24px' } },
-                                h('h5', { style: { marginBottom: '12px', fontWeight: '600' } }, quarter),
+                                h('h5', { 
+                                    style: { 
+                                        marginBottom: '12px', 
+                                        fontWeight: '600',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center'
+                                    }
+                                }, 
+                                    h('span', null, quarter),
+                                    h('span', { 
+                                        style: { 
+                                            fontSize: '12px', 
+                                            color: '#6B7280',
+                                            fontWeight: '400'
+                                        }
+                                    }, 
+                                        `(${((SEASONAL_DISTRIBUTIONS[editingBrand] || SEASONAL_DISTRIBUTIONS['default'])[quarter] * 100).toFixed(1)}% of annual)`
+                                    )
+                                ),
                                 h('div', { className: 'channel-inputs' },
                                     ALL_CHANNELS.slice(0, 4).map(channel =>
                                         h('div', { key: `${quarter}-${channel}`, style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
