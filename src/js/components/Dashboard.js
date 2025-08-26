@@ -32,9 +32,10 @@
             'CA International', 'UK International', 'Wholesale', 'Omnichannel'
         ]);
         
-        // Import targets from config
-        const dynamicTargets = config?.INITIAL_DATA?.targets || {};
-        const dynamicBrands = config?.INITIAL_DATA?.brands || [];
+        // FIX: Get targets directly from window.ChaiVision.INITIAL_DATA
+        const INITIAL_DATA = window.ChaiVision?.INITIAL_DATA || {};
+        const dynamicTargets = INITIAL_DATA.targets || {};
+        const dynamicBrands = INITIAL_DATA.brands || [];
         
         // Calculate KPIs
         const kpis = useMemo(() => {
