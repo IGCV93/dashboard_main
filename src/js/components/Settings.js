@@ -9,23 +9,36 @@
         const { useState, useEffect, createElement: h } = React;
         
         const {
+            brands: initialBrands,
+            targets: initialTargets,
+            channels,
             onUpdate
         } = props;
         
         // Get initial data from window
         const INITIAL_DATA = window.ChaiVision?.INITIAL_DATA || {};
-        const ALL_CHANNELS = INITIAL_DATA.channels || [];
+        const ALL_CHANNELS = channels || INITIAL_DATA.channels || [];
         
         // Get formatters from window
         const { formatCurrency } = window.formatters || {};
         
-        // State
+        // State - Initialize with props
         const [settingsYear, setSettingsYear] = useState('2025');
         const [editingBrand, setEditingBrand] = useState(null);
         const [editingValues, setEditingValues] = useState({});
         const [showAddBrand, setShowAddBrand] = useState(false);
-        const [dynamicBrands, setDynamicBrands] = useState(INITIAL_DATA.brands || []);
-        const [dynamicTargets, setDynamicTargets] = useState(INITIAL_DATA.targets || {});
+        const [dynamicBrands, setDynamicBrands] = useState(initialBrands || INITIAL_DATA.brands || []);
+        const [dynamicTargets, setDynamicTargets] = useState(initialTargets || INITIAL_DATA.targets || {});
+        
+        // Update local state when props change
+        useEffect(() => {
+            if (initialBrands) {
+                setDynamicBrands(initialBrands);
+            }
+            if (initialTargets) {
+                setDynamicTargets(initialTargets);
+            }
+        }, [initialBrands, initialTargets]);
         
         // Initialize new brand with channel defaults
         const getEmptyBrandData = () => {
@@ -52,7 +65,8 @@
                 return;
             }
             
-            setDynamicBrands([...dynamicBrands, newBrand.name]);
+            const updatedBrands = [...dynamicBrands, newBrand.name];
+            setDynamicBrands(updatedBrands);
             
             const updatedTargets = { ...dynamicTargets };
             if (!updatedTargets[settingsYear]) {
@@ -69,10 +83,10 @@
             
             setDynamicTargets(updatedTargets);
             
-            // Notify parent component
+            // IMPORTANT: Notify parent component to update global state
             if (onUpdate) {
                 onUpdate({
-                    brands: [...dynamicBrands, newBrand.name],
+                    brands: updatedBrands,
                     targets: updatedTargets
                 });
             }
