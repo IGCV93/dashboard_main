@@ -16,7 +16,9 @@
             selectedBrand,
             salesData,
             config,
-            dataService
+            dataService,
+            dynamicBrands,  // Accept dynamic brands from props
+            dynamicTargets  // Accept dynamic targets from props
         } = props;
         
         // Get dependencies from window
@@ -32,10 +34,12 @@
             'CA International', 'UK International', 'Wholesale', 'Omnichannel'
         ]);
         
-        // FIX: Get targets directly from window.ChaiVision.INITIAL_DATA
+        // FIX: Use dynamic props instead of static INITIAL_DATA
         const INITIAL_DATA = window.ChaiVision?.INITIAL_DATA || {};
-        const dynamicTargets = INITIAL_DATA.targets || {};
-        const dynamicBrands = INITIAL_DATA.brands || [];
+        
+        // Use dynamic values from props, fallback to INITIAL_DATA if not provided
+        const brandsToUse = dynamicBrands || INITIAL_DATA.brands || [];
+        const targetsToUse = dynamicTargets || INITIAL_DATA.targets || {};
         
         // Calculate KPIs
         const kpis = useMemo(() => {
@@ -93,10 +97,10 @@
                 channelTargets85[channel] = 0;
             });
             
-            // Calculate targets based on selection
+            // Calculate targets based on selection - USE DYNAMIC TARGETS
             if (selectedBrand === 'All Brands') {
-                dynamicBrands.forEach(brand => {
-                    const brandData = dynamicTargets[selectedYear]?.brands?.[brand];
+                brandsToUse.forEach(brand => {
+                    const brandData = targetsToUse[selectedYear]?.brands?.[brand];
                     if (brandData) {
                         let periodData;
                         if (view === 'annual') {
@@ -122,7 +126,7 @@
                     }
                 });
             } else {
-                const brandData = dynamicTargets[selectedYear]?.brands?.[selectedBrand];
+                const brandData = targetsToUse[selectedYear]?.brands?.[selectedBrand];
                 if (brandData) {
                     let periodData;
                     if (view === 'annual') {
@@ -205,9 +209,9 @@
                 gapToKPI,
                 gapTo100,
                 channelAchievements,
-                filteredData
+                filteredData // Include filtered data for charts
             };
-        }, [salesData, view, selectedPeriod, selectedYear, selectedMonth, selectedBrand, dynamicTargets, dynamicBrands]);
+        }, [salesData, view, selectedPeriod, selectedYear, selectedMonth, selectedBrand, targetsToUse, brandsToUse]); // Updated dependencies
         
         // Get display title
         const getDisplayTitle = () => {
