@@ -1,5 +1,5 @@
 /**
- * Settings Component - KPI Settings and Brand Management
+ * Settings Component - KPI and Brand Management
  */
 
 (function() {
@@ -8,56 +8,52 @@
     function Settings(props) {
         const { useState, useEffect, createElement: h } = React;
         
-        const { brands, targets, channels, onUpdate } = props;
+        const {
+            onUpdate
+        } = props;
         
-        // Get dependencies from window
+        // Get initial data from window
+        const INITIAL_DATA = window.ChaiVision?.INITIAL_DATA || {};
+        const ALL_CHANNELS = INITIAL_DATA.channels || [];
+        
+        // Get formatters from window
         const { formatCurrency } = window.formatters || {};
-        const ALL_CHANNELS = window.ALL_CHANNELS || ['Amazon', 'TikTok', 'DTC-Shopify', 'Retail', 'CA International', 'UK International', 'Wholesale', 'Omnichannel'];
         
         // State
         const [settingsYear, setSettingsYear] = useState('2025');
         const [editingBrand, setEditingBrand] = useState(null);
         const [editingValues, setEditingValues] = useState({});
         const [showAddBrand, setShowAddBrand] = useState(false);
-        const [dynamicBrands, setDynamicBrands] = useState(brands || []);
-        const [dynamicTargets, setDynamicTargets] = useState(targets || {});
-        const [newBrand, setNewBrand] = useState({
-            name: '',
-            annual: {},
-            Q1: {},
-            Q2: {},
-            Q3: {},
-            Q4: {}
-        });
+        const [dynamicBrands, setDynamicBrands] = useState(INITIAL_DATA.brands || []);
+        const [dynamicTargets, setDynamicTargets] = useState(INITIAL_DATA.targets || {});
         
-        // Initialize channel values for new brand
-        useEffect(() => {
+        // Initialize new brand with channel defaults
+        const getEmptyBrandData = () => {
             const channelDefaults = {};
             ALL_CHANNELS.forEach(channel => {
                 channelDefaults[channel] = 0;
             });
-            setNewBrand({
+            return {
                 name: '',
                 annual: { ...channelDefaults },
                 Q1: { ...channelDefaults },
                 Q2: { ...channelDefaults },
                 Q3: { ...channelDefaults },
                 Q4: { ...channelDefaults }
-            });
-        }, []);
+            };
+        };
         
-        // Handle adding a new brand
+        const [newBrand, setNewBrand] = useState(getEmptyBrandData());
+        
+        // Handle adding new brand
         const handleAddBrand = () => {
             if (!newBrand.name) {
                 alert('Please enter a brand name');
                 return;
             }
             
-            // Add to brands list
-            const updatedBrands = [...dynamicBrands, newBrand.name];
-            setDynamicBrands(updatedBrands);
+            setDynamicBrands([...dynamicBrands, newBrand.name]);
             
-            // Add to targets
             const updatedTargets = { ...dynamicTargets };
             if (!updatedTargets[settingsYear]) {
                 updatedTargets[settingsYear] = { brands: {} };
@@ -73,67 +69,60 @@
             
             setDynamicTargets(updatedTargets);
             
-            // Reset form
-            const channelDefaults = {};
-            ALL_CHANNELS.forEach(channel => {
-                channelDefaults[channel] = 0;
-            });
-            setNewBrand({
-                name: '',
-                annual: { ...channelDefaults },
-                Q1: { ...channelDefaults },
-                Q2: { ...channelDefaults },
-                Q3: { ...channelDefaults },
-                Q4: { ...channelDefaults }
-            });
-            setShowAddBrand(false);
-            
-            // Notify parent
+            // Notify parent component
             if (onUpdate) {
-                onUpdate({ brands: updatedBrands, targets: updatedTargets });
+                onUpdate({
+                    brands: [...dynamicBrands, newBrand.name],
+                    targets: updatedTargets
+                });
             }
+            
+            // Reset form
+            setNewBrand(getEmptyBrandData());
+            setShowAddBrand(false);
         };
         
-        // Handle editing a brand
+        // Handle editing existing brand
         const handleEditBrand = (brand) => {
             const brandData = dynamicTargets[settingsYear]?.brands?.[brand];
             if (brandData) {
                 setEditingBrand(brand);
-                setEditingValues({
-                    annual: { ...brandData.annual },
-                    Q1: { ...brandData.Q1 },
-                    Q2: { ...brandData.Q2 },
-                    Q3: { ...brandData.Q3 },
-                    Q4: { ...brandData.Q4 }
-                });
+                setEditingValues(JSON.parse(JSON.stringify(brandData)));
             }
         };
         
         // Handle saving edited brand
         const handleSaveEdit = () => {
+            if (!editingBrand) return;
+            
             const updatedTargets = { ...dynamicTargets };
             if (!updatedTargets[settingsYear]) {
                 updatedTargets[settingsYear] = { brands: {} };
             }
             
-            updatedTargets[settingsYear].brands[editingBrand] = { ...editingValues };
+            updatedTargets[settingsYear].brands[editingBrand] = editingValues;
             setDynamicTargets(updatedTargets);
+            
+            // Notify parent component
+            if (onUpdate) {
+                onUpdate({
+                    brands: dynamicBrands,
+                    targets: updatedTargets
+                });
+            }
+            
             setEditingBrand(null);
             setEditingValues({});
-            
-            // Notify parent
-            if (onUpdate) {
-                onUpdate({ brands: dynamicBrands, targets: updatedTargets });
-            }
         };
         
-        // Handle deleting a brand
+        // Handle deleting brand
         const handleDeleteBrand = (brand) => {
             if (!confirm(`Are you sure you want to delete ${brand}?`)) return;
             
             const updatedBrands = dynamicBrands.filter(b => b !== brand);
             const updatedTargets = { ...dynamicTargets };
             
+            // Remove brand from all years
             Object.keys(updatedTargets).forEach(year => {
                 if (updatedTargets[year]?.brands?.[brand]) {
                     delete updatedTargets[year].brands[brand];
@@ -143,9 +132,12 @@
             setDynamicBrands(updatedBrands);
             setDynamicTargets(updatedTargets);
             
-            // Notify parent
+            // Notify parent component
             if (onUpdate) {
-                onUpdate({ brands: updatedBrands, targets: updatedTargets });
+                onUpdate({
+                    brands: updatedBrands,
+                    targets: updatedTargets
+                });
             }
         };
         
@@ -209,36 +201,62 @@
                     h('div', { style: { marginTop: '20px' } },
                         h('h4', { style: { marginBottom: '12px' } }, 'Quarterly Breakdown'),
                         ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter =>
-                            h('div', { key: quarter, style: { marginBottom: '16px' } },
-                                h('h5', { style: { marginBottom: '8px', fontWeight: '600' } }, quarter),
-                                h('div', { className: 'channel-inputs' },
-                                    ALL_CHANNELS.slice(0, 4).map(channel =>
-                                        h('input', {
-                                            key: `${quarter}-${channel}`,
-                                            type: 'number',
-                                            className: 'input-field',
-                                            value: newBrand[quarter][channel] || 0,
-                                            onChange: (e) => setNewBrand({
-                                                ...newBrand,
-                                                [quarter]: { ...newBrand[quarter], [channel]: parseFloat(e.target.value) || 0 }
-                                            }),
-                                            placeholder: channel.substring(0, 3)
-                                        })
+                            h('div', { key: quarter, style: { marginBottom: '24px' } },
+                                h('h5', { style: { marginBottom: '12px', fontWeight: '600', fontSize: '16px' } }, quarter),
+                                h('div', { style: { marginBottom: '12px' } },
+                                    h('div', { className: 'channel-inputs' },
+                                        ALL_CHANNELS.slice(0, 4).map(channel =>
+                                            h('div', { key: `${quarter}-${channel}`, style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
+                                                h('input', {
+                                                    type: 'number',
+                                                    className: 'input-field',
+                                                    value: newBrand[quarter][channel] || 0,
+                                                    onChange: (e) => setNewBrand({
+                                                        ...newBrand,
+                                                        [quarter]: { ...newBrand[quarter], [channel]: parseFloat(e.target.value) || 0 }
+                                                    }),
+                                                    placeholder: '0'
+                                                }),
+                                                h('label', { 
+                                                    style: { 
+                                                        fontSize: '10px',
+                                                        fontWeight: '600',
+                                                        color: '#6B7280',
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.3px',
+                                                        textAlign: 'center'
+                                                    }
+                                                }, channel)
+                                            )
+                                        )
                                     )
                                 ),
-                                h('div', { className: 'channel-inputs', style: { marginTop: '8px' } },
-                                    ALL_CHANNELS.slice(4).map(channel =>
-                                        h('input', {
-                                            key: `${quarter}-${channel}`,
-                                            type: 'number',
-                                            className: 'input-field',
-                                            value: newBrand[quarter][channel] || 0,
-                                            onChange: (e) => setNewBrand({
-                                                ...newBrand,
-                                                [quarter]: { ...newBrand[quarter], [channel]: parseFloat(e.target.value) || 0 }
-                                            }),
-                                            placeholder: channel.substring(0, 3)
-                                        })
+                                h('div', null,
+                                    h('div', { className: 'channel-inputs' },
+                                        ALL_CHANNELS.slice(4).map(channel =>
+                                            h('div', { key: `${quarter}-${channel}`, style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
+                                                h('input', {
+                                                    type: 'number',
+                                                    className: 'input-field',
+                                                    value: newBrand[quarter][channel] || 0,
+                                                    onChange: (e) => setNewBrand({
+                                                        ...newBrand,
+                                                        [quarter]: { ...newBrand[quarter], [channel]: parseFloat(e.target.value) || 0 }
+                                                    }),
+                                                    placeholder: '0'
+                                                }),
+                                                h('label', { 
+                                                    style: { 
+                                                        fontSize: '10px',
+                                                        fontWeight: '600',
+                                                        color: '#6B7280',
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.3px',
+                                                        textAlign: 'center'
+                                                    }
+                                                }, channel)
+                                            )
+                                        )
                                     )
                                 )
                             )
@@ -249,6 +267,123 @@
                         onClick: handleAddBrand,
                         style: { marginTop: '20px' }
                     }, 'Save Brand')
+                )
+            ),
+            
+            // Edit Brand Modal (if editing)
+            editingBrand && h('div', {
+                style: {
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000
+                }
+            },
+                h('div', {
+                    style: {
+                        background: 'white',
+                        borderRadius: '16px',
+                        padding: '32px',
+                        maxWidth: '1200px',
+                        width: '90%',
+                        maxHeight: '90vh',
+                        overflow: 'auto'
+                    }
+                },
+                    h('h3', { style: { marginBottom: '24px' } }, `Edit ${editingBrand} Targets`),
+                    h('div', { className: 'add-brand-form' },
+                        ...ALL_CHANNELS.map(channel =>
+                            h('div', { key: channel, className: 'form-group' },
+                                h('label', null, `${channel} (Annual)`),
+                                h('input', {
+                                    type: 'number',
+                                    className: 'input-field',
+                                    value: editingValues.annual?.[channel] || 0,
+                                    onChange: (e) => setEditingValues({
+                                        ...editingValues,
+                                        annual: { ...editingValues.annual, [channel]: parseFloat(e.target.value) || 0 }
+                                    })
+                                })
+                            )
+                        )
+                    ),
+                    h('div', { style: { marginTop: '24px' } },
+                        h('h4', { style: { marginBottom: '16px' } }, 'Quarterly Breakdown'),
+                        ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter =>
+                            h('div', { key: quarter, style: { marginBottom: '24px' } },
+                                h('h5', { style: { marginBottom: '12px', fontWeight: '600' } }, quarter),
+                                h('div', { className: 'channel-inputs' },
+                                    ALL_CHANNELS.slice(0, 4).map(channel =>
+                                        h('div', { key: `${quarter}-${channel}`, style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
+                                            h('input', {
+                                                type: 'number',
+                                                className: 'input-field',
+                                                value: editingValues[quarter]?.[channel] || 0,
+                                                onChange: (e) => setEditingValues({
+                                                    ...editingValues,
+                                                    [quarter]: { ...editingValues[quarter], [channel]: parseFloat(e.target.value) || 0 }
+                                                })
+                                            }),
+                                            h('label', { 
+                                                style: { 
+                                                    fontSize: '10px',
+                                                    fontWeight: '600',
+                                                    color: '#6B7280',
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '0.3px',
+                                                    textAlign: 'center'
+                                                }
+                                            }, channel)
+                                        )
+                                    )
+                                ),
+                                h('div', { className: 'channel-inputs', style: { marginTop: '12px' } },
+                                    ALL_CHANNELS.slice(4).map(channel =>
+                                        h('div', { key: `${quarter}-${channel}`, style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
+                                            h('input', {
+                                                type: 'number',
+                                                className: 'input-field',
+                                                value: editingValues[quarter]?.[channel] || 0,
+                                                onChange: (e) => setEditingValues({
+                                                    ...editingValues,
+                                                    [quarter]: { ...editingValues[quarter], [channel]: parseFloat(e.target.value) || 0 }
+                                                })
+                                            }),
+                                            h('label', { 
+                                                style: { 
+                                                    fontSize: '10px',
+                                                    fontWeight: '600',
+                                                    color: '#6B7280',
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '0.3px',
+                                                    textAlign: 'center'
+                                                }
+                                            }, channel)
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    h('div', { style: { display: 'flex', gap: '12px', marginTop: '24px' } },
+                        h('button', {
+                            className: 'btn btn-success',
+                            onClick: handleSaveEdit
+                        }, 'Save Changes'),
+                        h('button', {
+                            className: 'btn btn-secondary',
+                            onClick: () => {
+                                setEditingBrand(null);
+                                setEditingValues({});
+                            }
+                        }, 'Cancel')
+                    )
                 )
             ),
             
@@ -268,52 +403,9 @@
                         ),
                         h('tbody', null,
                             dynamicBrands.map(brand => {
-                                const isEditing = editingBrand === brand;
-                                const brandData = isEditing ? editingValues : 
-                                                 dynamicTargets[settingsYear]?.brands?.[brand] || {};
+                                const brandData = dynamicTargets[settingsYear]?.brands?.[brand] || {};
                                 const annualData = brandData.annual || {};
                                 const total = ALL_CHANNELS.reduce((sum, ch) => sum + (annualData[ch] || 0), 0);
-                                
-                                if (isEditing) {
-                                    return h('tr', { key: brand },
-                                        h('td', { className: 'brand-name-cell' }, brand),
-                                        ...ALL_CHANNELS.map(channel =>
-                                            h('td', { key: channel },
-                                                h('input', {
-                                                    type: 'number',
-                                                    className: 'input-field',
-                                                    value: editingValues.annual[channel] || 0,
-                                                    onChange: (e) => setEditingValues({
-                                                        ...editingValues,
-                                                        annual: {
-                                                            ...editingValues.annual,
-                                                            [channel]: parseFloat(e.target.value) || 0
-                                                        }
-                                                    }),
-                                                    style: { width: '100px' }
-                                                })
-                                            )
-                                        ),
-                                        h('td', { style: { fontWeight: '700' } }, formatCurrency ? formatCurrency(total) : '$' + total),
-                                        h('td', null,
-                                            h('div', { className: 'action-buttons' },
-                                                h('button', {
-                                                    className: 'btn btn-success',
-                                                    onClick: handleSaveEdit,
-                                                    style: { padding: '6px 12px', fontSize: '12px' }
-                                                }, 'Save'),
-                                                h('button', {
-                                                    className: 'btn btn-secondary',
-                                                    onClick: () => {
-                                                        setEditingBrand(null);
-                                                        setEditingValues({});
-                                                    },
-                                                    style: { padding: '6px 12px', fontSize: '12px' }
-                                                }, 'Cancel')
-                                            )
-                                        )
-                                    );
-                                }
                                 
                                 return h('tr', { key: brand },
                                     h('td', { className: 'brand-name-cell' }, brand),
@@ -328,10 +420,10 @@
                                                 onClick: () => handleEditBrand(brand),
                                                 style: { padding: '6px 12px', fontSize: '12px' }
                                             }, 'Edit'),
-                                            brand !== 'LifePro' && brand !== 'PetCove' && h('button', {
+                                            h('button', {
                                                 className: 'btn btn-danger',
                                                 onClick: () => handleDeleteBrand(brand),
-                                                style: { padding: '6px 12px', fontSize: '12px' }
+                                                style: { padding: '6px 12px', fontSize: '12px', marginLeft: '8px' }
                                             }, 'Delete')
                                         )
                                     )
