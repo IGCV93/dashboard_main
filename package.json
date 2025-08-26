@@ -4,9 +4,11 @@
   "description": "Production-ready sales performance dashboard with multi-channel tracking and KPI monitoring",
   "main": "index.html",
   "scripts": {
-    "start": "python -m http.server 8000",
+    "dev": "npx serve",
+    "start": "npx serve",
+    "build": "echo 'No build required for static site'",
     "serve": "npx serve",
-    "deploy": "echo 'Deploy to your preferred hosting service'",
+    "preview": "npx serve",
     "test": "echo 'No tests configured yet'"
   },
   "keywords": [
