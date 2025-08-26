@@ -82,11 +82,11 @@
             const updatedBrand = { ...newBrand };
             ALL_CHANNELS.forEach(channel => {
                 const annualValue = updatedBrand.annual[channel] || 0;
-                // Distribute based on seasonal percentages
-                updatedBrand.Q1[channel] = annualValue * distribution.Q1;
-                updatedBrand.Q2[channel] = annualValue * distribution.Q2;
-                updatedBrand.Q3[channel] = annualValue * distribution.Q3;
-                updatedBrand.Q4[channel] = annualValue * distribution.Q4;
+                // Distribute based on seasonal percentages and round to 2 decimal places
+                updatedBrand.Q1[channel] = Math.round(annualValue * distribution.Q1 * 100) / 100;
+                updatedBrand.Q2[channel] = Math.round(annualValue * distribution.Q2 * 100) / 100;
+                updatedBrand.Q3[channel] = Math.round(annualValue * distribution.Q3 * 100) / 100;
+                updatedBrand.Q4[channel] = Math.round(annualValue * distribution.Q4 * 100) / 100;
             });
             setNewBrand(updatedBrand);
         };
@@ -98,18 +98,39 @@
             const updatedValues = { ...editingValues };
             ALL_CHANNELS.forEach(channel => {
                 const annualValue = updatedValues.annual?.[channel] || 0;
-                // Distribute based on seasonal percentages
+                // Distribute based on seasonal percentages and round to 2 decimal places
                 if (!updatedValues.Q1) updatedValues.Q1 = {};
                 if (!updatedValues.Q2) updatedValues.Q2 = {};
                 if (!updatedValues.Q3) updatedValues.Q3 = {};
                 if (!updatedValues.Q4) updatedValues.Q4 = {};
                 
-                updatedValues.Q1[channel] = annualValue * distribution.Q1;
-                updatedValues.Q2[channel] = annualValue * distribution.Q2;
-                updatedValues.Q3[channel] = annualValue * distribution.Q3;
-                updatedValues.Q4[channel] = annualValue * distribution.Q4;
+                updatedValues.Q1[channel] = Math.round(annualValue * distribution.Q1 * 100) / 100;
+                updatedValues.Q2[channel] = Math.round(annualValue * distribution.Q2 * 100) / 100;
+                updatedValues.Q3[channel] = Math.round(annualValue * distribution.Q3 * 100) / 100;
+                updatedValues.Q4[channel] = Math.round(annualValue * distribution.Q4 * 100) / 100;
             });
             setEditingValues(updatedValues);
+            
+            // IMPORTANT: Save immediately after auto-distributing in edit mode
+            setTimeout(() => {
+                const updatedTargets = { ...dynamicTargets };
+                if (!updatedTargets[settingsYear]) {
+                    updatedTargets[settingsYear] = { brands: {} };
+                }
+                
+                updatedTargets[settingsYear].brands[editingBrand] = updatedValues;
+                setDynamicTargets(updatedTargets);
+                
+                // Notify parent component immediately
+                if (onUpdate) {
+                    onUpdate({
+                        brands: dynamicBrands,
+                        targets: updatedTargets
+                    });
+                }
+                
+                window.showSuccessMessage && window.showSuccessMessage('Quarterly targets auto-distributed and saved');
+            }, 100);
         };
         
         // Get distribution display text
@@ -133,12 +154,21 @@
             // If no quarterly values and annual values exist, auto-distribute
             const hasAnnualValues = ALL_CHANNELS.some(channel => (newBrand.annual[channel] || 0) > 0);
             
+            let finalBrandData = { ...newBrand };
+            
             if (!hasQuarterlyValues && hasAnnualValues) {
                 // Automatically distribute based on brand patterns
-                autoDistributeToQuarters(newBrand.name);
-                
-                // Show notification
                 const distribution = SEASONAL_DISTRIBUTIONS[newBrand.name] || SEASONAL_DISTRIBUTIONS['default'];
+                
+                ALL_CHANNELS.forEach(channel => {
+                    const annualValue = finalBrandData.annual[channel] || 0;
+                    // Round to avoid floating point errors
+                    finalBrandData.Q1[channel] = Math.round(annualValue * distribution.Q1 * 100) / 100;
+                    finalBrandData.Q2[channel] = Math.round(annualValue * distribution.Q2 * 100) / 100;
+                    finalBrandData.Q3[channel] = Math.round(annualValue * distribution.Q3 * 100) / 100;
+                    finalBrandData.Q4[channel] = Math.round(annualValue * distribution.Q4 * 100) / 100;
+                });
+                
                 const distType = SEASONAL_DISTRIBUTIONS[newBrand.name] ? 'custom' : 'default';
                 console.log(`Auto-distributed using ${distType} seasonal pattern for ${newBrand.name}`);
             }
@@ -151,13 +181,13 @@
                 updatedTargets[settingsYear] = { brands: {} };
             }
             
-            // Use the auto-distributed values if they were calculated
+            // Use the properly distributed values
             updatedTargets[settingsYear].brands[newBrand.name] = {
-                annual: { ...newBrand.annual },
-                Q1: { ...newBrand.Q1 },
-                Q2: { ...newBrand.Q2 },
-                Q3: { ...newBrand.Q3 },
-                Q4: { ...newBrand.Q4 }
+                annual: { ...finalBrandData.annual },
+                Q1: { ...finalBrandData.Q1 },
+                Q2: { ...finalBrandData.Q2 },
+                Q3: { ...finalBrandData.Q3 },
+                Q4: { ...finalBrandData.Q4 }
             };
             
             setDynamicTargets(updatedTargets);
@@ -179,8 +209,19 @@
         const handleEditBrand = (brand) => {
             const brandData = dynamicTargets[settingsYear]?.brands?.[brand];
             if (brandData) {
+                // Clean up any floating point errors in existing data
+                const cleanedData = JSON.parse(JSON.stringify(brandData));
+                ['Q1', 'Q2', 'Q3', 'Q4'].forEach(quarter => {
+                    if (cleanedData[quarter]) {
+                        ALL_CHANNELS.forEach(channel => {
+                            if (cleanedData[quarter][channel]) {
+                                cleanedData[quarter][channel] = Math.round(cleanedData[quarter][channel] * 100) / 100;
+                            }
+                        });
+                    }
+                });
                 setEditingBrand(brand);
-                setEditingValues(JSON.parse(JSON.stringify(brandData)));
+                setEditingValues(cleanedData);
             }
         };
         
@@ -205,12 +246,24 @@
                 return;
             }
             
+            // Round all values before saving to avoid floating point errors
+            const cleanedValues = { ...editingValues };
+            ['annual', 'Q1', 'Q2', 'Q3', 'Q4'].forEach(period => {
+                if (cleanedValues[period]) {
+                    ALL_CHANNELS.forEach(channel => {
+                        if (cleanedValues[period][channel]) {
+                            cleanedValues[period][channel] = Math.round(cleanedValues[period][channel] * 100) / 100;
+                        }
+                    });
+                }
+            });
+            
             const updatedTargets = { ...dynamicTargets };
             if (!updatedTargets[settingsYear]) {
                 updatedTargets[settingsYear] = { brands: {} };
             }
             
-            updatedTargets[settingsYear].brands[editingBrand] = editingValues;
+            updatedTargets[settingsYear].brands[editingBrand] = cleanedValues;
             setDynamicTargets(updatedTargets);
             
             // Notify parent component
