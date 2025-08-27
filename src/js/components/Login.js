@@ -99,18 +99,26 @@
                     })
                     .eq('id', data.user.id);
                 
-                // Log the login
-                await supabase
-                    .from('audit_logs')
-                    .insert({
-                        user_id: data.user.id,
-                        user_email: email,
-                        user_role: profile.role,
-                        action: 'login',
-                        action_details: {
-                            timestamp: new Date().toISOString(),
-                            remember_me: rememberMe
-                        }
+                // Log the login - with better error handling
+                    try {
+                        await supabase
+                            .from('audit_logs')
+                            .insert({
+                                user_id: data.user.id,
+                                user_email: email,
+                                user_role: profile.role,
+                                action: 'login',
+                                action_details: {
+                                    timestamp: new Date().toISOString(),
+                                    remember_me: rememberMe
+                                },
+                                reference_id: `LOGIN_${Date.now()}`  // Add reference_id
+                            });
+                        console.log('Audit log created successfully');
+                    } catch (auditError) {
+                        console.error('Failed to create audit log:', auditError);
+                        // Don't fail the login just because audit failed
+                    }
                     });
                 
                 // Set session persistence
