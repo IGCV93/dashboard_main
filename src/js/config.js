@@ -61,8 +61,8 @@
         // Supabase Configuration - REPLACE WITH YOUR ACTUAL VALUES
         SUPABASE: {
             // IMPORTANT: Replace these with your actual Supabase project details
-            URL: getEnvVar('https://ebardgekhelbaoiwzwmu.supabase.co', 'https://ebardgekhelbaoiwzwmu.supabase.co'), // Replace with your URL
-            ANON_KEY: getEnvVar('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViYXJkZ2VraGVsYmFvaXd6d211Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMzM4MzksImV4cCI6MjA3MTgwOTgzOX0.9DAaE4c4C8HOaNcV7J3xhfdTc85Drc2fKnLTs_4lk0w', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViYXJkZ2VraGVsYmFvaXd6d211Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMzM4MzksImV4cCI6MjA3MTgwOTgzOX0.9DAaE4c4C8HOaNcV7J3xhfdTc85Drc2fKnLTs_4lk0w'), // Replace with your anon key
+            URL: getEnvVar('SUPABASE_URL', 'https://ebardgekhelbaoiwzwmu.supabase.co'), // Replace with your URL
+            ANON_KEY: getEnvVar('SUPABASE_ANON_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViYXJkZ2VraGVsYmFvaXd6d211Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMzM4MzksImV4cCI6MjA3MTgwOTgzOX0.9DAaE4c4C8HOaNcV7J3xhfdTc85Drc2fKnLTs_4lk0w'), // Replace with your anon key
             ENABLED: true, // Set to true to enable Supabase
             
             // Table names (matching our schema)
