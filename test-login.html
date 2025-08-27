@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Login Component</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="src/styles/main.css">
+    <link rel="stylesheet" href="src/styles/components/login.css">
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script src="src/js/config.js"></script>
+    <script src="src/js/services/supabaseService.js"></script>
+    <script src="src/js/components/Login.js"></script>
+    
+    <script>
+        // Update these with your Supabase credentials
+        window.CONFIG = {
+            SUPABASE: {
+                const SUPABASE_URL = 'https://ebardgekhelbaoiwzwmu.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViYXJkZ2VraGVsYmFvaXd6d211Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMzM4MzksImV4cCI6MjA3MTgwOTgzOX0.9DAaE4c4C8HOaNcV7J3xhfdTc85Drc2fKnLTs_4lk0w';
+        ,
+                TABLES: {
+                    USERS: 'profiles',
+                    BRAND_PERMISSIONS: 'user_brand_permissions',
+                    CHANNEL_PERMISSIONS: 'user_channel_permissions',
+                    AUDIT_LOGS: 'audit_logs'
+                }
+            }
+        };
+        
+        function handleLogin(user) {
+            console.log('Login successful!', user);
+            document.getElementById('root').innerHTML = `
+                <div style="padding: 40px; text-align: center;">
+                    <h1>Welcome, ${user.full_name || user.email}!</h1>
+                    <p>Role: ${user.role}</p>
+                    <p>User ID: ${user.id}</p>
+                    <button onclick="location.reload()">Logout</button>
+                </div>
+            `;
+        }
+        
+        const Login = window.Login || window.ChaiVision.components.Login;
+        ReactDOM.render(
+            React.createElement(Login, { onLogin: handleLogin }),
+            document.getElementById('root')
+        );
+    </script>
+</body>
+</html>
