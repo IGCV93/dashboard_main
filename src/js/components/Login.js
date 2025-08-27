@@ -68,12 +68,16 @@
             
             try {
                 // Supabase authentication
+                console.log('Attempting login for:', email);
+                
                 const { data, error: authError } = await supabase.auth.signInWithPassword({
                     email,
                     password
                 });
                 
                 if (authError) throw authError;
+                
+                console.log('Authentication successful, fetching profile...');
                 
                 // Get user profile
                 const { data: profile, error: profileError } = await supabase
@@ -84,6 +88,8 @@
                 
                 if (profileError) throw profileError;
                 
+                console.log('Profile fetched:', profile);
+                
                 // Check if user is active
                 if (profile.status !== 'active') {
                     await supabase.auth.signOut();
@@ -91,35 +97,62 @@
                 }
                 
                 // Update last login
-                await supabase
-                    .from('profiles')
-                    .update({ 
-                        last_login: new Date().toISOString(),
-                        login_count: (profile.login_count || 0) + 1
-                    })
-                    .eq('id', data.user.id);
-                
-                // Log the login - with better error handling
-                    try {
-                        await supabase
-                            .from('audit_logs')
-                            .insert({
-                                user_id: data.user.id,
-                                user_email: email,
-                                user_role: profile.role,
-                                action: 'login',
-                                action_details: {
-                                    timestamp: new Date().toISOString(),
-                                    remember_me: rememberMe
-                                },
-                                reference_id: `LOGIN_${Date.now()}`  // Add reference_id
-                            });
-                        console.log('Audit log created successfully');
-                    } catch (auditError) {
-                        console.error('Failed to create audit log:', auditError);
-                        // Don't fail the login just because audit failed
+                try {
+                    const { error: updateError } = await supabase
+                        .from('profiles')
+                        .update({ 
+                            last_login: new Date().toISOString(),
+                            login_count: (profile.login_count || 0) + 1
+                        })
+                        .eq('id', data.user.id);
+                    
+                    if (updateError) {
+                        console.warn('Failed to update last login:', updateError);
                     }
-                    });
+                } catch (updateErr) {
+                    console.warn('Could not update last login:', updateErr);
+                }
+                
+                // Log the login to audit_logs with better error handling
+                try {
+                    console.log('Creating audit log entry...');
+                    
+                    const auditEntry = {
+                        user_id: data.user.id,
+                        user_email: email,
+                        user_role: profile.role,
+                        action: 'login',
+                        action_details: {
+                            timestamp: new Date().toISOString(),
+                            remember_me: rememberMe,
+                            ip: window.location.hostname,
+                            user_agent: navigator.userAgent.substring(0, 200) // Limit length
+                        },
+                        reference_id: `LOGIN_${Date.now()}_${data.user.id.substring(0, 8)}`
+                    };
+                    
+                    console.log('Audit entry to be created:', auditEntry);
+                    
+                    const { data: auditData, error: auditError } = await supabase
+                        .from('audit_logs')
+                        .insert(auditEntry)
+                        .select();
+                    
+                    if (auditError) {
+                        console.error('Audit log error:', auditError);
+                        console.error('Error details:', {
+                            message: auditError.message,
+                            code: auditError.code,
+                            details: auditError.details,
+                            hint: auditError.hint
+                        });
+                    } else {
+                        console.log('✅ Audit log created successfully:', auditData);
+                    }
+                } catch (auditErr) {
+                    console.error('Failed to create audit log:', auditErr);
+                    // Don't fail the login just because audit failed
+                }
                 
                 // Set session persistence
                 if (rememberMe) {
@@ -134,6 +167,7 @@
                     ...profile
                 };
                 
+                console.log('Login complete, calling onLogin handler');
                 onLogin(userData);
                 
             } catch (err) {
@@ -166,6 +200,23 @@
                 
                 if (error) throw error;
                 
+                // Log password reset request
+                try {
+                    await supabase
+                        .from('audit_logs')
+                        .insert({
+                            user_email: resetEmail,
+                            action: 'password_reset_request',
+                            action_details: {
+                                timestamp: new Date().toISOString(),
+                                email: resetEmail
+                            },
+                            reference_id: `RESET_${Date.now()}`
+                        });
+                } catch (auditErr) {
+                    console.error('Failed to log password reset:', auditErr);
+                }
+                
                 setResetSent(true);
                 setError('');
             } catch (err) {
@@ -180,6 +231,22 @@
             setPassword(demo.password);
             setError('');
         };
+        
+        // Check Supabase connection on mount
+        useEffect(() => {
+            const checkSupabase = async () => {
+                const supabase = getSupabaseClient();
+                if (supabase) {
+                    try {
+                        const { data: { session } } = await supabase.auth.getSession();
+                        console.log('Existing session:', session ? 'Found' : 'None');
+                    } catch (err) {
+                        console.error('Supabase connection error:', err);
+                    }
+                }
+            };
+            checkSupabase();
+        }, []);
         
         if (showResetPassword) {
             return h('div', { className: 'login-container' },
@@ -274,7 +341,8 @@
                             h('button', {
                                 type: 'button',
                                 className: 'password-toggle',
-                                onClick: () => setShowPassword(!showPassword)
+                                onClick: () => setShowPassword(!showPassword),
+                                title: showPassword ? 'Hide password' : 'Show password'
                             }, showPassword ? '👁️' : '👁️‍🗨️')
                         )
                     ),
@@ -312,6 +380,7 @@
                         ...demoCredentials.map(demo =>
                             h('button', {
                                 key: demo.role,
+                                type: 'button',
                                 className: 'demo-btn',
                                 onClick: () => fillDemoCredentials(demo),
                                 title: `${demo.email} / ${demo.password}`
