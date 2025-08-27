@@ -1,0 +1,112 @@
+<!-- test-auth.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Supabase Auth</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button { margin: 10px 0; padding: 10px; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+    </style>
+</head>
+<body>
+    <h1>Supabase Auth Test</h1>
+    
+    <div>
+        <h2>Login Test</h2>
+        <input type="email" id="email" placeholder="Email" value="admin@chaivision.com">
+        <input type="password" id="password" placeholder="Password">
+        <br>
+        <button onclick="testLogin()">Test Login</button>
+        <button onclick="testLogout()">Logout</button>
+        <button onclick="checkSession()">Check Session</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        // Replace with your Supabase credentials
+        const SUPABASE_URL = 'YOUR-SUPABASE-URL';
+        const SUPABASE_ANON_KEY = 'YOUR-SUPABASE-ANON-KEY';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const results = document.getElementById('results');
+        
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            results.innerHTML = '<div class="info">Logging in...</div>';
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) throw error;
+                
+                // Get profile data
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', data.user.id)
+                    .single();
+                
+                if (profileError) throw profileError;
+                
+                // Get permissions
+                const { data: brands } = await supabase
+                    .from('user_brand_permissions')
+                    .select('brand')
+                    .eq('user_id', data.user.id);
+                
+                const { data: channels } = await supabase
+                    .from('user_channel_permissions')
+                    .select('channel')
+                    .eq('user_id', data.user.id);
+                
+                results.innerHTML = `
+                    <div class="success">
+                        <h3>✅ Login Successful!</h3>
+                        <p><strong>Email:</strong> ${data.user.email}</p>
+                        <p><strong>User ID:</strong> ${data.user.id}</p>
+                        <p><strong>Role:</strong> ${profile.role}</p>
+                        <p><strong>Full Name:</strong> ${profile.full_name}</p>
+                        <p><strong>Brands:</strong> ${brands.map(b => b.brand).join(', ')}</p>
+                        <p><strong>Channels:</strong> ${channels.map(c => c.channel).join(', ')}</p>
+                    </div>
+                `;
+            } catch (error) {
+                results.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function testLogout() {
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+                results.innerHTML = `<div class="error">❌ Logout Error: ${error.message}</div>`;
+            } else {
+                results.innerHTML = '<div class="success">✅ Logged out successfully</div>';
+            }
+        }
+        
+        async function checkSession() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                results.innerHTML = `<div class="success">✅ Active session for: ${session.user.email}</div>`;
+            } else {
+                results.innerHTML = '<div class="info">No active session</div>';
+            }
+        }
+        
+        // Check session on load
+        checkSession();
+    </script>
+</body>
+</html>
