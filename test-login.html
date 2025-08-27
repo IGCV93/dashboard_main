@@ -10,44 +10,80 @@
     <link rel="stylesheet" href="src/styles/components/login.css">
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+        <div style="padding: 40px; text-align: center;">
+            <h2>Loading Login Component...</h2>
+        </div>
+    </div>
     
+    <!-- Load scripts in correct order -->
     <script src="src/js/config.js"></script>
     <script src="src/js/services/supabaseService.js"></script>
     <script src="src/js/components/Login.js"></script>
     
     <script>
-        // Update these with your Supabase credentials
-        window.CONFIG = {
-            SUPABASE: {
-                URL: 'https://ebardgekhelbaoiwzwmu.supabase.co',
-                ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViYXJkZ2VraGVsYmFvaXd6d211Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMzM4MzksImV4cCI6MjA3MTgwOTgzOX0.9DAaE4c4C8HOaNcV7J3xhfdTc85Drc2fKnLTs_4lk0w',
-                TABLES: {
-                    USERS: 'profiles',
-                    BRAND_PERMISSIONS: 'user_brand_permissions',
-                    CHANNEL_PERMISSIONS: 'user_channel_permissions',
-                    AUDIT_LOGS: 'audit_logs'
+        // Wait for all scripts to load
+        window.addEventListener('load', function() {
+            console.log('Checking for Login component...');
+            console.log('window.Login:', window.Login);
+            console.log('window.ChaiVision:', window.ChaiVision);
+            
+            // Add a small delay to ensure scripts are parsed
+            setTimeout(function() {
+                try {
+                    // Try multiple ways to get the Login component
+                    const Login = window.Login || 
+                                 window.ChaiVision?.components?.Login ||
+                                 (window.ChaiVision && window.ChaiVision.components && window.ChaiVision.components.Login);
+                    
+                    if (!Login) {
+                        throw new Error('Login component not found. Check console for details.');
+                    }
+                    
+                    console.log('Login component found!', Login);
+                    
+                    function handleLogin(user) {
+                        console.log('Login successful!', user);
+                        document.getElementById('root').innerHTML = `
+                            <div style="padding: 40px; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                                <h1>✅ Login Successful!</h1>
+                                <h2>Welcome, ${user.full_name || user.email}!</h2>
+                                <p><strong>Role:</strong> ${user.role}</p>
+                                <p><strong>Status:</strong> ${user.status || 'Active'}</p>
+                                <p><strong>User ID:</strong> ${user.id}</p>
+                                <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;">Test Again (Logout)</button>
+                            </div>
+                        `;
+                    }
+                    
+                    // Render the Login component
+                    ReactDOM.render(
+                        React.createElement(Login, { onLogin: handleLogin }),
+                        document.getElementById('root')
+                    );
+                    
+                } catch (error) {
+                    console.error('Error loading Login component:', error);
+                    document.getElementById('root').innerHTML = `
+                        <div style="padding: 40px; text-align: center; color: red;">
+                            <h2>Error Loading Login Component</h2>
+                            <p>${error.message}</p>
+                            <p>Check the browser console for more details.</p>
+                            <details style="margin-top: 20px; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto;">
+                                <summary>Debug Info</summary>
+                                <pre style="background: #f5f5f5; padding: 10px; overflow: auto;">
+window.Login exists: ${!!window.Login}
+window.ChaiVision exists: ${!!window.ChaiVision}
+ChaiVision.components exists: ${!!(window.ChaiVision && window.ChaiVision.components)}
+React loaded: ${!!window.React}
+ReactDOM loaded: ${!!window.ReactDOM}
+                                </pre>
+                            </details>
+                        </div>
+                    `;
                 }
-            }
-        };
-        
-        function handleLogin(user) {
-            console.log('Login successful!', user);
-            document.getElementById('root').innerHTML = `
-                <div style="padding: 40px; text-align: center;">
-                    <h1>Welcome, ${user.full_name || user.email}!</h1>
-                    <p>Role: ${user.role}</p>
-                    <p>User ID: ${user.id}</p>
-                    <button onclick="location.reload()">Logout</button>
-                </div>
-            `;
-        }
-        
-        const Login = window.Login || window.ChaiVision.components.Login;
-        ReactDOM.render(
-            React.createElement(Login, { onLogin: handleLogin }),
-            document.getElementById('root')
-        );
+            }, 100); // Small delay to ensure scripts are fully parsed
+        });
     </script>
 </body>
 </html>
