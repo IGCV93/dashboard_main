@@ -115,11 +115,11 @@
             // Use different quarterly distributions based on brand
             const isLifePro = brandName.toLowerCase() === 'lifepro';
             
-            // LifePro quarterly distribution: Q1: 22%, Q2: 33%, Q3: 22%, Q4: 23%
-            // Other brands: Standard 25% each quarter
+            // LifePro quarterly distribution: Q1: 27.8%, Q2: 17.6%, Q3: 17.6%, Q4: 37.0%
+            // Other brands: Q1: 18.2%, Q2: 18.2%, Q3: 27.3%, Q4: 36.3%
             const quarterlyPercentages = isLifePro 
-                ? { Q1: 0.22, Q2: 0.33, Q3: 0.22, Q4: 0.23 }
-                : { Q1: 0.25, Q2: 0.25, Q3: 0.25, Q4: 0.25 };
+                ? { Q1: 0.278, Q2: 0.176, Q3: 0.176, Q4: 0.370 }
+                : { Q1: 0.182, Q2: 0.182, Q3: 0.273, Q4: 0.363 };
             
             availableChannels.forEach(channel => {
                 const annualValue = parseFloat(annualTargets[channel]) || 0;
@@ -693,7 +693,7 @@
                                  marginBottom: '16px',
                                  lineHeight: '1.4'
                              }
-                         }, 'Quarterly targets can be auto-calculated from annual targets. You can adjust them manually after calculation.'),
+                         }, 'Quarterly targets are auto-calculated using brand-specific distributions. LifePro: Q1(27.8%), Q2(17.6%), Q3(17.6%), Q4(37.0%). Other brands: Q1(18.2%), Q2(18.2%), Q3(27.3%), Q4(36.3%).'),
                         
                         // Horizontal Layout for Quarterly Cards
                         h('div', { 
