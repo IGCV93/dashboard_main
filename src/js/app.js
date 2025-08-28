@@ -214,8 +214,9 @@
             channel.postMessage({ event: 'SIGNED_OUT' });
         }
         
-        // Don't reload - let React handle the state change
-        console.log('✅ Sign out completed without reload');
+        // Force a page reload to reset React state completely
+        console.log('✅ Sign out completed - reloading page');
+        window.location.reload();
     }
 
     /**

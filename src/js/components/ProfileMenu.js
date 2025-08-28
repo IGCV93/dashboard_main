@@ -53,15 +53,15 @@
         const handleLogout = async () => {
             setShowMenu(false);
             
-            // Get Supabase client
-            const config = window.CONFIG || window.ChaiVision?.CONFIG;
-            if (config?.SUPABASE?.URL && window.supabase) {
-                const supabase = window.supabase.createClient(
-                    config.SUPABASE.URL,
-                    config.SUPABASE.ANON_KEY
-                );
-                
-                try {
+            try {
+                // Get Supabase client
+                const config = window.CONFIG || window.ChaiVision?.CONFIG;
+                if (config?.SUPABASE?.URL && window.supabase) {
+                    const supabase = window.supabase.createClient(
+                        config.SUPABASE.URL,
+                        config.SUPABASE.ANON_KEY
+                    );
+                    
                     // Log the logout
                     await supabase
                         .from('audit_logs')
@@ -78,18 +78,29 @@
                     
                     // Sign out from Supabase
                     await supabase.auth.signOut();
-                } catch (error) {
-                    console.error('Logout error:', error);
                 }
-            }
-            
-            // Clear local storage
-            localStorage.removeItem('chai_vision_remember');
-            sessionStorage.clear();
-            
-            // Call parent logout handler
-            if (onLogout) {
-                onLogout();
+                
+                // Call parent logout handler first (this will handle the main logout logic)
+                if (onLogout) {
+                    onLogout();
+                } else {
+                    // Fallback if no parent handler
+                    console.log('No parent logout handler, using fallback');
+                    localStorage.removeItem('chai_vision_remember');
+                    sessionStorage.clear();
+                    window.location.reload();
+                }
+                
+            } catch (error) {
+                console.error('Logout error:', error);
+                // Even if there's an error, still try to logout
+                if (onLogout) {
+                    onLogout();
+                } else {
+                    localStorage.removeItem('chai_vision_remember');
+                    sessionStorage.clear();
+                    window.location.reload();
+                }
             }
         };
         
