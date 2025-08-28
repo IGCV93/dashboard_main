@@ -1,5 +1,6 @@
 /**
  * Channel Performance Component
+ * ENHANCED WITH PERMISSION FILTERING
  */
 
 (function() {
@@ -21,18 +22,18 @@
             'Omnichannel': '#EC4899'
         };
         
-        const ALL_CHANNELS = [
-            'Amazon', 'TikTok', 'DTC-Shopify', 'Retail',
-            'CA International', 'UK International', 'Wholesale', 'Omnichannel'
-        ];
+        // Use channels from kpis (filtered by permissions) or fall back to default
+        const channelsToDisplay = kpis.channels || kpis.availableChannels || 
+            ['Amazon', 'TikTok', 'DTC-Shopify', 'Retail',
+             'CA International', 'UK International', 'Wholesale', 'Omnichannel'];
         
         return h('div', { className: 'channel-section' },
             h('div', { className: 'section-header' },
                 h('h2', { className: 'section-title' }, '🛍️ Channel Performance Breakdown')
             ),
             h('div', { className: 'channel-grid' },
-                ALL_CHANNELS.map(channel => {
-                    const achievement = kpis.channelAchievements[channel] || 0;
+                channelsToDisplay.map(channel => {
+                    const achievement = kpis.channelAchievements?.[channel] || 0;
                     const channelClass = channel.toLowerCase().replace(/[\s-]/g, '-');
                     
                     return h('div', { key: channel, className: `channel-card ${channelClass}` },
@@ -55,13 +56,15 @@
                             h('div', { className: 'metric-item' },
                                 h('div', { className: 'metric-label' }, 'Revenue'),
                                 h('div', { className: 'metric-value' }, 
-                                    formatCurrency ? formatCurrency(kpis.channelRevenues[channel] || 0) : '$' + (kpis.channelRevenues[channel] || 0)
+                                    formatCurrency ? formatCurrency(kpis.channelRevenues?.[channel] || 0) : 
+                                    '$' + (kpis.channelRevenues?.[channel] || 0)
                                 )
                             ),
                             h('div', { className: 'metric-item' },
                                 h('div', { className: 'metric-label' }, '85% Target'),
                                 h('div', { className: 'metric-value' }, 
-                                    formatCurrency ? formatCurrency(kpis.channelTargets85[channel] || 0) : '$' + (kpis.channelTargets85[channel] || 0)
+                                    formatCurrency ? formatCurrency(kpis.channelTargets85?.[channel] || 0) : 
+                                    '$' + (kpis.channelTargets85?.[channel] || 0)
                                 )
                             )
                         ),
