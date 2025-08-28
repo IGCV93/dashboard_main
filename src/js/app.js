@@ -375,7 +375,8 @@
                         console.warn('⏰ Auth check timeout - proceeding without authentication');
                         setCheckingAuth(false);
                         setLoading(false);
-                    }, 10000); // 10 second timeout
+                        setIsAuthenticated(false); // Force to login screen
+                    }, 5000); // Reduced to 5 seconds
                     
                     try {
                         if (APP_STATE.supabaseClient && config.FEATURES.ENABLE_SUPABASE) {
@@ -753,6 +754,18 @@
             const AuditLogs = window.AuditLogs || window.ChaiVision?.components?.AuditLogs;
             const ProfileMenu = window.ProfileMenu || window.ChaiVision?.components?.ProfileMenu;
             
+            // Debug component loading
+            console.log('🔍 Component Loading Status:');
+            console.log('  Login:', !!Login);
+            console.log('  Navigation:', !!Navigation);
+            console.log('  Sidebar:', !!Sidebar);
+            console.log('  Dashboard:', !!Dashboard);
+            console.log('  Settings:', !!Settings);
+            console.log('  Upload:', !!Upload);
+            console.log('  UserManagement:', !!UserManagement);
+            console.log('  AuditLogs:', !!AuditLogs);
+            console.log('  ProfileMenu:', !!ProfileMenu);
+            
             // If checking auth, show loading
             if (checkingAuth) {
                 return h('div', { className: 'loading-container' },
@@ -763,11 +776,40 @@
             
             // If not authenticated, show login
             if (!isAuthenticated) {
-                return Login ? h(Login, { 
-                    onLogin: handleLogin,
-                    rememberMe: APP_STATE.rememberMe,
-                    setRememberMe: (value) => { APP_STATE.rememberMe = value; }
-                }) : h('div', null, 'Loading...');
+                console.log('🔐 User not authenticated, showing login...');
+                if (Login) {
+                    return h(Login, { 
+                        onLogin: handleLogin,
+                        rememberMe: APP_STATE.rememberMe,
+                        setRememberMe: (value) => { APP_STATE.rememberMe = value; }
+                    });
+                } else {
+                    console.error('❌ Login component not found!');
+                    return h('div', { 
+                        style: { 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            minHeight: '100vh',
+                            flexDirection: 'column',
+                            gap: '20px'
+                        } 
+                    },
+                        h('h2', null, 'Login Component Not Found'),
+                        h('p', null, 'Please refresh the page or contact support.'),
+                        h('button', {
+                            onClick: () => window.location.reload(),
+                            style: {
+                                padding: '10px 20px',
+                                background: '#667eea',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer'
+                            }
+                        }, 'Refresh Page')
+                    );
+                }
             }
             
             // Debug currentUser state
