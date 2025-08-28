@@ -318,22 +318,21 @@
             // Charts Section
             h('div', { className: 'chart-card' },
                 h('div', { className: 'chart-header' },
-                    h('h3', { className: 'chart-title' }, '📊 Channel Performance Analysis'),
-                    h('div', { className: 'chart-filters' },
-                        h('span', { className: 'filter-label' }, 'Show Channels:'),
-                        h('div', { className: 'filter-checkboxes' },
-                            ...ALL_CHANNELS.map(channel =>
-                                h('div', {
-                                    key: channel,
-                                    className: `filter-checkbox ${selectedChannels.includes(channel) ? 'selected' : ''}`,
-                                    onClick: () => handleChannelToggle(channel)
-                                },
-                                    h('input', {
-                                        type: 'checkbox',
-                                        checked: selectedChannels.includes(channel),
-                                        onChange: () => {}
-                                    }),
-                                    h('label', null, channel)
+                    h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' } },
+                        h('h3', { className: 'chart-title' }, '📊 Channel Performance Analysis'),
+                        h('div', { className: 'chart-filters' },
+                            h('span', { className: 'filter-label' }, 'Show Channels:'),
+                            h('div', { className: 'filter-buttons' },
+                                ...ALL_CHANNELS.map(channel =>
+                                    h('button', {
+                                        key: channel,
+                                        className: `filter-btn ${selectedChannels.includes(channel) ? 'selected' : ''}`,
+                                        onClick: () => handleChannelToggle(channel),
+                                        style: {
+                                            backgroundColor: selectedChannels.includes(channel) ? CHANNEL_COLORS[channel] : 'transparent',
+                                            borderColor: CHANNEL_COLORS[channel]
+                                        }
+                                    }, channel)
                                 )
                             )
                         )

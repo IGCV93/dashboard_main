@@ -79,56 +79,50 @@
 .filter-label {
     font-size: 13px;
     font-weight: 600;
-    color: var(--medium-gray);
+    color: var(--text-secondary);
     white-space: nowrap;
 }
 
-.filter-checkboxes {
+.filter-buttons {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
 }
 
-.filter-checkbox {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+.filter-btn {
     padding: 6px 12px;
-    background: white;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s;
-    border: 2px solid transparent;
-    font-size: 13px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.filter-checkbox:hover {
-    border-color: var(--primary-blue);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.filter-checkbox.selected {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-color: transparent;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-}
-
-.filter-checkbox input[type="checkbox"] {
-    cursor: pointer;
-    margin: 0;
-    width: 14px;
-    height: 14px;
-}
-
-.filter-checkbox label {
-    cursor: pointer;
-    font-weight: 600;
-    user-select: none;
+    border: 2px solid;
+    border-radius: 20px;
+    background: transparent;
+    color: var(--text-primary);
     font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    min-width: 60px;
+    text-align: center;
 }
+
+.filter-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.filter-btn.selected {
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Channel-specific colors for filter buttons */
+.filter-btn[style*="Amazon"] { border-color: #FF9900; }
+.filter-btn[style*="TikTok"] { border-color: #000000; }
+.filter-btn[style*="DTC-Shopify"] { border-color: #96bf48; }
+.filter-btn[style*="Retail"] { border-color: #8B5CF6; }
+.filter-btn[style*="CA International"] { border-color: #DC2626; }
+.filter-btn[style*="UK International"] { border-color: #1E40AF; }
+.filter-btn[style*="Wholesale"] { border-color: #14B8A6; }
+.filter-btn[style*="Omnichannel"] { border-color: #EC4899; }
 
 /* Chart Container */
 .chart-container {
