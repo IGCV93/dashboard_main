@@ -56,14 +56,14 @@
                         ),
                         h('div', { className: 'channel-metrics' },
                             h('div', { className: 'metric-item' },
-                                h('div', { className: 'metric-label' }, 'Revenue'),
+                                h('div', { className: 'metric-label' }, 'REVENUE'),
                                 h('div', { className: 'metric-value' }, 
                                     formatCurrency ? formatCurrency(kpis.channelRevenues?.[channel] || 0) : 
                                     '$' + (kpis.channelRevenues?.[channel] || 0)
                                 )
                             ),
                             h('div', { className: 'metric-item' },
-                                h('div', { className: 'metric-label' }, '85% Target'),
+                                h('div', { className: 'metric-label' }, '85% TARGET'),
                                 h('div', { className: 'metric-value' }, 
                                     formatCurrency ? formatCurrency(kpis.channelTargets85?.[channel] || 0) : 
                                     '$' + (kpis.channelTargets85?.[channel] || 0)
