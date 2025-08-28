@@ -753,6 +753,7 @@
             const UserManagement = window.UserManagement || window.ChaiVision?.components?.UserManagement;
             const AuditLogs = window.AuditLogs || window.ChaiVision?.components?.AuditLogs;
             const ProfileMenu = window.ProfileMenu || window.ChaiVision?.components?.ProfileMenu;
+            const ProfileSettings = window.ProfileSettings || window.ChaiVision?.components?.ProfileSettings;
             
             // Debug component loading
             console.log('🔍 Component Loading Status:');
@@ -765,6 +766,7 @@
             console.log('  UserManagement:', !!UserManagement);
             console.log('  AuditLogs:', !!AuditLogs);
             console.log('  ProfileMenu:', !!ProfileMenu);
+            console.log('  ProfileSettings:', !!ProfileSettings);
             
             // If checking auth, show loading
             if (checkingAuth) {
@@ -950,6 +952,18 @@
                         return AuditLogs ? h(AuditLogs, {
                             currentUser
                         }) : h('div', null, 'Audit Logs component not found');
+                        
+                    case 'profile':
+                        // All authenticated users can access profile settings
+                        return ProfileSettings ? h(ProfileSettings, {
+                            currentUser,
+                            onUpdate: (updatedUser) => {
+                                // Update the current user in the app state
+                                APP_STATE.currentUser = updatedUser;
+                                // Force a re-render
+                                setCurrentUser(updatedUser);
+                            }
+                        }) : h('div', null, 'Profile Settings component not found');
                         
                     default:
                         return h('div', null, 'Section not found');
