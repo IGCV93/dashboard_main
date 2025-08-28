@@ -1,0 +1,10 @@
+[33maaf1b49[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Restore Add New Brand functionality in Settings component
+[33mf57e6be[m Fix loading issue: add missing Login component, improve auth timeout handling, add component debugging
+[33m541ba82[m Fix authentication loop and data loading issues - disable BroadcastChannel reloads, improve debugging, temporarily disable Supabase
+[33mfc993ea[m Fix critical issues: user preferences 409 conflict, ProfileMenu loading, and data generation
+[33m0ebb258[m CRITICAL FIX: Fix syntax errors and stop infinite loops - Fix JavaScript syntax error in index.html onClick function - Disable auth state reload loops in app.js - Remove automatic reload from fallback app - Prevent infinite loop behavior
+[33mc6d09a0[m CRITICAL FIX: Stop infinite loop issues - Fix auth state reload loops in app.js - Add initialization guards to prevent multiple init attempts - Remove automatic reload from fallback app in index.html - Disable auto-initialization in module-bridge.js - Add initializing flag to prevent race conditions
+[33m6f511ea[m Fix UserManagement loading and authentication loop - Add UserManagement.js to HTML script loading - Add 10-second timeout to prevent auth loop - Add better error handling for user preferences 409 conflict - Add debug logging for component loading and activeSection
+[33m3eddc88[m Fix profile menu loading and add debugging - Add ProfileMenu component loading in app.js and HTML - Add meta.json to resolve 404 error - Add debug logging for currentUser state - Profile menu should now appear in top-right corner
+[33mc1b3d75[m feat(nav): integrate ProfileMenu with role-based actions and Supabase logout
+[33m2380db4[m[33m ([m[1;34mgrafted[m[33m)[m Update app.js

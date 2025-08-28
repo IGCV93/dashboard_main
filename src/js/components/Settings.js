@@ -57,7 +57,7 @@
         const [editingValues, setEditingValues] = useState({});
         const [showAddBrand, setShowAddBrand] = useState(false);
         const [newBrandName, setNewBrandName] = useState('');
-        const [newBrandTarget, setNewBrandTarget] = useState(0);
+        const [newBrandTargets, setNewBrandTargets] = useState(createEmptyTargets());
         const [dynamicBrands, setDynamicBrands] = useState(availableBrands);
         const [dynamicTargets, setDynamicTargets] = useState(initialTargets || {});
         const [error, setError] = useState('');
@@ -80,6 +80,79 @@
                                     userPermissions?.channels?.includes(channel);
             
             return hasBrandAccess && hasChannelAccess;
+        };
+        
+        // Helper function to create empty targets structure
+        const createEmptyTargets = () => {
+            const emptyTargets = {
+                annual: {},
+                Q1: {},
+                Q2: {},
+                Q3: {},
+                Q4: {}
+            };
+            
+            availableChannels.forEach(channel => {
+                emptyTargets.annual[channel] = 0;
+                emptyTargets.Q1[channel] = 0;
+                emptyTargets.Q2[channel] = 0;
+                emptyTargets.Q3[channel] = 0;
+                emptyTargets.Q4[channel] = 0;
+            });
+            
+            return emptyTargets;
+        };
+        
+        // Helper function to auto-calculate quarterly targets from annual
+        const autoCalculateQuarterly = (annualTargets) => {
+            const quarterlyTargets = {
+                Q1: {},
+                Q2: {},
+                Q3: {},
+                Q4: {}
+            };
+            
+            availableChannels.forEach(channel => {
+                const annualValue = parseFloat(annualTargets[channel]) || 0;
+                const quarterlyValue = annualValue / 4;
+                
+                quarterlyTargets.Q1[channel] = quarterlyValue;
+                quarterlyTargets.Q2[channel] = quarterlyValue;
+                quarterlyTargets.Q3[channel] = quarterlyValue;
+                quarterlyTargets.Q4[channel] = quarterlyValue;
+            });
+            
+            return quarterlyTargets;
+        };
+        
+        // Helper function to validate targets (using the validator from utils)
+        const validateTargets = (targets) => {
+            const { validateTargets: validateTargetsUtil } = window.validators || {};
+            if (validateTargetsUtil) {
+                return validateTargetsUtil(targets);
+            }
+            
+            // Fallback validation
+            const errors = [];
+            if (!targets || typeof targets !== 'object') {
+                errors.push('Invalid target configuration');
+                return { isValid: false, errors };
+            }
+            
+            if (!targets.annual || typeof targets.annual !== 'object') {
+                errors.push('Annual targets are required');
+            }
+            
+            ['Q1', 'Q2', 'Q3', 'Q4'].forEach(quarter => {
+                if (!targets[quarter] || typeof targets[quarter] !== 'object') {
+                    errors.push(`${quarter} targets are required`);
+                }
+            });
+            
+            return {
+                isValid: errors.length === 0,
+                errors
+            };
         };
         
         // Audit log helper
@@ -163,9 +236,9 @@
         };
         
         // Handle add new brand
-        const handleAddBrand = () => {
-            if (!newBrandName.trim() || !newBrandTarget) {
-                setError('Please enter both brand name and target');
+        const handleAddBrand = async () => {
+            if (!newBrandName.trim()) {
+                setError('Please enter a brand name');
                 return;
             }
             
@@ -176,49 +249,122 @@
             
             const brandName = newBrandName.trim();
             
-            // Add to brands list
-            const updatedBrands = [...dynamicBrands, brandName];
-            setDynamicBrands(updatedBrands);
-            
-            // Initialize targets for the new brand
-            const updatedTargets = { ...dynamicTargets };
-            if (!updatedTargets[settingsYear]) {
-                updatedTargets[settingsYear] = { brands: {} };
-            }
-            if (!updatedTargets[settingsYear].brands) {
-                updatedTargets[settingsYear].brands = {};
+            // Validate targets
+            const targetValidation = validateTargets(newBrandTargets);
+            if (!targetValidation.isValid) {
+                setError('Invalid target configuration: ' + targetValidation.errors.join(', '));
+                return;
             }
             
-            // Set initial targets for all channels
-            const initialTargets = {};
-            availableChannels.forEach(channel => {
-                initialTargets[channel] = newBrandTarget / availableChannels.length;
-            });
-            
-            updatedTargets[settingsYear].brands[brandName] = {
-                annual: initialTargets,
-                Q1: { ...initialTargets },
-                Q2: { ...initialTargets },
-                Q3: { ...initialTargets },
-                Q4: { ...initialTargets }
-            };
-            
-            setDynamicTargets(updatedTargets);
-            
-            // Notify parent component
-            if (onUpdate) {
-                onUpdate({
-                    brands: updatedBrands,
-                    targets: updatedTargets
-                });
+            try {
+                // Add to brands list
+                const updatedBrands = [...dynamicBrands, brandName];
+                setDynamicBrands(updatedBrands);
+                
+                // Initialize targets for the new brand
+                const updatedTargets = { ...dynamicTargets };
+                if (!updatedTargets[settingsYear]) {
+                    updatedTargets[settingsYear] = { brands: {} };
+                }
+                if (!updatedTargets[settingsYear].brands) {
+                    updatedTargets[settingsYear].brands = {};
+                }
+                
+                updatedTargets[settingsYear].brands[brandName] = newBrandTargets;
+                setDynamicTargets(updatedTargets);
+                
+                // Save to database if Supabase is enabled
+                const supabase = getSupabaseClient();
+                if (supabase && window.CONFIG?.FEATURES?.ENABLE_SUPABASE) {
+                    try {
+                        // Save brand to brands table
+                        await supabase
+                            .from('brands')
+                            .insert({
+                                name: brandName,
+                                created_by: currentUser?.id,
+                                created_at: new Date().toISOString()
+                            });
+                        
+                        // Save KPI targets
+                        const targetsToSave = [];
+                        availableChannels.forEach(channel => {
+                            // Annual target
+                            if (newBrandTargets.annual[channel]) {
+                                targetsToSave.push({
+                                    year: parseInt(settingsYear),
+                                    period: 'annual',
+                                    brand: brandName,
+                                    channel: channel,
+                                    target_value: newBrandTargets.annual[channel],
+                                    created_by: currentUser?.id,
+                                    created_at: new Date().toISOString()
+                                });
+                            }
+                            
+                            // Quarterly targets
+                            ['Q1', 'Q2', 'Q3', 'Q4'].forEach(quarter => {
+                                if (newBrandTargets[quarter]?.[channel]) {
+                                    targetsToSave.push({
+                                        year: parseInt(settingsYear),
+                                        period: quarter,
+                                        brand: brandName,
+                                        channel: channel,
+                                        target_value: newBrandTargets[quarter][channel],
+                                        created_by: currentUser?.id,
+                                        created_at: new Date().toISOString()
+                                    });
+                                }
+                            });
+                        });
+                        
+                        if (targetsToSave.length > 0) {
+                            await supabase
+                                .from('kpi_targets')
+                                .insert(targetsToSave);
+                        }
+                        
+                        // Log to audit
+                        await supabase
+                            .from('audit_logs')
+                            .insert({
+                                user_id: currentUser?.id,
+                                user_email: currentUser?.email,
+                                user_role: userRole,
+                                action: 'brand_created',
+                                action_details: {
+                                    brand_name: brandName,
+                                    year: settingsYear,
+                                    targets: newBrandTargets
+                                },
+                                reference_id: `BRAND_${Date.now()}_${brandName}`
+                            });
+                            
+                    } catch (dbError) {
+                        console.error('Failed to save to database:', dbError);
+                        // Continue with local update even if DB fails
+                    }
+                }
+                
+                // Notify parent component
+                if (onUpdate) {
+                    onUpdate({
+                        brands: updatedBrands,
+                        targets: updatedTargets
+                    });
+                }
+                
+                // Reset form
+                setNewBrandName('');
+                setNewBrandTargets(createEmptyTargets());
+                setShowAddBrand(false);
+                setSuccess(`Brand "${brandName}" added successfully`);
+                setTimeout(() => setSuccess(''), 3000);
+                
+            } catch (error) {
+                console.error('Failed to add brand:', error);
+                setError('Failed to add brand. Please try again.');
             }
-            
-            // Reset form
-            setNewBrandName('');
-            setNewBrandTarget(0);
-            setShowAddBrand(false);
-            setSuccess(`Brand "${brandName}" added successfully`);
-            setTimeout(() => setSuccess(''), 3000);
         };
         
         // Handle saving edited brand
@@ -374,30 +520,101 @@
                             onChange: (e) => setNewBrandName(e.target.value)
                         })
                     ),
-                    h('div', { className: 'form-group' },
-                        h('label', null, 'Initial Annual Target:'),
-                        h('input', {
-                            type: 'number',
-                            className: 'input-field',
-                            placeholder: 'Enter initial target...',
-                            value: newBrandTarget || '',
-                            onChange: (e) => setNewBrandTarget(parseFloat(e.target.value) || 0)
-                        })
+                    
+                    // Annual Targets Section
+                    h('div', { className: 'targets-section' },
+                        h('h4', { style: { marginBottom: '16px', color: '#374151' } }, '📊 Annual Targets'),
+                        h('div', { className: 'channel-inputs-grid' },
+                            availableChannels.map(channel =>
+                                h('div', { key: `annual-${channel}`, className: 'form-group' },
+                                    h('label', null, `${channel} (Annual):`),
+                                    h('input', {
+                                        type: 'number',
+                                        className: 'input-field',
+                                        placeholder: '0',
+                                        value: newBrandTargets.annual[channel] || '',
+                                        onChange: (e) => {
+                                            const value = parseFloat(e.target.value) || 0;
+                                            const updatedTargets = { ...newBrandTargets };
+                                            updatedTargets.annual[channel] = value;
+                                            
+                                            // Auto-calculate quarterly if annual is set
+                                            if (value > 0) {
+                                                const quarterlyValue = value / 4;
+                                                updatedTargets.Q1[channel] = quarterlyValue;
+                                                updatedTargets.Q2[channel] = quarterlyValue;
+                                                updatedTargets.Q3[channel] = quarterlyValue;
+                                                updatedTargets.Q4[channel] = quarterlyValue;
+                                            }
+                                            
+                                            setNewBrandTargets(updatedTargets);
+                                        }
+                                    })
+                                )
+                            )
+                        )
                     ),
-                    h('div', { style: { display: 'flex', gap: '12px', marginTop: '16px' } },
+                    
+                    // Quarterly Targets Section
+                    h('div', { className: 'targets-section', style: { marginTop: '24px' } },
+                        h('h4', { style: { marginBottom: '16px', color: '#374151' } }, '📅 Quarterly Targets'),
+                        h('p', { style: { fontSize: '14px', color: '#6B7280', marginBottom: '16px' } }, 
+                            'Quarterly targets are auto-calculated from annual targets. You can adjust them manually.'
+                        ),
+                        ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter =>
+                            h('div', { key: quarter, style: { marginBottom: '20px' } },
+                                h('h5', { style: { marginBottom: '12px', fontWeight: '600', color: '#374151' } }, quarter),
+                                h('div', { className: 'channel-inputs-grid' },
+                                    availableChannels.map(channel =>
+                                        h('div', { key: `${quarter}-${channel}`, className: 'form-group' },
+                                            h('label', { style: { fontSize: '12px', color: '#6B7280' } }, channel),
+                                            h('input', {
+                                                type: 'number',
+                                                className: 'input-field',
+                                                placeholder: '0',
+                                                value: newBrandTargets[quarter]?.[channel] || '',
+                                                onChange: (e) => {
+                                                    const value = parseFloat(e.target.value) || 0;
+                                                    const updatedTargets = { ...newBrandTargets };
+                                                    if (!updatedTargets[quarter]) updatedTargets[quarter] = {};
+                                                    updatedTargets[quarter][channel] = value;
+                                                    setNewBrandTargets(updatedTargets);
+                                                }
+                                            })
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    
+                    // Action Buttons
+                    h('div', { style: { display: 'flex', gap: '12px', marginTop: '24px' } },
                         h('button', {
                             className: 'btn btn-success',
                             onClick: handleAddBrand,
-                            disabled: !newBrandName || !newBrandTarget
+                            disabled: !newBrandName
                         }, 'Add Brand'),
                         h('button', {
                             className: 'btn btn-secondary',
                             onClick: () => {
                                 setShowAddBrand(false);
                                 setNewBrandName('');
-                                setNewBrandTarget(0);
+                                setNewBrandTargets(createEmptyTargets());
                             }
-                        }, 'Cancel')
+                        }, 'Cancel'),
+                        h('button', {
+                            className: 'btn btn-outline',
+                            onClick: () => {
+                                const updatedTargets = { ...newBrandTargets };
+                                const quarterlyTargets = autoCalculateQuarterly(newBrandTargets.annual);
+                                updatedTargets.Q1 = quarterlyTargets.Q1;
+                                updatedTargets.Q2 = quarterlyTargets.Q2;
+                                updatedTargets.Q3 = quarterlyTargets.Q3;
+                                updatedTargets.Q4 = quarterlyTargets.Q4;
+                                setNewBrandTargets(updatedTargets);
+                            }
+                        }, 'Auto-Calculate Quarterly')
                     )
                 )
             ),
