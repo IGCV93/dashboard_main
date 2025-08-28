@@ -286,6 +286,108 @@
                 )
             ),
             
+            // Filter Controls
+            h('div', { className: 'filter-controls' },
+                h('div', { className: 'filter-section' },
+                    h('span', { className: 'filter-label' }, 'Time Period:'),
+                    h('div', { className: 'period-selector' },
+                        h('button', {
+                            className: `period-btn ${view === 'annual' ? 'active' : ''}`,
+                            onClick: () => setView('annual')
+                        }, 'Annual'),
+                        h('button', {
+                            className: `period-btn ${view === 'quarterly' ? 'active' : ''}`,
+                            onClick: () => setView('quarterly')
+                        }, 'Quarterly'),
+                        h('button', {
+                            className: `period-btn ${view === 'monthly' ? 'active' : ''}`,
+                            onClick: () => setView('monthly')
+                        }, 'Monthly'),
+                        
+                        view === 'quarterly' && [
+                            h('select', {
+                                key: 'quarter',
+                                value: selectedPeriod,
+                                onChange: (e) => setSelectedPeriod(e.target.value),
+                                className: 'filter-select'
+                            },
+                                h('option', { value: 'Q1' }, 'Q1'),
+                                h('option', { value: 'Q2' }, 'Q2'),
+                                h('option', { value: 'Q3' }, 'Q3'),
+                                h('option', { value: 'Q4' }, 'Q4')
+                            ),
+                            h('select', {
+                                key: 'year',
+                                value: selectedYear,
+                                onChange: (e) => setSelectedYear(e.target.value),
+                                className: 'filter-select'
+                            },
+                                h('option', { value: '2024' }, '2024'),
+                                h('option', { value: '2025' }, '2025'),
+                                h('option', { value: '2026' }, '2026')
+                            )
+                        ],
+                        
+                        view === 'monthly' && [
+                            h('select', {
+                                key: 'month',
+                                value: selectedMonth,
+                                onChange: (e) => setSelectedMonth(parseInt(e.target.value)),
+                                className: 'filter-select'
+                            },
+                                h('option', { value: 1 }, 'January'),
+                                h('option', { value: 2 }, 'February'),
+                                h('option', { value: 3 }, 'March'),
+                                h('option', { value: 4 }, 'April'),
+                                h('option', { value: 5 }, 'May'),
+                                h('option', { value: 6 }, 'June'),
+                                h('option', { value: 7 }, 'July'),
+                                h('option', { value: 8 }, 'August'),
+                                h('option', { value: 9 }, 'September'),
+                                h('option', { value: 10 }, 'October'),
+                                h('option', { value: 11 }, 'November'),
+                                h('option', { value: 12 }, 'December')
+                            ),
+                            h('select', {
+                                key: 'year',
+                                value: selectedYear,
+                                onChange: (e) => setSelectedYear(e.target.value),
+                                className: 'filter-select'
+                            },
+                                h('option', { value: '2024' }, '2024'),
+                                h('option', { value: '2025' }, '2025'),
+                                h('option', { value: '2026' }, '2026')
+                            )
+                        ],
+                        
+                        view === 'annual' && h('select', {
+                            key: 'year',
+                            value: selectedYear,
+                            onChange: (e) => setSelectedYear(e.target.value),
+                            className: 'filter-select'
+                        },
+                            h('option', { value: '2024' }, '2024'),
+                            h('option', { value: '2025' }, '2025'),
+                            h('option', { value: '2026' }, '2026')
+                        )
+                    )
+                ),
+                
+                h('div', { className: 'filter-section' },
+                    h('span', { className: 'filter-label' }, 'Brand:'),
+                    h('select', {
+                        value: selectedBrand,
+                        onChange: (e) => setSelectedBrand(e.target.value),
+                        className: 'filter-select brand-select'
+                    },
+                        h('option', { value: 'All Brands' }, '🏢 All Brands'),
+                        ...availableBrands.map(brand =>
+                            h('option', { key: brand, value: brand }, brand)
+                        )
+                    )
+                )
+            ),
+            
             // Target Overview Section
             h('div', { className: 'target-overview' },
                 h('div', { className: 'target-grid' },
