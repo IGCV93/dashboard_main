@@ -633,109 +633,117 @@
                         )
                     ),
                     
-                    // Right Column: Quarterly Targets
-                    h('div', { 
-                        style: { 
-                            display: 'flex', 
-                            flexDirection: 'column',
-                            gap: '16px'
-                        }
-                    },
-                        h('h4', { 
-                            style: { 
-                                marginBottom: '16px', 
-                                color: '#374151',
-                                fontSize: '18px',
-                                fontWeight: '600',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            }
-                        }, '📅 Quarterly Targets'),
-                        h('p', { 
-                            style: { 
-                                fontSize: '14px', 
-                                color: '#6B7280', 
-                                marginBottom: '16px',
-                                lineHeight: '1.4'
-                            }
-                        }, 'Quarterly targets are auto-calculated from annual targets. You can adjust them manually.'),
-                        h('div', { 
-                            style: { 
-                                display: 'flex', 
-                                flexDirection: 'column',
-                                gap: '20px',
-                                maxHeight: '400px',
-                                overflowY: 'auto'
-                            }
-                        },
-                            ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter =>
-                                h('div', { 
-                                    key: quarter, 
-                                    style: { 
-                                        display: 'flex', 
-                                        flexDirection: 'column',
-                                        gap: '12px'
-                                    }
-                                },
-                                    h('h5', { 
-                                        style: { 
-                                            marginBottom: '8px', 
-                                            fontWeight: '600', 
-                                            color: '#374151',
-                                            fontSize: '16px'
-                                        }
-                                    }, quarter),
-                                    h('div', { 
-                                        style: { 
-                                            display: 'flex', 
-                                            flexDirection: 'column',
-                                            gap: '8px'
-                                        }
-                                    },
-                                        availableChannels.map(channel =>
-                                            h('div', { 
-                                                key: `${quarter}-${channel}`, 
-                                                style: { 
-                                                    display: 'flex', 
-                                                    flexDirection: 'column',
-                                                    gap: '4px'
-                                                }
-                                            },
-                                                h('label', { 
-                                                    style: { 
-                                                        fontSize: '11px', 
-                                                        color: '#6B7280',
-                                                        fontWeight: '500'
-                                                    }
-                                                }, channel),
-                                                h('input', {
-                                                    type: 'number',
-                                                    className: 'input-field',
-                                                    placeholder: '0',
-                                                    value: newBrandTargets[quarter]?.[channel] || '',
-                                                    onChange: (e) => {
-                                                        const value = parseFloat(e.target.value) || 0;
-                                                        const updatedTargets = { ...newBrandTargets };
-                                                        if (!updatedTargets[quarter]) updatedTargets[quarter] = {};
-                                                        updatedTargets[quarter][channel] = value;
-                                                        setNewBrandTargets(updatedTargets);
-                                                    },
-                                                    style: {
-                                                        padding: '6px 10px',
-                                                        fontSize: '13px',
-                                                        border: '1px solid #D1D5DB',
-                                                        borderRadius: '4px',
-                                                        width: '100%'
-                                                    }
-                                                })
-                                            )
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    )
+                                         // Right Column: Quarterly Targets
+                     h('div', { 
+                         style: { 
+                             display: 'flex', 
+                             flexDirection: 'column',
+                             gap: '16px'
+                         }
+                     },
+                         h('h4', { 
+                             style: { 
+                                 marginBottom: '16px', 
+                                 color: '#374151',
+                                 fontSize: '18px',
+                                 fontWeight: '600',
+                                 display: 'flex',
+                                 alignItems: 'center',
+                                 gap: '8px'
+                             }
+                         }, '📅 Quarterly Targets'),
+                         h('p', { 
+                             style: { 
+                                 fontSize: '14px', 
+                                 color: '#6B7280', 
+                                 marginBottom: '16px',
+                                 lineHeight: '1.4'
+                             }
+                         }, 'Quarterly targets are auto-calculated from annual targets. You can adjust them manually.'),
+                         
+                         // Compact Grid Layout for Quarterly Targets
+                         h('div', { 
+                             style: { 
+                                 display: 'grid',
+                                 gridTemplateColumns: 'repeat(2, 1fr)',
+                                 gap: '16px'
+                             }
+                         },
+                             ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter =>
+                                 h('div', { 
+                                     key: quarter, 
+                                     style: { 
+                                         background: '#F9FAFB',
+                                         padding: '12px',
+                                         borderRadius: '8px',
+                                         border: '1px solid #E5E7EB'
+                                     }
+                                 },
+                                     h('h5', { 
+                                         style: { 
+                                             marginBottom: '12px', 
+                                             fontWeight: '600', 
+                                             color: '#374151',
+                                             fontSize: '14px',
+                                             textAlign: 'center',
+                                             background: '#E5E7EB',
+                                             padding: '4px 8px',
+                                             borderRadius: '4px'
+                                         }
+                                     }, quarter),
+                                     h('div', { 
+                                         style: { 
+                                             display: 'flex', 
+                                             flexDirection: 'column',
+                                             gap: '6px'
+                                         }
+                                     },
+                                         availableChannels.map(channel =>
+                                             h('div', { 
+                                                 key: `${quarter}-${channel}`, 
+                                                 style: { 
+                                                     display: 'flex', 
+                                                     flexDirection: 'column',
+                                                     gap: '2px'
+                                                 }
+                                             },
+                                                 h('label', { 
+                                                     style: { 
+                                                         fontSize: '10px', 
+                                                         color: '#6B7280',
+                                                         fontWeight: '500',
+                                                         textTransform: 'uppercase',
+                                                         letterSpacing: '0.5px'
+                                                     }
+                                                 }, channel),
+                                                 h('input', {
+                                                     type: 'number',
+                                                     className: 'input-field',
+                                                     placeholder: '0',
+                                                     value: newBrandTargets[quarter]?.[channel] || '',
+                                                     onChange: (e) => {
+                                                         const value = parseFloat(e.target.value) || 0;
+                                                         const updatedTargets = { ...newBrandTargets };
+                                                         if (!updatedTargets[quarter]) updatedTargets[quarter] = {};
+                                                         updatedTargets[quarter][channel] = value;
+                                                         setNewBrandTargets(updatedTargets);
+                                                     },
+                                                     style: {
+                                                         padding: '4px 6px',
+                                                         fontSize: '12px',
+                                                         border: '1px solid #D1D5DB',
+                                                         borderRadius: '4px',
+                                                         width: '100%',
+                                                         minHeight: '28px'
+                                                     }
+                                                 })
+                                             )
+                                         )
+                                     )
+                                 )
+                             )
+                         )
+                     )
                 ),
                 
                 // Action Buttons - Outside the form grid
