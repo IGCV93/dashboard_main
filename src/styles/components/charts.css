@@ -69,27 +69,27 @@
 }
 
 /* Chart Filters */
-.chart-filters {
+.chart-card .chart-header .chart-filters {
     display: flex;
     align-items: center;
     gap: 16px;
     margin-left: auto;
 }
 
-.filter-label {
+.chart-card .chart-header .chart-filters .filter-label {
     font-size: 13px;
     font-weight: 600;
     color: var(--text-secondary);
     white-space: nowrap;
 }
 
-.filter-buttons {
+.chart-card .chart-header .chart-filters .filter-buttons {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
 }
 
-.filter-btn {
+.chart-card .chart-header .chart-filters .filter-btn {
     padding: 6px 12px;
     border: 2px solid;
     border-radius: 20px;
@@ -104,12 +104,12 @@
     text-align: center;
 }
 
-.filter-btn:hover {
+.chart-card .chart-header .chart-filters .filter-btn:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.filter-btn.selected {
+.chart-card .chart-header .chart-filters .filter-btn.selected {
     color: white;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
