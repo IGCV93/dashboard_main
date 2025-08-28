@@ -30,8 +30,20 @@
         
         // Get data from window
         const INITIAL_DATA = window.ChaiVision?.INITIAL_DATA || {};
-        const ALL_CHANNELS = INITIAL_DATA.channels || [];
-        const CHANNEL_COLORS = INITIAL_DATA.channelColors || {};
+        const ALL_CHANNELS = INITIAL_DATA.channels || [
+            'Amazon', 'TikTok', 'DTC-Shopify', 'Retail',
+            'CA International', 'UK International', 'Wholesale', 'Omnichannel'
+        ];
+        const CHANNEL_COLORS = INITIAL_DATA.channelColors || {
+            'Amazon': '#FF9900',
+            'TikTok': '#000000',
+            'DTC-Shopify': '#96bf48',
+            'Retail': '#8B5CF6',
+            'CA International': '#DC2626',
+            'UK International': '#1E40AF',
+            'Wholesale': '#14B8A6',
+            'Omnichannel': '#EC4899'
+        };
         
         // Get display title helper
         const getDisplayTitle = () => {
