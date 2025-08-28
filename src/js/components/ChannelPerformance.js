@@ -68,7 +68,7 @@
                                 )
                             )
                         ),
-                        h('div', { className: 'progress-bar large' },
+                        h('div', { className: 'progress-bar' },
                             h('div', {
                                 className: 'progress-fill',
                                 style: { 
