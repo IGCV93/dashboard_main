@@ -52,6 +52,27 @@
         const canManageBrands = userRole === 'Admin';
         
         // State
+        // Helper function to create empty targets structure
+        const createEmptyTargets = () => {
+            const emptyTargets = {
+                annual: {},
+                Q1: {},
+                Q2: {},
+                Q3: {},
+                Q4: {}
+            };
+            
+            availableChannels.forEach(channel => {
+                emptyTargets.annual[channel] = 0;
+                emptyTargets.Q1[channel] = 0;
+                emptyTargets.Q2[channel] = 0;
+                emptyTargets.Q3[channel] = 0;
+                emptyTargets.Q4[channel] = 0;
+            });
+            
+            return emptyTargets;
+        };
+        
         const [settingsYear, setSettingsYear] = useState('2025');
         const [editingBrand, setEditingBrand] = useState(null);
         const [editingValues, setEditingValues] = useState({});
@@ -80,27 +101,6 @@
                                     userPermissions?.channels?.includes(channel);
             
             return hasBrandAccess && hasChannelAccess;
-        };
-        
-        // Helper function to create empty targets structure
-        const createEmptyTargets = () => {
-            const emptyTargets = {
-                annual: {},
-                Q1: {},
-                Q2: {},
-                Q3: {},
-                Q4: {}
-            };
-            
-            availableChannels.forEach(channel => {
-                emptyTargets.annual[channel] = 0;
-                emptyTargets.Q1[channel] = 0;
-                emptyTargets.Q2[channel] = 0;
-                emptyTargets.Q3[channel] = 0;
-                emptyTargets.Q4[channel] = 0;
-            });
-            
-            return emptyTargets;
         };
         
         // Helper function to auto-calculate quarterly targets from annual
