@@ -176,7 +176,7 @@
         try {
             const { data } = await supabase
                 .from('user_preferences')
-                .select('last_selected_brand, last_selected_period, last_selected_year, last_selected_view')
+                .select('last_selected_brand, last_selected_period, last_selected_year, last_selected_view, theme, compact_mode, notifications_enabled, refresh_interval, show_tutorials, auto_save')
                 .eq('user_id', userId)
                 .single();
             
@@ -184,6 +184,152 @@
         } catch (error) {
             console.error('Failed to load preferences:', error);
             return {};
+        }
+    }
+    
+    /**
+     * Apply user preferences to the application
+     */
+    function applyUserPreferences(prefs) {
+        // Apply theme
+        if (prefs.theme) {
+            applyTheme(prefs.theme);
+        }
+        
+        // Apply compact mode
+        if (prefs.compact_mode !== undefined) {
+            applyCompactMode(prefs.compact_mode);
+        }
+        
+        // Apply notifications
+        if (prefs.notifications_enabled !== undefined) {
+            applyNotifications(prefs.notifications_enabled);
+        }
+        
+        // Apply refresh interval
+        if (prefs.refresh_interval && prefs.auto_save) {
+            applyRefreshInterval(prefs.refresh_interval);
+        }
+        
+        // Apply tutorials
+        if (prefs.show_tutorials !== undefined) {
+            applyTutorials(prefs.show_tutorials);
+        }
+    }
+    
+    /**
+     * Apply theme to the application
+     */
+    function applyTheme(theme) {
+        const root = document.documentElement;
+        const body = document.body;
+        
+        // Remove existing theme classes
+        root.classList.remove('theme-light', 'theme-dark');
+        body.classList.remove('theme-light', 'theme-dark');
+        
+        // Add new theme class
+        root.classList.add(`theme-${theme}`);
+        body.classList.add(`theme-${theme}`);
+        
+        // Update CSS custom properties
+        if (theme === 'dark') {
+            root.style.setProperty('--bg-primary', '#1f2937');
+            root.style.setProperty('--bg-secondary', '#374151');
+            root.style.setProperty('--text-primary', '#f9fafb');
+            root.style.setProperty('--text-secondary', '#d1d5db');
+            root.style.setProperty('--border-color', '#4b5563');
+        } else {
+            root.style.setProperty('--bg-primary', '#ffffff');
+            root.style.setProperty('--bg-secondary', '#f9fafb');
+            root.style.setProperty('--text-primary', '#1f2937');
+            root.style.setProperty('--text-secondary', '#6b7280');
+            root.style.setProperty('--border-color', '#e5e7eb');
+        }
+        
+        console.log(`🎨 Theme applied: ${theme}`);
+    }
+    
+    /**
+     * Apply compact mode
+     */
+    function applyCompactMode(enabled) {
+        const root = document.documentElement;
+        
+        if (enabled) {
+            root.classList.add('compact-mode');
+            root.style.setProperty('--spacing-base', '0.75rem');
+            root.style.setProperty('--font-size-base', '0.875rem');
+        } else {
+            root.classList.remove('compact-mode');
+            root.style.setProperty('--spacing-base', '1rem');
+            root.style.setProperty('--font-size-base', '1rem');
+        }
+        
+        console.log(`📏 Compact mode: ${enabled ? 'enabled' : 'disabled'}`);
+    }
+    
+    /**
+     * Apply notifications setting
+     */
+    function applyNotifications(enabled) {
+        if (enabled) {
+            // Request notification permission if not already granted
+            if (Notification.permission === 'default') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        console.log('🔔 Notifications enabled');
+                    } else {
+                        console.log('🔕 Notifications permission denied');
+                    }
+                });
+            } else if (Notification.permission === 'granted') {
+                console.log('🔔 Notifications already enabled');
+            }
+        } else {
+            console.log('🔕 Notifications disabled');
+        }
+    }
+    
+    /**
+     * Apply refresh interval
+     */
+    function applyRefreshInterval(interval) {
+        // Clear existing refresh interval
+        if (window.chaiVisionRefreshInterval) {
+            clearInterval(window.chaiVisionRefreshInterval);
+        }
+        
+        // Set new refresh interval if auto-save is enabled
+        if (interval > 0) {
+            window.chaiVisionRefreshInterval = setInterval(() => {
+                // Trigger data refresh
+                if (window.APP_STATE && window.APP_STATE.dataService) {
+                    console.log('🔄 Auto-refreshing data...');
+                    // This would trigger a data refresh in the dashboard
+                    if (window.refreshDashboardData) {
+                        window.refreshDashboardData();
+                    }
+                }
+            }, interval * 1000);
+            
+            console.log(`⏰ Refresh interval set to ${interval} seconds`);
+        }
+    }
+    
+    /**
+     * Apply tutorials setting
+     */
+    function applyTutorials(enabled) {
+        if (enabled) {
+            // Show tutorial tooltips or guides
+            console.log('📚 Tutorials enabled');
+            // This would show tutorial elements
+            document.body.classList.add('show-tutorials');
+        } else {
+            // Hide tutorial elements
+            console.log('📚 Tutorials disabled');
+            document.body.classList.remove('show-tutorials');
         }
     }
     
@@ -424,15 +570,18 @@
                                              channelPerms?.map(p => p.channel) || []
                                 };
                                 
-                                // Load user preferences
-                                const prefs = await loadUserPreferences(user.id);
-                                if (prefs) {
-                                    if (prefs.last_selected_view) setView(prefs.last_selected_view);
-                                    if (prefs.last_selected_period) setSelectedPeriod(prefs.last_selected_period);
-                                    if (prefs.last_selected_year) setSelectedYear(prefs.last_selected_year);
-                                    if (prefs.last_selected_brand) setSelectedBrand(prefs.last_selected_brand);
-                                    APP_STATE.preferences = prefs;
-                                }
+                                                                 // Load user preferences
+                                 const prefs = await loadUserPreferences(user.id);
+                                 if (prefs) {
+                                     if (prefs.last_selected_view) setView(prefs.last_selected_view);
+                                     if (prefs.last_selected_period) setSelectedPeriod(prefs.last_selected_period);
+                                     if (prefs.last_selected_year) setSelectedYear(prefs.last_selected_year);
+                                     if (prefs.last_selected_brand) setSelectedBrand(prefs.last_selected_brand);
+                                     APP_STATE.preferences = prefs;
+                                     
+                                     // Apply preferences to the application
+                                     applyUserPreferences(prefs);
+                                 }
                                 
                                 setCurrentUser(user);
                                 setUserPermissions(permissions);
@@ -1010,6 +1159,21 @@
     window.handleSignOut = handleSignOut;
     window.saveUserPreferences = saveUserPreferences;
     window.loadUserPreferences = loadUserPreferences;
+    window.applyUserPreferences = applyUserPreferences;
+    window.applyTheme = applyTheme;
+    window.applyCompactMode = applyCompactMode;
+    window.applyNotifications = applyNotifications;
+    window.applyRefreshInterval = applyRefreshInterval;
+    window.applyTutorials = applyTutorials;
+    
+    // Global refresh function for preferences
+    window.refreshDashboardData = function() {
+        if (window.APP_STATE && window.APP_STATE.dataService) {
+            console.log('🔄 Refreshing dashboard data...');
+            // This would trigger a data refresh in the dashboard
+            // The actual implementation would depend on how the dashboard handles data updates
+        }
+    };
     
     // Also add to ChaiVision namespace
     window.ChaiVision = window.ChaiVision || {};

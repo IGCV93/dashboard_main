@@ -35,6 +35,11 @@
             loadPreferences();
         }, []);
         
+        // Apply preferences when they change
+        useEffect(() => {
+            applyPreferences(preferences);
+        }, [preferences]);
+        
         // Load preferences from Supabase or localStorage
         const loadPreferences = async () => {
             try {
@@ -79,6 +84,130 @@
                 setError('Failed to load preferences. Please try again.');
             } finally {
                 setIsLoading(false);
+            }
+        };
+        
+        // Apply preferences throughout the application
+        const applyPreferences = (prefs) => {
+            // Apply theme
+            applyTheme(prefs.theme);
+            
+            // Apply compact mode
+            applyCompactMode(prefs.compact_mode);
+            
+            // Apply notifications
+            applyNotifications(prefs.notifications_enabled);
+            
+            // Apply refresh interval
+            applyRefreshInterval(prefs.refresh_interval);
+            
+            // Apply tutorials setting
+            applyTutorials(prefs.show_tutorials);
+        };
+        
+        // Apply theme to the application
+        const applyTheme = (theme) => {
+            const root = document.documentElement;
+            const body = document.body;
+            
+            // Remove existing theme classes
+            root.classList.remove('theme-light', 'theme-dark');
+            body.classList.remove('theme-light', 'theme-dark');
+            
+            // Add new theme class
+            root.classList.add(`theme-${theme}`);
+            body.classList.add(`theme-${theme}`);
+            
+            // Update CSS custom properties
+            if (theme === 'dark') {
+                root.style.setProperty('--bg-primary', '#1f2937');
+                root.style.setProperty('--bg-secondary', '#374151');
+                root.style.setProperty('--text-primary', '#f9fafb');
+                root.style.setProperty('--text-secondary', '#d1d5db');
+                root.style.setProperty('--border-color', '#4b5563');
+            } else {
+                root.style.setProperty('--bg-primary', '#ffffff');
+                root.style.setProperty('--bg-secondary', '#f9fafb');
+                root.style.setProperty('--text-primary', '#1f2937');
+                root.style.setProperty('--text-secondary', '#6b7280');
+                root.style.setProperty('--border-color', '#e5e7eb');
+            }
+            
+            console.log(`🎨 Theme applied: ${theme}`);
+        };
+        
+        // Apply compact mode
+        const applyCompactMode = (enabled) => {
+            const root = document.documentElement;
+            
+            if (enabled) {
+                root.classList.add('compact-mode');
+                root.style.setProperty('--spacing-base', '0.75rem');
+                root.style.setProperty('--font-size-base', '0.875rem');
+            } else {
+                root.classList.remove('compact-mode');
+                root.style.setProperty('--spacing-base', '1rem');
+                root.style.setProperty('--font-size-base', '1rem');
+            }
+            
+            console.log(`📏 Compact mode: ${enabled ? 'enabled' : 'disabled'}`);
+        };
+        
+        // Apply notifications setting
+        const applyNotifications = (enabled) => {
+            if (enabled) {
+                // Request notification permission if not already granted
+                if (Notification.permission === 'default') {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            console.log('🔔 Notifications enabled');
+                        } else {
+                            console.log('🔕 Notifications permission denied');
+                        }
+                    });
+                } else if (Notification.permission === 'granted') {
+                    console.log('🔔 Notifications already enabled');
+                }
+            } else {
+                console.log('🔕 Notifications disabled');
+            }
+        };
+        
+        // Apply refresh interval
+        const applyRefreshInterval = (interval) => {
+            // Clear existing refresh interval
+            if (window.chaiVisionRefreshInterval) {
+                clearInterval(window.chaiVisionRefreshInterval);
+            }
+            
+            // Set new refresh interval if auto-save is enabled
+            if (preferences.auto_save && interval > 0) {
+                window.chaiVisionRefreshInterval = setInterval(() => {
+                    // Trigger data refresh
+                    if (window.APP_STATE && window.APP_STATE.dataService) {
+                        console.log('🔄 Auto-refreshing data...');
+                        // This would trigger a data refresh in the dashboard
+                        if (window.refreshDashboardData) {
+                            window.refreshDashboardData();
+                        }
+                    }
+                }, interval * 1000);
+                
+                console.log(`⏰ Refresh interval set to ${interval} seconds`);
+            }
+        };
+        
+        // Apply tutorials setting
+        const applyTutorials = (enabled) => {
+            if (enabled) {
+                // Show tutorial tooltips or guides
+                console.log('📚 Tutorials enabled');
+                // This would show tutorial elements
+                document.body.classList.add('show-tutorials');
+            } else {
+                // Hide tutorial elements
+                console.log('📚 Tutorials disabled');
+                document.body.classList.remove('show-tutorials');
             }
         };
         
@@ -140,6 +269,9 @@
                     onUpdate(newPreferences);
                 }
                 
+                // Apply the new preferences immediately
+                applyPreferences(newPreferences);
+                
                 // Clear success message after 3 seconds
                 setTimeout(() => setSuccess(null), 3000);
                 
@@ -158,6 +290,17 @@
                 [key]: value
             };
             setPreferences(newPreferences);
+            
+            // Apply certain preferences immediately for better UX
+            if (key === 'theme') {
+                applyTheme(value);
+            } else if (key === 'compact_mode') {
+                applyCompactMode(value);
+            } else if (key === 'notifications_enabled') {
+                applyNotifications(value);
+            } else if (key === 'show_tutorials') {
+                applyTutorials(value);
+            }
         };
         
         // Handle save button click
@@ -181,6 +324,9 @@
                 compact_mode: false
             };
             setPreferences(defaultPreferences);
+            
+            // Apply default preferences immediately
+            applyPreferences(defaultPreferences);
         };
         
         // Loading state
