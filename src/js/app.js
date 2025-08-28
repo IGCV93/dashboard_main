@@ -755,6 +755,7 @@
             const AuditLogs = window.AuditLogs || window.ChaiVision?.components?.AuditLogs;
             const ProfileMenu = window.ProfileMenu || window.ChaiVision?.components?.ProfileMenu;
             const ProfileSettings = window.ProfileSettings || window.ChaiVision?.components?.ProfileSettings;
+            const Preferences = window.Preferences || window.ChaiVision?.components?.Preferences;
             
             // Debug component loading
             console.log('🔍 Component Loading Status:');
@@ -768,6 +769,7 @@
             console.log('  AuditLogs:', !!AuditLogs);
             console.log('  ProfileMenu:', !!ProfileMenu);
             console.log('  ProfileSettings:', !!ProfileSettings);
+            console.log('  Preferences:', !!Preferences);
             
             // If checking auth, show loading
             if (checkingAuth) {
@@ -965,6 +967,21 @@
                                 setCurrentUser(updatedUser);
                             }
                         }) : h('div', null, 'Profile Settings component not found');
+                        
+                    case 'preferences':
+                        // All authenticated users can access preferences
+                        return Preferences ? h(Preferences, {
+                            currentUser,
+                            onUpdate: (updatedPreferences) => {
+                                // Update the global preferences
+                                APP_STATE.preferences = updatedPreferences;
+                                // Update local state if needed
+                                if (updatedPreferences.last_selected_view) setView(updatedPreferences.last_selected_view);
+                                if (updatedPreferences.last_selected_period) setSelectedPeriod(updatedPreferences.last_selected_period);
+                                if (updatedPreferences.last_selected_year) setSelectedYear(updatedPreferences.last_selected_year);
+                                if (updatedPreferences.last_selected_brand) setSelectedBrand(updatedPreferences.last_selected_brand);
+                            }
+                        }) : h('div', null, 'Preferences component not found');
                         
                     default:
                         return h('div', null, 'Section not found');
