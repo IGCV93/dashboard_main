@@ -509,25 +509,96 @@
                     }, showAddBrand ? 'Cancel' : 'Add New Brand')
                 ),
                 
-                showAddBrand && h('div', { className: 'add-brand-form' },
-                    h('div', { className: 'form-group' },
-                        h('label', null, 'Brand Name:'),
-                        h('input', {
-                            type: 'text',
-                            className: 'input-field',
-                            placeholder: 'Enter brand name...',
-                            value: newBrandName || '',
-                            onChange: (e) => setNewBrandName(e.target.value)
-                        })
+                showAddBrand && h('div', { 
+                    className: 'add-brand-form',
+                    style: {
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr 1fr',
+                        gap: '32px',
+                        padding: '32px',
+                        background: 'white',
+                        borderRadius: '16px',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+                        marginTop: '20px'
+                    }
+                },
+                    // Left Column: Brand Name
+                    h('div', { 
+                        style: { 
+                            display: 'flex', 
+                            flexDirection: 'column',
+                            gap: '16px'
+                        }
+                    },
+                        h('div', { className: 'form-group' },
+                            h('label', { 
+                                style: { 
+                                    fontSize: '14px', 
+                                    fontWeight: '600', 
+                                    color: '#374151',
+                                    marginBottom: '8px'
+                                }
+                            }, 'BRAND NAME:'),
+                            h('input', {
+                                type: 'text',
+                                className: 'input-field',
+                                placeholder: 'Enter brand name...',
+                                value: newBrandName || '',
+                                onChange: (e) => setNewBrandName(e.target.value),
+                                style: {
+                                    padding: '12px 16px',
+                                    fontSize: '16px',
+                                    border: '2px solid #E5E7EB',
+                                    borderRadius: '8px',
+                                    width: '100%'
+                                }
+                            })
+                        )
                     ),
                     
-                    // Annual Targets Section
-                    h('div', { className: 'targets-section' },
-                        h('h4', { style: { marginBottom: '16px', color: '#374151' } }, '📊 Annual Targets'),
-                        h('div', { className: 'channel-inputs-grid' },
+                    // Middle Column: Annual Targets
+                    h('div', { 
+                        style: { 
+                            display: 'flex', 
+                            flexDirection: 'column',
+                            gap: '16px'
+                        }
+                    },
+                        h('h4', { 
+                            style: { 
+                                marginBottom: '16px', 
+                                color: '#374151',
+                                fontSize: '18px',
+                                fontWeight: '600',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }
+                        }, '📊 Annual Targets'),
+                        h('div', { 
+                            style: { 
+                                display: 'flex', 
+                                flexDirection: 'column',
+                                gap: '12px'
+                            }
+                        },
                             availableChannels.map(channel =>
-                                h('div', { key: `annual-${channel}`, className: 'form-group' },
-                                    h('label', null, `${channel} (Annual):`),
+                                h('div', { 
+                                    key: `annual-${channel}`, 
+                                    style: { 
+                                        display: 'flex', 
+                                        flexDirection: 'column',
+                                        gap: '4px'
+                                    }
+                                },
+                                    h('label', { 
+                                        style: { 
+                                            fontSize: '12px', 
+                                            fontWeight: '600', 
+                                            color: '#6B7280',
+                                            textTransform: 'uppercase'
+                                        }
+                                    }, `${channel} (ANNUAL):`),
                                     h('input', {
                                         type: 'number',
                                         className: 'input-field',
@@ -548,6 +619,13 @@
                                             }
                                             
                                             setNewBrandTargets(updatedTargets);
+                                        },
+                                        style: {
+                                            padding: '8px 12px',
+                                            fontSize: '14px',
+                                            border: '1px solid #D1D5DB',
+                                            borderRadius: '6px',
+                                            width: '100%'
                                         }
                                     })
                                 )
@@ -555,67 +633,164 @@
                         )
                     ),
                     
-                    // Quarterly Targets Section
-                    h('div', { className: 'targets-section', style: { marginTop: '24px' } },
-                        h('h4', { style: { marginBottom: '16px', color: '#374151' } }, '📅 Quarterly Targets'),
-                        h('p', { style: { fontSize: '14px', color: '#6B7280', marginBottom: '16px' } }, 
-                            'Quarterly targets are auto-calculated from annual targets. You can adjust them manually.'
-                        ),
-                        ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter =>
-                            h('div', { key: quarter, style: { marginBottom: '20px' } },
-                                h('h5', { style: { marginBottom: '12px', fontWeight: '600', color: '#374151' } }, quarter),
-                                h('div', { className: 'channel-inputs-grid' },
-                                    availableChannels.map(channel =>
-                                        h('div', { key: `${quarter}-${channel}`, className: 'form-group' },
-                                            h('label', { style: { fontSize: '12px', color: '#6B7280' } }, channel),
-                                            h('input', {
-                                                type: 'number',
-                                                className: 'input-field',
-                                                placeholder: '0',
-                                                value: newBrandTargets[quarter]?.[channel] || '',
-                                                onChange: (e) => {
-                                                    const value = parseFloat(e.target.value) || 0;
-                                                    const updatedTargets = { ...newBrandTargets };
-                                                    if (!updatedTargets[quarter]) updatedTargets[quarter] = {};
-                                                    updatedTargets[quarter][channel] = value;
-                                                    setNewBrandTargets(updatedTargets);
+                    // Right Column: Quarterly Targets
+                    h('div', { 
+                        style: { 
+                            display: 'flex', 
+                            flexDirection: 'column',
+                            gap: '16px'
+                        }
+                    },
+                        h('h4', { 
+                            style: { 
+                                marginBottom: '16px', 
+                                color: '#374151',
+                                fontSize: '18px',
+                                fontWeight: '600',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }
+                        }, '📅 Quarterly Targets'),
+                        h('p', { 
+                            style: { 
+                                fontSize: '14px', 
+                                color: '#6B7280', 
+                                marginBottom: '16px',
+                                lineHeight: '1.4'
+                            }
+                        }, 'Quarterly targets are auto-calculated from annual targets. You can adjust them manually.'),
+                        h('div', { 
+                            style: { 
+                                display: 'flex', 
+                                flexDirection: 'column',
+                                gap: '20px',
+                                maxHeight: '400px',
+                                overflowY: 'auto'
+                            }
+                        },
+                            ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter =>
+                                h('div', { 
+                                    key: quarter, 
+                                    style: { 
+                                        display: 'flex', 
+                                        flexDirection: 'column',
+                                        gap: '12px'
+                                    }
+                                },
+                                    h('h5', { 
+                                        style: { 
+                                            marginBottom: '8px', 
+                                            fontWeight: '600', 
+                                            color: '#374151',
+                                            fontSize: '16px'
+                                        }
+                                    }, quarter),
+                                    h('div', { 
+                                        style: { 
+                                            display: 'flex', 
+                                            flexDirection: 'column',
+                                            gap: '8px'
+                                        }
+                                    },
+                                        availableChannels.map(channel =>
+                                            h('div', { 
+                                                key: `${quarter}-${channel}`, 
+                                                style: { 
+                                                    display: 'flex', 
+                                                    flexDirection: 'column',
+                                                    gap: '4px'
                                                 }
-                                            })
+                                            },
+                                                h('label', { 
+                                                    style: { 
+                                                        fontSize: '11px', 
+                                                        color: '#6B7280',
+                                                        fontWeight: '500'
+                                                    }
+                                                }, channel),
+                                                h('input', {
+                                                    type: 'number',
+                                                    className: 'input-field',
+                                                    placeholder: '0',
+                                                    value: newBrandTargets[quarter]?.[channel] || '',
+                                                    onChange: (e) => {
+                                                        const value = parseFloat(e.target.value) || 0;
+                                                        const updatedTargets = { ...newBrandTargets };
+                                                        if (!updatedTargets[quarter]) updatedTargets[quarter] = {};
+                                                        updatedTargets[quarter][channel] = value;
+                                                        setNewBrandTargets(updatedTargets);
+                                                    },
+                                                    style: {
+                                                        padding: '6px 10px',
+                                                        fontSize: '13px',
+                                                        border: '1px solid #D1D5DB',
+                                                        borderRadius: '4px',
+                                                        width: '100%'
+                                                    }
+                                                })
+                                            )
                                         )
                                     )
                                 )
                             )
                         )
-                    ),
-                    
-                    // Action Buttons
-                    h('div', { style: { display: 'flex', gap: '12px', marginTop: '24px' } },
-                        h('button', {
-                            className: 'btn btn-success',
-                            onClick: handleAddBrand,
-                            disabled: !newBrandName
-                        }, 'Add Brand'),
-                        h('button', {
-                            className: 'btn btn-secondary',
-                            onClick: () => {
-                                setShowAddBrand(false);
-                                setNewBrandName('');
-                                setNewBrandTargets(createEmptyTargets());
-                            }
-                        }, 'Cancel'),
-                        h('button', {
-                            className: 'btn btn-outline',
-                            onClick: () => {
-                                const updatedTargets = { ...newBrandTargets };
-                                const quarterlyTargets = autoCalculateQuarterly(newBrandTargets.annual);
-                                updatedTargets.Q1 = quarterlyTargets.Q1;
-                                updatedTargets.Q2 = quarterlyTargets.Q2;
-                                updatedTargets.Q3 = quarterlyTargets.Q3;
-                                updatedTargets.Q4 = quarterlyTargets.Q4;
-                                setNewBrandTargets(updatedTargets);
-                            }
-                        }, 'Auto-Calculate Quarterly')
                     )
+                ),
+                
+                // Action Buttons - Outside the form grid
+                showAddBrand && h('div', { 
+                    style: { 
+                        display: 'flex', 
+                        gap: '12px', 
+                        marginTop: '24px',
+                        justifyContent: 'center',
+                        padding: '20px',
+                        background: '#F9FAFB',
+                        borderRadius: '12px',
+                        border: '1px solid #E5E7EB'
+                    }
+                },
+                    h('button', {
+                        className: 'btn btn-success',
+                        onClick: handleAddBrand,
+                        disabled: !newBrandName,
+                        style: {
+                            padding: '12px 24px',
+                            fontSize: '16px',
+                            fontWeight: '600'
+                        }
+                    }, 'Add Brand'),
+                    h('button', {
+                        className: 'btn btn-secondary',
+                        onClick: () => {
+                            setShowAddBrand(false);
+                            setNewBrandName('');
+                            setNewBrandTargets(createEmptyTargets());
+                        },
+                        style: {
+                            padding: '12px 24px',
+                            fontSize: '16px',
+                            fontWeight: '600'
+                        }
+                    }, 'Cancel'),
+                    h('button', {
+                        className: 'btn btn-outline',
+                        onClick: () => {
+                            const updatedTargets = { ...newBrandTargets };
+                            const quarterlyTargets = autoCalculateQuarterly(newBrandTargets.annual);
+                            updatedTargets.Q1 = quarterlyTargets.Q1;
+                            updatedTargets.Q2 = quarterlyTargets.Q2;
+                            updatedTargets.Q3 = quarterlyTargets.Q3;
+                            updatedTargets.Q4 = quarterlyTargets.Q4;
+                            setNewBrandTargets(updatedTargets);
+                        },
+                        style: {
+                            padding: '12px 24px',
+                            fontSize: '16px',
+                            fontWeight: '600'
+                        }
+                    }, 'Auto-Calculate Quarterly')
                 )
             ),
             
