@@ -189,6 +189,15 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
         const [loading, setLoading] = useState(true);
         const [error, setError] = useState(null);
         
+        // Enhanced setActiveSection that also updates URL
+        const setActiveSectionWithRouting = (section) => {
+            setActiveSection(section);
+            // Update URL when section changes
+            if (window.ChaiVision?.routing?.updateURL) {
+                window.ChaiVision.routing.updateURL(section);
+            }
+        };
+        
         // Helper functions
         function getCurrentQuarter() {
             const month = new Date().getMonth();
@@ -199,9 +208,16 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
             return new Date().getMonth() + 1;
         }
         
-        // Load initial data
+        // Load initial data and initialize routing
         useEffect(() => {
             loadInitialData();
+            
+            // Initialize routing after a short delay to ensure components are loaded
+            setTimeout(() => {
+                if (window.ChaiVision?.routing?.initializeRouting) {
+                    window.ChaiVision.routing.initializeRouting(setActiveSectionWithRouting, 'dashboard');
+                }
+            }, 100);
         }, []);
         
         async function loadInitialData() {
@@ -237,13 +253,14 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
             selectedBrand,
             setSelectedBrand,
             brands: config.INITIAL_DATA.brands || ['LifePro', 'PetCove'],
-            activeSection
+            activeSection,
+            setActiveSection: setActiveSectionWithRouting
         });
         
         // Render sidebar
         const sidebar = h(Sidebar, {
             activeSection,
-            setActiveSection
+            setActiveSection: setActiveSectionWithRouting
         });
         
         // Render main content based on active section

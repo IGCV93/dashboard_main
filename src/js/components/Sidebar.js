@@ -20,7 +20,13 @@
                 h('div', {
                     key: item.id,
                     className: `sidebar-item ${activeSection === item.id ? 'active' : ''}`,
-                    onClick: () => setActiveSection(item.id)
+                    onClick: () => {
+                        setActiveSection(item.id);
+                        // Also use routing navigation if available
+                        if (window.ChaiVision?.routing?.navigateToSection) {
+                            window.ChaiVision.routing.navigateToSection(item.id);
+                        }
+                    }
                 },
                     h('span', null, item.icon),
                     h('span', null, item.label)

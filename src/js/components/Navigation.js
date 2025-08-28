@@ -25,7 +25,19 @@
         
         return h('nav', { className: 'top-nav' },
             h('div', { className: 'nav-left' },
-                h('div', { className: 'logo' },
+                h('div', { 
+                    className: 'logo',
+                    onClick: () => {
+                        if (typeof setActiveSection === 'function') {
+                            setActiveSection('dashboard');
+                        }
+                        // Also use routing navigation if available
+                        if (window.ChaiVision?.routing?.navigateToSection) {
+                            window.ChaiVision.routing.navigateToSection('dashboard');
+                        }
+                    },
+                    style: { cursor: 'pointer' }
+                },
                     h('div', { className: 'logo-placeholder' }, 'CV'),
                     h('span', { className: 'logo-text' }, 'Chai Vision')
                 ),
