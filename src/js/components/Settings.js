@@ -104,7 +104,7 @@
         };
         
         // Helper function to auto-calculate quarterly targets from annual
-        const autoCalculateQuarterly = (annualTargets) => {
+        const autoCalculateQuarterly = (annualTargets, brandName = '') => {
             const quarterlyTargets = {
                 Q1: {},
                 Q2: {},
@@ -112,14 +112,22 @@
                 Q4: {}
             };
             
+            // Use different quarterly distributions based on brand
+            const isLifePro = brandName.toLowerCase() === 'lifepro';
+            
+            // LifePro quarterly distribution: Q1: 22%, Q2: 33%, Q3: 22%, Q4: 23%
+            // Other brands: Standard 25% each quarter
+            const quarterlyPercentages = isLifePro 
+                ? { Q1: 0.22, Q2: 0.33, Q3: 0.22, Q4: 0.23 }
+                : { Q1: 0.25, Q2: 0.25, Q3: 0.25, Q4: 0.25 };
+            
             availableChannels.forEach(channel => {
                 const annualValue = parseFloat(annualTargets[channel]) || 0;
-                const quarterlyValue = annualValue / 4;
                 
-                quarterlyTargets.Q1[channel] = quarterlyValue;
-                quarterlyTargets.Q2[channel] = quarterlyValue;
-                quarterlyTargets.Q3[channel] = quarterlyValue;
-                quarterlyTargets.Q4[channel] = quarterlyValue;
+                quarterlyTargets.Q1[channel] = annualValue * quarterlyPercentages.Q1;
+                quarterlyTargets.Q2[channel] = annualValue * quarterlyPercentages.Q2;
+                quarterlyTargets.Q3[channel] = annualValue * quarterlyPercentages.Q3;
+                quarterlyTargets.Q4[channel] = annualValue * quarterlyPercentages.Q4;
             });
             
             return quarterlyTargets;
@@ -609,22 +617,12 @@
                                         className: 'input-field',
                                         placeholder: '0',
                                         value: newBrandTargets.annual[channel] || '',
-                                        onChange: (e) => {
-                                            const value = parseFloat(e.target.value) || 0;
-                                            const updatedTargets = { ...newBrandTargets };
-                                            updatedTargets.annual[channel] = value;
-                                            
-                                            // Auto-calculate quarterly if annual is set
-                                            if (value > 0) {
-                                                const quarterlyValue = value / 4;
-                                                updatedTargets.Q1[channel] = quarterlyValue;
-                                                updatedTargets.Q2[channel] = quarterlyValue;
-                                                updatedTargets.Q3[channel] = quarterlyValue;
-                                                updatedTargets.Q4[channel] = quarterlyValue;
-                                            }
-                                            
-                                            setNewBrandTargets(updatedTargets);
-                                        },
+                                                                                 onChange: (e) => {
+                                             const value = parseFloat(e.target.value) || 0;
+                                             const updatedTargets = { ...newBrandTargets };
+                                             updatedTargets.annual[channel] = value;
+                                             setNewBrandTargets(updatedTargets);
+                                         },
                                         style: {
                                             padding: '12px',
                                             fontSize: '14px',
@@ -639,33 +637,63 @@
                         )
                     ),
                     
-                    // Bottom Section: Quarterly Targets (Horizontal Cards)
-                    h('div', { 
-                        style: { 
-                            display: 'flex', 
-                            flexDirection: 'column',
-                            gap: '16px'
-                        }
-                    },
-                        h('h4', { 
-                            style: { 
-                                marginBottom: '16px', 
-                                color: '#374151',
-                                fontSize: '18px',
-                                fontWeight: '600',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            }
-                        }, '📅 Quarterly Targets'),
-                        h('p', { 
-                            style: { 
-                                fontSize: '14px', 
-                                color: '#6B7280', 
-                                marginBottom: '16px',
-                                lineHeight: '1.4'
-                            }
-                        }, 'Quarterly targets are auto-calculated from annual targets. You can adjust them manually.'),
+                                         // Bottom Section: Quarterly Targets (Horizontal Cards)
+                     h('div', { 
+                         style: { 
+                             display: 'flex', 
+                             flexDirection: 'column',
+                             gap: '16px'
+                         }
+                     },
+                         h('div', { 
+                             style: { 
+                                 display: 'flex', 
+                                 justifyContent: 'space-between',
+                                 alignItems: 'center',
+                                 marginBottom: '16px'
+                             }
+                         },
+                             h('h4', { 
+                                 style: { 
+                                     color: '#374151',
+                                     fontSize: '18px',
+                                     fontWeight: '600',
+                                     display: 'flex',
+                                     alignItems: 'center',
+                                     gap: '8px',
+                                     margin: 0
+                                 }
+                             }, '📅 Quarterly Targets'),
+                             h('button', {
+                                 className: 'btn btn-outline',
+                                 onClick: () => {
+                                     const updatedTargets = { ...newBrandTargets };
+                                     const quarterlyTargets = autoCalculateQuarterly(newBrandTargets.annual, newBrandName);
+                                     updatedTargets.Q1 = quarterlyTargets.Q1;
+                                     updatedTargets.Q2 = quarterlyTargets.Q2;
+                                     updatedTargets.Q3 = quarterlyTargets.Q3;
+                                     updatedTargets.Q4 = quarterlyTargets.Q4;
+                                     setNewBrandTargets(updatedTargets);
+                                 },
+                                 style: {
+                                     padding: '8px 16px',
+                                     fontSize: '14px',
+                                     fontWeight: '600',
+                                     background: '#F3F4F6',
+                                     border: '1px solid #D1D5DB',
+                                     borderRadius: '6px',
+                                     color: '#374151'
+                                 }
+                             }, 'Auto-Calculate Quarterly')
+                         ),
+                         h('p', { 
+                             style: { 
+                                 fontSize: '14px', 
+                                 color: '#6B7280', 
+                                 marginBottom: '16px',
+                                 lineHeight: '1.4'
+                             }
+                         }, 'Quarterly targets can be auto-calculated from annual targets. You can adjust them manually after calculation.'),
                         
                         // Horizontal Layout for Quarterly Cards
                         h('div', { 
@@ -789,23 +817,7 @@
                             fontWeight: '600'
                         }
                     }, 'Cancel'),
-                    h('button', {
-                        className: 'btn btn-outline',
-                        onClick: () => {
-                            const updatedTargets = { ...newBrandTargets };
-                            const quarterlyTargets = autoCalculateQuarterly(newBrandTargets.annual);
-                            updatedTargets.Q1 = quarterlyTargets.Q1;
-                            updatedTargets.Q2 = quarterlyTargets.Q2;
-                            updatedTargets.Q3 = quarterlyTargets.Q3;
-                            updatedTargets.Q4 = quarterlyTargets.Q4;
-                            setNewBrandTargets(updatedTargets);
-                        },
-                        style: {
-                            padding: '12px 24px',
-                            fontSize: '16px',
-                            fontWeight: '600'
-                        }
-                    }, 'Auto-Calculate Quarterly')
+                    
                 )
             ),
             
