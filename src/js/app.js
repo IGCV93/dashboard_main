@@ -135,7 +135,10 @@
                 .from('user_preferences')
                 .upsert({
                     user_id: APP_STATE.currentUser.id,
-                    ...APP_STATE.preferences,
+                    last_selected_brand: APP_STATE.preferences.last_selected_brand,
+                    last_selected_period: APP_STATE.preferences.last_selected_period,
+                    last_selected_year: APP_STATE.preferences.last_selected_year,
+                    last_selected_view: APP_STATE.preferences.last_selected_view,
                     updated_at: new Date().toISOString()
                 });
         } catch (error) {
@@ -146,7 +149,10 @@
                     await supabase
                         .from('user_preferences')
                         .update({
-                            ...APP_STATE.preferences,
+                            last_selected_brand: APP_STATE.preferences.last_selected_brand,
+                            last_selected_period: APP_STATE.preferences.last_selected_period,
+                            last_selected_year: APP_STATE.preferences.last_selected_year,
+                            last_selected_view: APP_STATE.preferences.last_selected_view,
                             updated_at: new Date().toISOString()
                         })
                         .eq('user_id', APP_STATE.currentUser.id);
@@ -170,7 +176,7 @@
         try {
             const { data } = await supabase
                 .from('user_preferences')
-                .select('*')
+                .select('last_selected_brand, last_selected_period, last_selected_year, last_selected_view')
                 .eq('user_id', userId)
                 .single();
             
@@ -770,7 +776,8 @@
                 setShowProfileMenu,
                 onLogout: handleLogout,
                 userRole: currentUser?.role,
-                setActiveSection
+                setActiveSection,
+                ProfileMenu
             }) : null;
             
             // Render sidebar

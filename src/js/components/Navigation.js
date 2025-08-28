@@ -17,10 +17,11 @@
             currentUser,
             onLogout,
             setActiveSection,
-            showProfileMenu, setShowProfileMenu
+            showProfileMenu, setShowProfileMenu,
+            ProfileMenu
         } = props;
         
-        const ProfileMenu = window.ProfileMenu || window.ChaiVision?.components?.ProfileMenu;
+        const ProfileMenuComponent = ProfileMenu || window.ProfileMenu || window.ChaiVision?.components?.ProfileMenu;
         
         return h('nav', { className: 'top-nav' },
             h('div', { className: 'nav-left' },
@@ -127,7 +128,7 @@
             ),
             // Right side: Profile menu
             h('div', { className: 'nav-right' },
-                currentUser && ProfileMenu ? h(ProfileMenu, {
+                currentUser && ProfileMenuComponent ? h(ProfileMenuComponent, {
                     currentUser,
                     onLogout,
                     onNavigate: (section) => {
@@ -137,7 +138,23 @@
                     },
                     showMenu: showProfileMenu,
                     setShowMenu: setShowProfileMenu
-                }) : null
+                }) : currentUser ? h('button', {
+                    onClick: onLogout,
+                    style: {
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '40px',
+                        height: '40px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '16px',
+                        fontWeight: 'bold'
+                    }
+                }, currentUser.full_name?.charAt(0) || currentUser.email?.charAt(0) || 'U') : null
             )
         );
     }
