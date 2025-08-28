@@ -255,7 +255,7 @@
                             }
                         }, 'If this message persists, please check that all JavaScript files are in the correct locations.'),
                         h('button', {
-                            onClick: () => window.location.reload(),
+                            onClick: () => {\n                                // Only reload if explicitly requested by user\n                                if (confirm('Are you sure you want to reload the dashboard?')) {\n                                    window.location.reload();\n                                }\n                            },
                             style: {
                                 marginTop: '20px',
                                 padding: '12px 24px',
