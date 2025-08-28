@@ -94,12 +94,14 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--bg-gray);
 }
 
 .channel-name {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 18px;
+    font-weight: 700;
     color: var(--dark-gray);
 }
 
@@ -114,25 +116,32 @@
 .channel-metrics {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-    margin-bottom: 20px;
+    gap: 12px;
+    margin-bottom: 16px;
 }
 
 .metric-item {
-    /* Remove background and padding to match screenshot */
+    padding: 10px;
+    background: var(--bg-gray);
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.metric-item:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
 }
 
 .metric-label {
-    font-size: 10px;
-    color: #6c757d;
+    font-size: 11px;
+    color: var(--medium-gray);
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     font-weight: 600;
 }
 
 .metric-value {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 700;
     color: var(--dark-gray);
 }
