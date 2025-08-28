@@ -1,5 +1,6 @@
 /**
  * Upload Component - Handle CSV and Excel file uploads
+ * ENHANCED WITH PERMISSION VALIDATION
  */
 
 (function() {
@@ -8,16 +9,66 @@
     function Upload(props) {
         const { useState, useRef, createElement: h } = React;
         
-        const { dataService, onUploadComplete, config } = props;
+        const { 
+            dataService, 
+            onUploadComplete, 
+            config,
+            userRole,
+            userPermissions,
+            currentUser
+        } = props;
+        
+        // Permission check - only Admin and Manager can upload
+        if (userRole === 'User') {
+            return h('div', { className: 'upload-container' },
+                h('div', { className: 'alert-banner warning' },
+                    h('div', { className: 'alert-content' },
+                        h('span', { className: 'alert-icon' }, '🔒'),
+                        h('span', { className: 'alert-message' }, 
+                            'You do not have permission to upload data. Contact an administrator or manager.'
+                        )
+                    )
+                )
+            );
+        }
         
         // Get dependencies from window
         const { formatCurrency } = window.formatters || {};
-        const ALL_CHANNELS = window.ALL_CHANNELS || ['Amazon', 'TikTok', 'DTC-Shopify', 'Retail', 'CA International', 'UK International', 'Wholesale', 'Omnichannel'];
-        const DEFAULT_BRANDS = window.DEFAULT_BRANDS || ['LifePro', 'PetCove', 'Joyberri', 'Oaktiv', 'Loft & Ivy', 'New Brands'];
+        const getSupabaseClient = () => {
+            const config = window.CONFIG || window.ChaiVision?.CONFIG;
+            if (config?.SUPABASE?.URL && window.supabase) {
+                return window.supabase.createClient(
+                    config.SUPABASE.URL,
+                    config.SUPABASE.ANON_KEY
+                );
+            }
+            return null;
+        };
+        
+        // Get allowed brands and channels based on permissions
+        const getAllowedBrands = () => {
+            if (userRole === 'Admin' || userPermissions?.brands?.includes('All Brands')) {
+                return window.DEFAULT_BRANDS || ['LifePro', 'PetCove', 'Joyberri', 'Oaktiv', 'Loft & Ivy', 'New Brands'];
+            }
+            return userPermissions?.brands || [];
+        };
+        
+        const getAllowedChannels = () => {
+            if (userRole === 'Admin' || userPermissions?.channels?.includes('All Channels')) {
+                return window.ALL_CHANNELS || ['Amazon', 'TikTok', 'DTC-Shopify', 'Retail', 
+                                              'CA International', 'UK International', 'Wholesale', 'Omnichannel'];
+            }
+            return userPermissions?.channels || [];
+        };
+        
+        const allowedBrands = getAllowedBrands();
+        const allowedChannels = getAllowedChannels();
         
         // State
         const [uploadedFile, setUploadedFile] = useState(null);
         const [uploadedData, setUploadedData] = useState([]);
+        const [filteredData, setFilteredData] = useState([]);
+        const [rejectedData, setRejectedData] = useState([]);
         const [uploadProgress, setUploadProgress] = useState(0);
         const [uploadStatus, setUploadStatus] = useState(null);
         const [validationErrors, setValidationErrors] = useState([]);
@@ -26,20 +77,54 @@
         const fileInputRef = useRef(null);
         const supabaseEnabled = config?.FEATURES?.ENABLE_SUPABASE || false;
         
+        // Audit log helper
+        const logUpload = async (recordCount, acceptedCount, rejectedCount, fileName) => {
+            const supabase = getSupabaseClient();
+            if (!supabase) return;
+            
+            const uploadBatchId = `UPLOAD_${Date.now()}_${currentUser?.id?.substring(0, 8)}`;
+            
+            try {
+                await supabase
+                    .from('audit_logs')
+                    .insert({
+                        user_id: currentUser?.id,
+                        user_email: currentUser?.email,
+                        user_role: userRole,
+                        action: 'data_upload',
+                        action_details: {
+                            file_name: fileName,
+                            total_records: recordCount,
+                            accepted_records: acceptedCount,
+                            rejected_records: rejectedCount,
+                            allowed_brands: allowedBrands,
+                            allowed_channels: allowedChannels,
+                            timestamp: new Date().toISOString()
+                        },
+                        reference_id: uploadBatchId
+                    });
+                    
+                return uploadBatchId;
+            } catch (error) {
+                console.error('Failed to log upload:', error);
+                return null;
+            }
+        };
+        
         // Download template
         const downloadTemplate = () => {
             const templateData = [
                 ['Date', 'Channel', 'Brand', 'Revenue'],
-                ['2025-01-01', 'Amazon', 'LifePro', '250000'],
-                ['2025-01-01', 'TikTok', 'LifePro', '30000'],
-                ['2025-01-01', 'DTC-Shopify', 'PetCove', '6500'],
-                ['2025-01-02', 'Amazon', 'LifePro', '275000'],
+                ['2025-01-01', allowedChannels[0] || 'Amazon', allowedBrands[0] || 'LifePro', '250000'],
+                ['2025-01-01', allowedChannels[1] || 'TikTok', allowedBrands[0] || 'LifePro', '30000'],
+                ['2025-01-02', allowedChannels[0] || 'Amazon', allowedBrands[0] || 'LifePro', '275000'],
                 ['', '', '', ''],
                 ['Instructions:', '', '', ''],
                 ['1. Date format: YYYY-MM-DD', '', '', ''],
-                ['2. Channel must be one of: ' + ALL_CHANNELS.join(', '), '', '', ''],
-                ['3. Brand must match existing brands in system', '', '', ''],
-                ['4. Revenue should be numeric value (no currency symbols)', '', '', '']
+                [`2. Your allowed channels: ${allowedChannels.join(', ')}`, '', '', ''],
+                [`3. Your allowed brands: ${allowedBrands.join(', ')}`, '', '', ''],
+                ['4. Revenue should be numeric value (no currency symbols)', '', '', ''],
+                ['5. Data outside your permissions will be rejected', '', '', '']
             ];
             
             const csvContent = templateData.map(row => row.join(',')).join('\n');
@@ -54,74 +139,45 @@
             window.URL.revokeObjectURL(url);
         };
         
-        // File upload handlers
-        const handleDragOver = (e) => {
-            e.preventDefault();
-            setIsDragging(true);
-        };
-        
-        const handleDragLeave = (e) => {
-            e.preventDefault();
-            setIsDragging(false);
-        };
-        
-        const handleDrop = (e) => {
-            e.preventDefault();
-            setIsDragging(false);
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleFileUpload(files[0]);
-            }
-        };
-        
-        const handleFileSelect = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                handleFileUpload(file);
-            }
-        };
-        
-        // Validate data
-        const validateData = (data) => {
+        // Validate data with permissions
+        const validateDataWithPermissions = (data) => {
             const errors = [];
-            const validChannels = ALL_CHANNELS;
-            const validBrands = DEFAULT_BRANDS;
+            const accepted = [];
+            const rejected = [];
             
             data.forEach((row, index) => {
-                // Check for required fields
-                if (!row.Date && !row.date) {
-                    errors.push(`Row ${index + 2}: Missing date`);
-                }
-                if (!row.Channel && !row.channel) {
-                    errors.push(`Row ${index + 2}: Missing channel`);
-                }
-                if (!row.Brand && !row.brand) {
-                    errors.push(`Row ${index + 2}: Missing brand`);
-                }
-                if (!row.Revenue && !row.revenue) {
-                    errors.push(`Row ${index + 2}: Missing revenue`);
-                }
-                
-                // Validate channel
-                const channel = row.Channel || row.channel;
-                if (channel && !validChannels.includes(channel)) {
-                    errors.push(`Row ${index + 2}: Invalid channel "${channel}"`);
-                }
-                
-                // Validate brand
                 const brand = row.Brand || row.brand;
-                if (brand && !validBrands.includes(brand)) {
-                    errors.push(`Row ${index + 2}: Invalid brand "${brand}"`);
-                }
+                const channel = row.Channel || row.channel;
+                const rowNum = index + 2;
                 
-                // Validate revenue is numeric
-                const revenue = row.Revenue || row.revenue;
-                if (revenue && isNaN(parseFloat(revenue))) {
-                    errors.push(`Row ${index + 2}: Revenue must be a number`);
+                // Check brand permission
+                const brandAllowed = userRole === 'Admin' || 
+                                    allowedBrands.includes(brand) ||
+                                    userPermissions?.brands?.includes('All Brands');
+                
+                // Check channel permission
+                const channelAllowed = userRole === 'Admin' || 
+                                      allowedChannels.includes(channel) ||
+                                      userPermissions?.channels?.includes('All Channels');
+                
+                if (!brandAllowed || !channelAllowed) {
+                    const reason = [];
+                    if (!brandAllowed) reason.push(`brand "${brand}" not in your permissions`);
+                    if (!channelAllowed) reason.push(`channel "${channel}" not in your permissions`);
+                    
+                    rejected.push({
+                        ...row,
+                        _rowNumber: rowNum,
+                        _rejectionReason: reason.join(' and ')
+                    });
+                    
+                    errors.push(`Row ${rowNum}: ${reason.join(' and ')}`);
+                } else {
+                    accepted.push(row);
                 }
             });
             
-            return errors;
+            return { accepted, rejected, errors };
         };
         
         // Handle file upload
@@ -145,17 +201,9 @@
                         skipEmptyLines: true,
                         complete: (results) => {
                             setUploadProgress(60);
-                            const errors = validateData(results.data);
-                            
-                            if (errors.length > 0) {
-                                setValidationErrors(errors);
-                                setUploadStatus('error');
-                                setUploadProgress(0);
-                            } else {
-                                setUploadedData(results.data);
-                                setUploadStatus('validated');
-                                setUploadProgress(80);
-                            }
+                            setUploadedData(results.data);
+                            setUploadStatus('parsed');
+                            setUploadProgress(80);
                         }
                     });
                 } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
@@ -166,17 +214,13 @@
                     const data = XLSX.utils.sheet_to_json(sheet);
                     
                     setUploadProgress(60);
-                    const errors = validateData(data);
-                    
-                    if (errors.length > 0) {
-                        setValidationErrors(errors);
-                        setUploadStatus('error');
-                        setUploadProgress(0);
-                    } else {
-                        setUploadedData(data);
-                        setUploadStatus('validated');
-                        setUploadProgress(80);
-                    }
+                    setUploadedData(data);
+                    setUploadStatus('parsed');
+                    setUploadProgress(80);
+                } else {
+                    setUploadStatus('error');
+                    setValidationErrors(['Invalid file format. Please upload CSV or Excel file.']);
+                    setUploadProgress(0);
                 }
             };
             
@@ -184,10 +228,6 @@
                 reader.readAsText(file);
             } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
                 reader.readAsBinaryString(file);
-            } else {
-                setUploadStatus('error');
-                setValidationErrors(['Invalid file format. Please upload CSV or Excel file.']);
-                setUploadProgress(0);
             }
         };
         
@@ -195,16 +235,54 @@
         const uploadToDatabase = async () => {
             if (!uploadedData || uploadedData.length === 0) return;
             
+            setUploadStatus('validating');
+            setUploadProgress(85);
+            
+            // Validate permissions
+            const { accepted, rejected, errors } = validateDataWithPermissions(uploadedData);
+            
+            setFilteredData(accepted);
+            setRejectedData(rejected);
+            
+            if (accepted.length === 0) {
+                setUploadStatus('error');
+                setValidationErrors(['All records were rejected due to permission restrictions']);
+                setUploadProgress(0);
+                return;
+            }
+            
+            // Show validation results
+            if (rejected.length > 0) {
+                setValidationErrors([
+                    `${rejected.length} records will be rejected (outside your permissions)`,
+                    `${accepted.length} records will be uploaded`
+                ]);
+                setUploadStatus('validated');
+                setUploadProgress(90);
+                return;
+            }
+            
+            // Proceed with upload
             setUploadStatus('uploading');
-            setUploadProgress(90);
+            setUploadProgress(95);
             
             try {
+                // Log the upload
+                const batchId = await logUpload(
+                    uploadedData.length,
+                    accepted.length,
+                    rejected.length,
+                    uploadedFile.name
+                );
+                
                 // Format data for storage
-                const formattedData = uploadedData.map(row => ({
+                const formattedData = accepted.map(row => ({
                     date: row.Date || row.date,
                     channel: row.Channel || row.channel,
                     brand: row.Brand || row.brand,
                     revenue: parseFloat(row.Revenue || row.revenue),
+                    uploaded_by: currentUser?.id,
+                    upload_batch_id: batchId,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
                 }));
@@ -233,6 +311,8 @@
                 setTimeout(() => {
                     setUploadedFile(null);
                     setUploadedData([]);
+                    setFilteredData([]);
+                    setRejectedData([]);
                     setUploadProgress(0);
                     setUploadStatus(null);
                     setValidationErrors([]);
@@ -245,10 +325,56 @@
             }
         };
         
+        // Continue upload after validation
+        const continueUpload = () => {
+            uploadToDatabase();
+        };
+        
+        // File handlers
+        const handleDragOver = (e) => {
+            e.preventDefault();
+            setIsDragging(true);
+        };
+        
+        const handleDragLeave = (e) => {
+            e.preventDefault();
+            setIsDragging(false);
+        };
+        
+        const handleDrop = (e) => {
+            e.preventDefault();
+            setIsDragging(false);
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileUpload(files[0]);
+            }
+        };
+        
+        const handleFileSelect = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFileUpload(file);
+            }
+        };
+        
         return h('div', { className: 'upload-container' },
             h('div', { className: 'upload-header' },
                 h('h1', { className: 'upload-title' }, '📊 Upload Sales Data'),
                 h('p', { className: 'upload-subtitle' }, 'Import your sales data from CSV or Excel files to update the dashboard'),
+                
+                // Permission notice
+                userRole === 'Manager' && h('div', {
+                    className: 'alert-banner warning',
+                    style: { marginTop: '16px' }
+                },
+                    h('div', { className: 'alert-content' },
+                        h('span', { className: 'alert-icon' }, '🔒'),
+                        h('span', { className: 'alert-message' }, 
+                            `You can upload data for: ${allowedBrands.join(', ')} (${allowedChannels.join(', ')})`
+                        )
+                    )
+                ),
+                
                 !supabaseEnabled && h('div', {
                     className: 'validation-message warning',
                     style: { marginTop: '16px' }
@@ -263,22 +389,13 @@
                     h('div', { className: 'upload-card-icon' }, '📄'),
                     h('h3', { className: 'upload-card-title' }, 'Download Template'),
                     h('p', { className: 'upload-card-description' }, 
-                        'Download a pre-formatted template with the correct headers for your sales data.'
+                        'Download a pre-formatted template with your allowed brands and channels.'
                     ),
-                    h('div', { className: 'template-section' },
-                        h('div', { className: 'template-info' },
-                            h('div', { className: 'template-icon' }, '✨'),
-                            h('div', { className: 'template-text' },
-                                h('div', { className: 'template-title' }, 'Sales Data Template'),
-                                h('div', { className: 'template-description' }, 'CSV format with Date, Channel, Brand, Revenue columns')
-                            )
-                        ),
-                        h('button', {
-                            className: 'btn btn-primary',
-                            onClick: downloadTemplate,
-                            style: { width: '100%' }
-                        }, '⬇️ Download Template')
-                    )
+                    h('button', {
+                        className: 'btn btn-primary',
+                        onClick: downloadTemplate,
+                        style: { width: '100%' }
+                    }, '⬇️ Download Custom Template')
                 ),
                 
                 // File Upload Card
@@ -286,7 +403,7 @@
                     h('div', { className: 'upload-card-icon' }, '📤'),
                     h('h3', { className: 'upload-card-title' }, 'Upload Data File'),
                     h('p', { className: 'upload-card-description' }, 
-                        'Upload your sales data file in CSV or Excel format.'
+                        'Upload your sales data file. Records outside your permissions will be rejected.'
                     ),
                     h('div', {
                         className: `upload-zone ${isDragging ? 'dragging' : ''}`,
@@ -322,18 +439,34 @@
                         )
                     ),
                     
-                    uploadStatus === 'validated' && h('div', null,
+                    uploadStatus === 'parsed' && h('div', null,
                         h('div', { className: 'validation-message success' },
-                            '✅ File validated successfully!'
+                            `✅ File parsed: ${uploadedData.length} records found`
                         ),
                         h('button', {
                             className: 'btn btn-success',
                             onClick: uploadToDatabase,
                             style: { width: '100%', marginTop: '16px' }
-                        }, supabaseEnabled ? 
-                            `📤 Upload ${uploadedData.length} Records to Database` :
-                            `💾 Save ${uploadedData.length} Records Locally`
-                        )
+                        }, '🔍 Validate & Upload')
+                    ),
+                    
+                    uploadStatus === 'validated' && rejectedData.length > 0 && h('div', null,
+                        h('div', { className: 'validation-message warning' },
+                            `⚠️ ${rejectedData.length} records outside your permissions will be rejected`
+                        ),
+                        h('div', { style: { marginTop: '12px' } },
+                            h('p', { style: { fontSize: '14px', marginBottom: '8px' } }, 
+                                `✅ ${filteredData.length} records will be accepted`
+                            ),
+                            h('p', { style: { fontSize: '14px', color: '#DC2626' } }, 
+                                `❌ ${rejectedData.length} records will be rejected`
+                            )
+                        ),
+                        h('button', {
+                            className: 'btn btn-primary',
+                            onClick: continueUpload,
+                            style: { width: '100%', marginTop: '16px' }
+                        }, `📤 Upload ${filteredData.length} Valid Records`)
                     ),
                     
                     uploadStatus === 'uploading' && h('div', { className: 'upload-progress' },
@@ -357,7 +490,7 @@
                     
                     uploadStatus === 'error' && h('div', null,
                         h('div', { className: 'validation-message error' },
-                            '❌ Validation errors found:'
+                            '❌ Upload failed:'
                         ),
                         validationErrors.length > 0 && h('ul', { style: { marginTop: '12px', paddingLeft: '20px' } },
                             validationErrors.slice(0, 5).map((error, index) =>
@@ -371,51 +504,41 @@
                 )
             ),
             
-            // Data Preview
-            uploadedData.length > 0 && uploadStatus === 'validated' && h('div', { className: 'data-preview' },
+            // Rejected Records Preview
+            rejectedData.length > 0 && uploadStatus === 'validated' && h('div', { className: 'data-preview' },
                 h('div', { className: 'preview-header' },
-                    h('h3', { className: 'preview-title' }, 'Data Preview'),
-                    h('div', { className: 'preview-stats' },
-                        h('div', { className: 'preview-stat' },
-                            h('div', { className: 'preview-stat-value' }, uploadedData.length),
-                            h('div', { className: 'preview-stat-label' }, 'Records')
-                        ),
-                        h('div', { className: 'preview-stat' },
-                            h('div', { className: 'preview-stat-value' }, 
-                                [...new Set(uploadedData.map(d => d.Channel || d.channel))].length
-                            ),
-                            h('div', { className: 'preview-stat-label' }, 'Channels')
-                        ),
-                        h('div', { className: 'preview-stat' },
-                            h('div', { className: 'preview-stat-value' }, 
-                                [...new Set(uploadedData.map(d => d.Brand || d.brand))].length
-                            ),
-                            h('div', { className: 'preview-stat-label' }, 'Brands')
-                        )
+                    h('h3', { className: 'preview-title', style: { color: '#DC2626' } }, 
+                        '❌ Rejected Records (Outside Permissions)'
                     )
                 ),
                 h('div', { className: 'preview-table' },
                     h('table', null,
                         h('thead', null,
                             h('tr', null,
+                                h('th', null, 'Row'),
                                 h('th', null, 'Date'),
                                 h('th', null, 'Channel'),
                                 h('th', null, 'Brand'),
-                                h('th', null, 'Revenue')
+                                h('th', null, 'Revenue'),
+                                h('th', null, 'Reason')
                             )
                         ),
                         h('tbody', null,
-                            uploadedData.slice(0, 10).map((row, index) =>
-                                h('tr', { key: index },
+                            rejectedData.slice(0, 10).map((row, index) =>
+                                h('tr', { key: index, style: { background: '#FEE2E2' } },
+                                    h('td', null, row._rowNumber),
                                     h('td', null, row.Date || row.date),
                                     h('td', null, row.Channel || row.channel),
                                     h('td', null, row.Brand || row.brand),
-                                    h('td', null, formatCurrency ? formatCurrency(parseFloat(row.Revenue || row.revenue)) : '$' + (row.Revenue || row.revenue))
+                                    h('td', null, formatCurrency ? formatCurrency(parseFloat(row.Revenue || row.revenue)) : 
+                                        '$' + (row.Revenue || row.revenue)),
+                                    h('td', { style: { fontSize: '12px', color: '#991B1B' } }, 
+                                        row._rejectionReason)
                                 )
                             ),
-                            uploadedData.length > 10 && h('tr', null,
-                                h('td', { colSpan: 4, style: { textAlign: 'center', fontStyle: 'italic', color: '#6B7280' } },
-                                    `...and ${uploadedData.length - 10} more records`
+                            rejectedData.length > 10 && h('tr', null,
+                                h('td', { colSpan: 6, style: { textAlign: 'center', fontStyle: 'italic', color: '#6B7280' } },
+                                    `...and ${rejectedData.length - 10} more rejected records`
                                 )
                             )
                         )
