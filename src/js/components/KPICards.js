@@ -24,7 +24,7 @@
                 h('div', { className: 'kpi-label' }, 'KPI Achievement (85% Target)'),
                 h('div', { className: 'kpi-value' }, `${kpis.kpiAchievement.toFixed(1)}%`),
                 h('div', { className: 'kpi-subtitle' }, `Gap to KPI: ${formatCurrency ? formatCurrency(kpis.gapToKPI) : '$' + kpis.gapToKPI}`),
-                h('div', { className: 'progress-bar' },
+                h('div', { className: 'progress-bar large' },
                     h('div', {
                         className: 'progress-fill',
                         style: { 
@@ -52,7 +52,10 @@
                 h('div', { className: 'progress-bar' },
                     h('div', {
                         className: 'progress-fill',
-                        style: { width: `${(kpis.daysElapsed / kpis.daysInPeriod) * 100}%` }
+                        style: { 
+                            width: `${(kpis.daysElapsed / kpis.daysInPeriod) * 100}%`,
+                            background: 'linear-gradient(90deg, #F59E0B, #FBBF24)'
+                        }
                     },
                         h('span', { className: 'progress-text' }, `${kpis.daysElapsed} days`)
                     )

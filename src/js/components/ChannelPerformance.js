@@ -68,7 +68,7 @@
                                 )
                             )
                         ),
-                        h('div', { className: 'progress-bar', style: { height: '20px' } },
+                        h('div', { className: 'progress-bar large' },
                             h('div', {
                                 className: 'progress-fill',
                                 style: { 
@@ -76,7 +76,7 @@
                                     background: `linear-gradient(90deg, ${CHANNEL_COLORS[channel]}, ${CHANNEL_COLORS[channel]}99)`
                                 }
                             },
-                                h('span', { className: 'progress-text', style: { fontSize: '11px' } }, 
+                                h('span', { className: 'progress-text' }, 
                                     `${achievement.toFixed(0)}%`
                                 )
                             )
