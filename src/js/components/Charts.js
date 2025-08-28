@@ -318,22 +318,24 @@
             // Charts Section
             h('div', { className: 'chart-card' },
                 h('div', { className: 'chart-header' },
-                    h('h3', { className: 'chart-title' }, '📊 Channel Performance Analysis')
-                ),
-                h('div', { className: 'chart-filters' },
-                    h('span', { style: { fontWeight: '600', marginRight: '12px' } }, 'Show Channels:'),
-                    ...ALL_CHANNELS.map(channel =>
-                        h('div', {
-                            key: channel,
-                            className: `filter-checkbox ${selectedChannels.includes(channel) ? 'selected' : ''}`,
-                            onClick: () => handleChannelToggle(channel)
-                        },
-                            h('input', {
-                                type: 'checkbox',
-                                checked: selectedChannels.includes(channel),
-                                onChange: () => {}
-                            }),
-                            h('label', null, channel)
+                    h('h3', { className: 'chart-title' }, '📊 Channel Performance Analysis'),
+                    h('div', { className: 'chart-filters' },
+                        h('span', { className: 'filter-label' }, 'Show Channels:'),
+                        h('div', { className: 'filter-checkboxes' },
+                            ...ALL_CHANNELS.map(channel =>
+                                h('div', {
+                                    key: channel,
+                                    className: `filter-checkbox ${selectedChannels.includes(channel) ? 'selected' : ''}`,
+                                    onClick: () => handleChannelToggle(channel)
+                                },
+                                    h('input', {
+                                        type: 'checkbox',
+                                        checked: selectedChannels.includes(channel),
+                                        onChange: () => {}
+                                    }),
+                                    h('label', null, channel)
+                                )
+                            )
                         )
                     )
                 ),
