@@ -13,8 +13,14 @@
             selectedMonth, setSelectedMonth,
             selectedYear, setSelectedYear,
             selectedBrand, setSelectedBrand,
-            brands, activeSection
+            brands, activeSection,
+            currentUser,
+            onLogout,
+            setActiveSection,
+            showProfileMenu, setShowProfileMenu
         } = props;
+        
+        const ProfileMenu = window.ProfileMenu || window.ChaiVision?.components?.ProfileMenu;
         
         return h('nav', { className: 'top-nav' },
             h('div', { className: 'nav-left' },
@@ -118,6 +124,20 @@
                         )
                     )
                 )
+            ),
+            // Right side: Profile menu
+            h('div', { className: 'nav-right' },
+                currentUser && ProfileMenu ? h(ProfileMenu, {
+                    currentUser,
+                    onLogout,
+                    onNavigate: (section) => {
+                        if (typeof setActiveSection === 'function') {
+                            setActiveSection(section);
+                        }
+                    },
+                    showMenu: showProfileMenu,
+                    setShowMenu: setShowProfileMenu
+                }) : null
             )
         );
     }
