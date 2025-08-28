@@ -140,6 +140,20 @@
                 });
         } catch (error) {
             console.error('Failed to save preferences:', error);
+            // If it's a conflict error, try to update instead
+            if (error.code === '23505' || error.message.includes('duplicate key')) {
+                try {
+                    await supabase
+                        .from('user_preferences')
+                        .update({
+                            ...APP_STATE.preferences,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('user_id', APP_STATE.currentUser.id);
+                } catch (updateError) {
+                    console.error('Failed to update preferences:', updateError);
+                }
+            }
         }
     }
     
@@ -347,8 +361,15 @@
                 const checkAuth = async () => {
                     setCheckingAuth(true);
                     
-                    if (APP_STATE.supabaseClient && config.FEATURES.ENABLE_SUPABASE) {
-                        try {
+                    // Add timeout to prevent infinite loading
+                    const authTimeout = setTimeout(() => {
+                        console.warn('Auth check timeout - proceeding without authentication');
+                        setCheckingAuth(false);
+                        setLoading(false);
+                    }, 10000); // 10 second timeout
+                    
+                    try {
+                        if (APP_STATE.supabaseClient && config.FEATURES.ENABLE_SUPABASE) {
                             const { data: { session } } = await APP_STATE.supabaseClient.auth.getSession();
                             
                             if (session) {
@@ -364,6 +385,7 @@
                                     if (window.showErrorMessage) {
                                         window.showErrorMessage('Your account is inactive. Please contact an administrator.');
                                     }
+                                    clearTimeout(authTimeout);
                                     setCheckingAuth(false);
                                     return;
                                 }
@@ -422,23 +444,26 @@
                                     }
                                 }
                             }
-                        } catch (error) {
-                            console.error('Auth check error:', error);
+                        } else {
+                            // Check demo mode session
+                            const savedUser = localStorage.getItem('chai_vision_user_session');
+                            if (savedUser) {
+                                const user = JSON.parse(savedUser);
+                                setCurrentUser(user);
+                                setUserPermissions(user.permissions || { brands: ['All Brands'], channels: ['All Channels'] });
+                                setIsAuthenticated(true);
+                                APP_STATE.currentUser = user;
+                                APP_STATE.userPermissions = user.permissions;
+                            }
                         }
-                    } else {
-                        // Check demo mode session
-                        const savedUser = localStorage.getItem('chai_vision_user_session');
-                        if (savedUser) {
-                            const user = JSON.parse(savedUser);
-                            setCurrentUser(user);
-                            setUserPermissions(user.permissions || { brands: ['All Brands'], channels: ['All Channels'] });
-                            setIsAuthenticated(true);
-                            APP_STATE.currentUser = user;
-                            APP_STATE.userPermissions = user.permissions;
-                        }
+                    } catch (error) {
+                        console.error('Auth check error:', error);
+                        // Don't let auth errors prevent the app from loading
+                    } finally {
+                        clearTimeout(authTimeout);
+                        setCheckingAuth(false);
+                        setLoading(false);
                     }
-                    setCheckingAuth(false);
-                    setLoading(false);
                 };
                 
                 checkAuth();
@@ -723,6 +748,8 @@
             console.log('🔍 Debug - isAuthenticated:', isAuthenticated);
             console.log('🔍 Debug - Navigation component:', Navigation);
             console.log('🔍 Debug - ProfileMenu component:', ProfileMenu);
+            console.log('🔍 Debug - UserManagement component:', UserManagement);
+            console.log('🔍 Debug - activeSection:', activeSection);
             
             // Render navigation
             const navigation = Navigation ? h(Navigation, {
