@@ -1,0 +1,23 @@
+{
+  "name": "Chai Vision Dashboard",
+  "version": "1.0.0",
+  "description": "Real-time sales performance tracking across all channels with KPI monitoring and data visualization",
+  "author": "Chai Vision",
+  "license": "MIT",
+  "features": {
+    "authentication": true,
+    "role_based_access": true,
+    "profile_menu": true,
+    "user_management": true,
+    "audit_logs": true,
+    "data_upload": true,
+    "kpi_tracking": true,
+    "channel_performance": true
+  },
+  "supported_browsers": [
+    "Chrome >= 90",
+    "Firefox >= 88",
+    "Safari >= 14",
+    "Edge >= 90"
+  ]
+}

@@ -699,6 +699,7 @@
             const Upload = window.Upload || window.ChaiVision?.components?.Upload;
             const UserManagement = window.UserManagement || window.ChaiVision?.components?.UserManagement;
             const AuditLogs = window.AuditLogs || window.ChaiVision?.components?.AuditLogs;
+            const ProfileMenu = window.ProfileMenu || window.ChaiVision?.components?.ProfileMenu;
             
             // If checking auth, show loading
             if (checkingAuth) {
@@ -716,6 +717,12 @@
                     setRememberMe: (value) => { APP_STATE.rememberMe = value; }
                 }) : h('div', null, 'Loading...');
             }
+            
+            // Debug currentUser state
+            console.log('🔍 Debug - currentUser:', currentUser);
+            console.log('🔍 Debug - isAuthenticated:', isAuthenticated);
+            console.log('🔍 Debug - Navigation component:', Navigation);
+            console.log('🔍 Debug - ProfileMenu component:', ProfileMenu);
             
             // Render navigation
             const navigation = Navigation ? h(Navigation, {
