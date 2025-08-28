@@ -104,7 +104,7 @@
 
         // Feature Flags
         FEATURES: {
-            ENABLE_SUPABASE: true, // Enable Supabase integration
+            ENABLE_SUPABASE: false, // Temporarily disabled to fix auth loop
             ENABLE_DEMO_MODE: true, // Keep demo mode available
             ENABLE_DARK_MODE: false,
             ENABLE_EXPORT: true,

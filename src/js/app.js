@@ -73,17 +73,17 @@
                         }
                     });
                     
-                    // Listen for auth changes from other tabs
-                    if (window.BroadcastChannel) {
-                        const channel = new BroadcastChannel('chai_vision_auth');
-                        channel.onmessage = (e) => {
-                            if (e.data.event === 'SIGNED_OUT') {
-                                window.location.reload();
-                            } else if (e.data.event === 'SIGNED_IN') {
-                                window.location.reload();
-                            }
-                        };
-                    }
+                    // Listen for auth changes from other tabs - DISABLED to prevent loops
+                    // if (window.BroadcastChannel) {
+                    //     const channel = new BroadcastChannel('chai_vision_auth');
+                    //     channel.onmessage = (e) => {
+                    //         if (e.data.event === 'SIGNED_OUT') {
+                    //             window.location.reload();
+                    //         } else if (e.data.event === 'SIGNED_IN') {
+                    //             window.location.reload();
+                    //         }
+                    //     };
+                    // }
                 }
             }
             
@@ -191,6 +191,8 @@
      * Handle sign out
      */
     function handleSignOut() {
+        console.log('🔄 Handling sign out...');
+        
         // Clear all local storage
         Object.keys(localStorage).forEach(key => {
             if (key.startsWith('chai_vision_')) {
@@ -206,14 +208,14 @@
         APP_STATE.userPermissions = { brands: [], channels: [] };
         APP_STATE.preferences = {};
         
-        // Notify other tabs
+        // Notify other tabs (but don't reload this tab)
         if (window.BroadcastChannel) {
             const channel = new BroadcastChannel('chai_vision_auth');
             channel.postMessage({ event: 'SIGNED_OUT' });
         }
         
-        // Reload to login page
-        window.location.reload();
+        // Don't reload - let React handle the state change
+        console.log('✅ Sign out completed without reload');
     }
 
     /**
@@ -365,11 +367,12 @@
             // Check for saved session with remember me
             useEffect(() => {
                 const checkAuth = async () => {
+                    console.log('🔐 Starting authentication check...');
                     setCheckingAuth(true);
                     
                     // Add timeout to prevent infinite loading
                     const authTimeout = setTimeout(() => {
-                        console.warn('Auth check timeout - proceeding without authentication');
+                        console.warn('⏰ Auth check timeout - proceeding without authentication');
                         setCheckingAuth(false);
                         setLoading(false);
                     }, 10000); // 10 second timeout
@@ -451,15 +454,19 @@
                                 }
                             }
                         } else {
+                            console.log('🔐 Supabase disabled, checking demo mode...');
                             // Check demo mode session
                             const savedUser = localStorage.getItem('chai_vision_user_session');
                             if (savedUser) {
+                                console.log('✅ Found saved demo user session');
                                 const user = JSON.parse(savedUser);
                                 setCurrentUser(user);
                                 setUserPermissions(user.permissions || { brands: ['All Brands'], channels: ['All Channels'] });
                                 setIsAuthenticated(true);
                                 APP_STATE.currentUser = user;
                                 APP_STATE.userPermissions = user.permissions;
+                            } else {
+                                console.log('ℹ️ No saved demo session found');
                             }
                         }
                     } catch (error) {
@@ -578,22 +585,36 @@
             // Load initial data
             async function loadInitialData() {
                 try {
+                    console.log('🔄 Loading initial data...');
                     setLoading(true);
                     if (APP_STATE.dataService) {
                         const data = await APP_STATE.dataService.loadSalesData();
-                        // Filter data based on user permissions
-                        const filteredData = data.filter(d => {
-                            const brandAllowed = userPermissions.brands.includes('All Brands') || 
-                                                userPermissions.brands.includes(d.brand);
-                            const channelAllowed = userPermissions.channels.includes('All Channels') || 
-                                                  userPermissions.channels.includes(d.channel);
-                            return brandAllowed && channelAllowed;
-                        });
-                        setSalesData(filteredData);
+                        console.log('📊 Raw data loaded:', data?.length || 0, 'records');
+                        
+                        // Only filter if we have valid permissions
+                        let filteredData = data;
+                        if (userPermissions.brands && userPermissions.brands.length > 0 && 
+                            userPermissions.channels && userPermissions.channels.length > 0) {
+                            filteredData = data.filter(d => {
+                                const brandAllowed = userPermissions.brands.includes('All Brands') || 
+                                                    userPermissions.brands.includes(d.brand);
+                                const channelAllowed = userPermissions.channels.includes('All Channels') || 
+                                                      userPermissions.channels.includes(d.channel);
+                                return brandAllowed && channelAllowed;
+                            });
+                            console.log('📊 Filtered data:', filteredData?.length || 0, 'records');
+                        } else {
+                            console.log('⚠️ No permissions set, using all data');
+                        }
+                        
+                        setSalesData(filteredData || []);
+                    } else {
+                        console.log('⚠️ No data service available');
+                        setSalesData([]);
                     }
                     setLoading(false);
                 } catch (err) {
-                    console.error('Failed to load data:', err);
+                    console.error('❌ Failed to load data:', err);
                     setError('Failed to load sales data');
                     setLoading(false);
                 }
