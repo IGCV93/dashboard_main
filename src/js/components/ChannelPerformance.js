@@ -42,26 +42,23 @@
                             h('span', { 
                                 className: 'channel-badge',
                                 style: {
-                                    background: achievement >= 100 ? 
-                                        'linear-gradient(135deg, #D1FAE5, #A7F3D0)' :
-                                        achievement >= 85 ? 
+                                    background: achievement >= 85 ? 
                                         'linear-gradient(135deg, #FEF3C7, #FDE68A)' :
                                         'linear-gradient(135deg, #FEE2E2, #FCA5A5)',
-                                    color: achievement >= 100 ? '#065F46' :
-                                           achievement >= 85 ? '#92400E' : '#991B1B'
+                                    color: achievement >= 85 ? '#92400E' : '#991B1B'
                                 }
                             }, `${achievement.toFixed(1)}%`)
                         ),
                         h('div', { className: 'channel-metrics' },
                             h('div', { className: 'metric-item' },
-                                h('div', { className: 'metric-label' }, 'Revenue'),
+                                h('div', { className: 'metric-label' }, 'REVENUE'),
                                 h('div', { className: 'metric-value' }, 
                                     formatCurrency ? formatCurrency(kpis.channelRevenues?.[channel] || 0) : 
                                     '$' + (kpis.channelRevenues?.[channel] || 0)
                                 )
                             ),
                             h('div', { className: 'metric-item' },
-                                h('div', { className: 'metric-label' }, '85% Target'),
+                                h('div', { className: 'metric-label' }, '85% TARGET'),
                                 h('div', { className: 'metric-value' }, 
                                     formatCurrency ? formatCurrency(kpis.channelTargets85?.[channel] || 0) : 
                                     '$' + (kpis.channelTargets85?.[channel] || 0)
@@ -73,7 +70,7 @@
                                 className: 'progress-fill',
                                 style: { 
                                     width: `${Math.min(100, achievement)}%`,
-                                    background: `linear-gradient(90deg, ${CHANNEL_COLORS[channel]}, ${CHANNEL_COLORS[channel]}99)`
+                                    background: CHANNEL_COLORS[channel]
                                 }
                             },
                                 h('span', { className: 'progress-text' }, 
