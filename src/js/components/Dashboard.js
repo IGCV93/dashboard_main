@@ -11,10 +11,15 @@
         
         const {
             view,
+            setView,
             selectedPeriod,
+            setSelectedPeriod,
             selectedMonth,
+            setSelectedMonth,
             selectedYear,
+            setSelectedYear,
             selectedBrand,
+            setSelectedBrand,
             salesData,
             config,
             dataService,

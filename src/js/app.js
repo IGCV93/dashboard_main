@@ -1028,10 +1028,15 @@
                     case 'dashboard':
                         return Dashboard ? h(Dashboard, {
                             view,
+                            setView,
                             selectedPeriod,
+                            setSelectedPeriod,
                             selectedMonth,
+                            setSelectedMonth,
                             selectedYear,
+                            setSelectedYear,
                             selectedBrand,
+                            setSelectedBrand,
                             salesData,
                             config,
                             dataService: APP_STATE.dataService,
