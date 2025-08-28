@@ -56,6 +56,8 @@
         const [editingBrand, setEditingBrand] = useState(null);
         const [editingValues, setEditingValues] = useState({});
         const [showAddBrand, setShowAddBrand] = useState(false);
+        const [newBrandName, setNewBrandName] = useState('');
+        const [newBrandTarget, setNewBrandTarget] = useState(0);
         const [dynamicBrands, setDynamicBrands] = useState(availableBrands);
         const [dynamicTargets, setDynamicTargets] = useState(initialTargets || {});
         const [error, setError] = useState('');
@@ -158,6 +160,65 @@
                 setEditingValues(filteredData);
                 setError('');
             }
+        };
+        
+        // Handle add new brand
+        const handleAddBrand = () => {
+            if (!newBrandName.trim() || !newBrandTarget) {
+                setError('Please enter both brand name and target');
+                return;
+            }
+            
+            if (dynamicBrands.includes(newBrandName.trim())) {
+                setError('Brand already exists');
+                return;
+            }
+            
+            const brandName = newBrandName.trim();
+            
+            // Add to brands list
+            const updatedBrands = [...dynamicBrands, brandName];
+            setDynamicBrands(updatedBrands);
+            
+            // Initialize targets for the new brand
+            const updatedTargets = { ...dynamicTargets };
+            if (!updatedTargets[settingsYear]) {
+                updatedTargets[settingsYear] = { brands: {} };
+            }
+            if (!updatedTargets[settingsYear].brands) {
+                updatedTargets[settingsYear].brands = {};
+            }
+            
+            // Set initial targets for all channels
+            const initialTargets = {};
+            availableChannels.forEach(channel => {
+                initialTargets[channel] = newBrandTarget / availableChannels.length;
+            });
+            
+            updatedTargets[settingsYear].brands[brandName] = {
+                annual: initialTargets,
+                Q1: { ...initialTargets },
+                Q2: { ...initialTargets },
+                Q3: { ...initialTargets },
+                Q4: { ...initialTargets }
+            };
+            
+            setDynamicTargets(updatedTargets);
+            
+            // Notify parent component
+            if (onUpdate) {
+                onUpdate({
+                    brands: updatedBrands,
+                    targets: updatedTargets
+                });
+            }
+            
+            // Reset form
+            setNewBrandName('');
+            setNewBrandTarget(0);
+            setShowAddBrand(false);
+            setSuccess(`Brand "${brandName}" added successfully`);
+            setTimeout(() => setSuccess(''), 3000);
         };
         
         // Handle saving edited brand
@@ -288,6 +349,55 @@
                     h('span', { className: 'alert-icon' }, '🔒'),
                     h('span', { className: 'alert-message' }, 
                         `You can edit targets for: ${availableBrands.join(', ')} (${availableChannels.join(', ')})`
+                    )
+                )
+            ),
+            
+            // Add New Brand Section (Admin only)
+            canManageBrands && h('div', { className: 'add-brand-section' },
+                h('div', { className: 'section-header' },
+                    h('h3', null, '➕ Add New Brand'),
+                    h('button', {
+                        className: 'btn btn-primary',
+                        onClick: () => setShowAddBrand(!showAddBrand)
+                    }, showAddBrand ? 'Cancel' : 'Add New Brand')
+                ),
+                
+                showAddBrand && h('div', { className: 'add-brand-form' },
+                    h('div', { className: 'form-group' },
+                        h('label', null, 'Brand Name:'),
+                        h('input', {
+                            type: 'text',
+                            className: 'input-field',
+                            placeholder: 'Enter brand name...',
+                            value: newBrandName || '',
+                            onChange: (e) => setNewBrandName(e.target.value)
+                        })
+                    ),
+                    h('div', { className: 'form-group' },
+                        h('label', null, 'Initial Annual Target:'),
+                        h('input', {
+                            type: 'number',
+                            className: 'input-field',
+                            placeholder: 'Enter initial target...',
+                            value: newBrandTarget || '',
+                            onChange: (e) => setNewBrandTarget(parseFloat(e.target.value) || 0)
+                        })
+                    ),
+                    h('div', { style: { display: 'flex', gap: '12px', marginTop: '16px' } },
+                        h('button', {
+                            className: 'btn btn-success',
+                            onClick: handleAddBrand,
+                            disabled: !newBrandName || !newBrandTarget
+                        }, 'Add Brand'),
+                        h('button', {
+                            className: 'btn btn-secondary',
+                            onClick: () => {
+                                setShowAddBrand(false);
+                                setNewBrandName('');
+                                setNewBrandTarget(0);
+                            }
+                        }, 'Cancel')
                     )
                 )
             ),
