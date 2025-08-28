@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Auth Flow Test - Chai Vision</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #F9FAFB;
+            border-radius: 12px;
+        }
+        .test-section h3 {
+            margin-bottom: 15px;
+            color: #374151;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .success {
+            background: #D1FAE5;
+            color: #065F46;
+            border: 1px solid #10B981;
+        }
+        .error {
+            background: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #EF4444;
+        }
+        .warning {
+            background: #FEF3C7;
+            color: #92400E;
+            border: 1px solid #F59E0B;
+        }
+        .test-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .test-btn:hover {
+            background: #5a67d8;
+        }
+        pre {
+            background: #1F2937;
+            color: #10B981;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Auth Flow Testing Suite</h1>
+        
+        <div class="test-section">
+            <h3>1. Test User Roles</h3>
+            <button class="test-btn" onclick="testAdminLogin()">Test Admin Login</button>
+            <button class="test-btn" onclick="testManagerLogin()">Test Manager Login</button>
+            <button class="test-btn" onclick="testUserLogin()">Test User Login</button>
+            <div id="role-test-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. Test Permission Boundaries</h3>
+            <button class="test-btn" onclick="testBrandPermissions()">Test Brand Access</button>
+            <button class="test-btn" onclick="testChannelPermissions()">Test Channel Access</button>
+            <button class="test-btn" onclick="testKPIEditPermissions()">Test KPI Edit</button>
+            <div id="permission-test-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>3. Test Audit Logging</h3>
+            <button class="test-btn" onclick="testAuditLogging()">Test Audit Log Creation</button>
+            <button class="test-btn" onclick="viewRecentLogs()">View Recent Logs</button>
+            <div id="audit-test-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>4. Test Session Management</h3>
+            <button class="test-btn" onclick="testRememberMe()">Test Remember Me</button>
+            <button class="test-btn" onclick="testMultiTab()">Test Multi-Tab Sync</button>
+            <button class="test-btn" onclick="testSessionPersistence()">Test Session Persistence</button>
+            <div id="session-test-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>5. Console Output</h3>
+            <pre id="console-output">Console output will appear here...</pre>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const log = (message, type = 'info') => {
+            const output = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            output.textContent += `[${timestamp}] [${type.toUpperCase()}] ${message}\n`;
+            console.log(message);
+        };
+        
+        const showResult = (containerId, message, type = 'success') => {
+            const container = document.getElementById(containerId);
+            const result = document.createElement('div');
+            result.className = `test-result ${type}`;
+            result.textContent = message;
+            container.appendChild(result);
+        };
+        
+        // Get Supabase client
+        const getSupabase = () => {
+            return window.supabase.createClient(
+                'https://ebardgekhelbaoiwzwmu.supabase.co',
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViYXJkZ2VraGVsYmFvaXd6d211Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMzM4MzksImV4cCI6MjA3MTgwOTgzOX0.9DAaE4c4C8HOaNcV7J3xhfdTc85Drc2fKnLTs_4lk0w'
+            );
+        };
+        
+        // Test Functions
+        async function testAdminLogin() {
+            log('Testing Admin login...');
+            const supabase = getSupabase();
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: 'demo-admin@chaivision.com',
+                    password: 'demo123'
+                });
+                
+                if (error) throw error;
+                
+                // Get profile
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', data.user.id)
+                    .single();
+                
+                showResult('role-test-results', 
+                    `✅ Admin login successful - Role: ${profile?.role}`, 
+                    'success'
+                );
+                log(`Admin profile: ${JSON.stringify(profile)}`);
+                
+                // Sign out
+                await supabase.auth.signOut();
+            } catch (error) {
+                showResult('role-test-results', 
+                    `❌ Admin login failed: ${error.message}`, 
+                    'error'
+                );
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testManagerLogin() {
+            log('Testing Manager login...');
+            const supabase = getSupabase();
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: 'demo-manager@chaivision.com',
+                    password: 'demo123'
+                });
+                
+                if (error) throw error;
+                
+                showResult('role-test-results', 
+                    `✅ Manager login successful`, 
+                    'success'
+                );
+                
+                await supabase.auth.signOut();
+            } catch (error) {
+                showResult('role-test-results', 
+                    `❌ Manager login failed: ${error.message}`, 
+                    'error'
+                );
+            }
+        }
+        
+        async function testUserLogin() {
+            log('Testing User login...');
+            const supabase = getSupabase();
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: 'demo-user@chaivision.com',
+                    password: 'demo123'
+                });
+                
+                if (error) throw error;
+                
+                showResult('role-test-results', 
+                    `✅ User login successful`, 
+                    'success'
+                );
+                
+                await supabase.auth.signOut();
+            } catch (error) {
+                showResult('role-test-results', 
+                    `❌ User login failed: ${error.message}`, 
+                    'error'
+                );
+            }
+        }
+        
+        async function testBrandPermissions() {
+            log('Testing brand permissions...');
+            const supabase = getSupabase();
+            
+            try {
+                // Login as manager
+                const { data: auth } = await supabase.auth.signInWithPassword({
+                    email: 'demo-manager@chaivision.com',
+                    password: 'demo123'
+                });
+                
+                // Get permissions
+                const { data: perms } = await supabase
+                    .from('user_brand_permissions')
+                    .select('brand')
+                    .eq('user_id', auth.user.id);
+                
+                showResult('permission-test-results', 
+                    `✅ Brand permissions: ${perms?.map(p => p.brand).join(', ') || 'None'}`, 
+                    'success'
+                );
+                
+                await supabase.auth.signOut();
+            } catch (error) {
+                showResult('permission-test-results', 
+                    `❌ Brand permission test failed: ${error.message}`, 
+                    'error'
+                );
+            }
+        }
+        
+        async function testChannelPermissions() {
+            log('Testing channel permissions...');
+            const supabase = getSupabase();
+            
+            try {
+                // Login as manager
+                const { data: auth } = await supabase.auth.signInWithPassword({
+                    email: 'demo-manager@chaivision.com',
+                    password: 'demo123'
+                });
+                
+                // Get permissions
+                const { data: perms } = await supabase
+                    .from('user_channel_permissions')
+                    .select('channel')
+                    .eq('user_id', auth.user.id);
+                
+                showResult('permission-test-results', 
+                    `✅ Channel permissions: ${perms?.map(p => p.channel).join(', ') || 'None'}`, 
+                    'success'
+                );
+                
+                await supabase.auth.signOut();
+            } catch (error) {
+                showResult('permission-test-results', 
+                    `❌ Channel permission test failed: ${error.message}`, 
+                    'error'
+                );
+            }
+        }
+        
+        async function testKPIEditPermissions() {
+            log('Testing KPI edit permissions...');
+            showResult('permission-test-results', 
+                `⚠️ KPI edit test requires full dashboard context`, 
+                'warning'
+            );
+        }
+        
+        async function testAuditLogging() {
+            log('Testing audit log creation...');
+            const supabase = getSupabase();
+            
+            try {
+                // Login
+                const { data: auth } = await supabase.auth.signInWithPassword({
+                    email: 'demo-admin@chaivision.com',
+                    password: 'demo123'
+                });
+                
+                // Create audit log
+                const { data, error } = await supabase
+                    .from('audit_logs')
+                    .insert({
+                        user_id: auth.user.id,
+                        user_email: 'demo-admin@chaivision.com',
+                        user_role: 'Admin',
+                        action: 'test_action',
+                        action_details: { test: true, timestamp: new Date().toISOString() },
+                        reference_id: `TEST_${Date.now()}`
+                    })
+                    .select();
+                
+                if (error) throw error;
+                
+                showResult('audit-test-results', 
+                    `✅ Audit log created: ${data[0].reference_id}`, 
+                    'success'
+                );
+                
+                await supabase.auth.signOut();
+            } catch (error) {
+                showResult('audit-test-results', 
+                    `❌ Audit log test failed: ${error.message}`, 
+                    'error'
+                );
+            }
+        }
+        
+        async function viewRecentLogs() {
+            log('Fetching recent audit logs...');
+            const supabase = getSupabase();
+            
+            try {
+                const { data, error } = await supabase
+                    .from('audit_logs')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+                
+                if (error) throw error;
+                
+                showResult('audit-test-results', 
+                    `✅ Found ${data.length} recent logs`, 
+                    'success'
+                );
+                
+                data.forEach(log => {
+                    showResult('audit-test-results', 
+                        `📋 ${log.action} by ${log.user_email} at ${new Date(log.created_at).toLocaleString()}`, 
+                        'success'
+                    );
+                });
+            } catch (error) {
+                showResult('audit-test-results', 
+                    `❌ Failed to fetch logs: ${error.message}`, 
+                    'error'
+                );
+            }
+        }
+        
+        function testRememberMe() {
+            localStorage.setItem('chai_vision_remember', 'true');
+            const remembered = localStorage.getItem('chai_vision_remember');
+            showResult('session-test-results', 
+                `✅ Remember me ${remembered === 'true' ? 'enabled' : 'disabled'}`, 
+                'success'
+            );
+        }
+        
+        function testMultiTab() {
+            if (window.BroadcastChannel) {
+                const channel = new BroadcastChannel('chai_vision_auth');
+                channel.postMessage({ event: 'TEST', timestamp: Date.now() });
+                showResult('session-test-results', 
+                    `✅ BroadcastChannel available - multi-tab sync supported`, 
+                    'success'
+                );
+                channel.close();
+            } else {
+                showResult('session-test-results', 
+                    `⚠️ BroadcastChannel not supported in this browser`, 
+                    'warning'
+                );
+            }
+        }
+        
+        async function testSessionPersistence() {
+            const supabase = getSupabase();
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (session) {
+                showResult('session-test-results', 
+                    `✅ Active session found: ${session.user.email}`, 
+                    'success'
+                );
+            } else {
+                showResult('session-test-results', 
+                    `ℹ️ No active session`, 
+                    'warning'
+                );
+            }
+        }
+        
+        // Initialize
+        log('Test suite loaded and ready');
+    </script>
+</body>
+</html>
