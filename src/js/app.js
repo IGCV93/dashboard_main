@@ -1,6 +1,7 @@
 /**
  * Chai Vision Dashboard - Main Application Module
  * Entry point for the dashboard application
+ * ENHANCED WITH AUTHENTICATION AND PERMISSIONS
  */
 
 (function() {
@@ -141,6 +142,44 @@
             }
         };
     }
+    
+    /**
+     * Setup event listeners
+     */
+    function setupEventListeners() {
+        // Global error handler
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+        });
+    }
+    
+    /**
+     * Show error message
+     */
+    function showErrorMessage(message) {
+        const root = document.getElementById('root');
+        if (root) {
+            root.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px;">
+                    <div style="text-align: center; max-width: 500px;">
+                        <h2 style="color: #EF4444;">Error</h2>
+                        <p style="color: #6B7280;">${message}</p>
+                        <button onclick="window.location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                            Reload Page
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    /**
+     * Show success message
+     */
+    window.showSuccessMessage = function(message) {
+        console.log('✅', message);
+        // Could implement toast notification here
+    };
 
     /**
      * Initialize React application
@@ -148,7 +187,7 @@
     function initializeReactApp(config) {
         const { useState, useEffect, useMemo, useRef, createElement: h } = React;
         
-        // Get helper functions
+        // Helper functions
         const getCurrentQuarter = () => {
             const month = new Date().getMonth();
             return `Q${Math.floor(month / 3) + 1}`;
@@ -271,9 +310,19 @@
                 return channels.filter(channel => userPermissions.channels.includes(channel));
             }, [channels, userPermissions, currentUser]);
             
+            // Set default brand on permission change
+            useEffect(() => {
+                if (availableBrands.length > 0 && !availableBrands.includes(selectedBrand)) {
+                    if (availableBrands.includes('All Brands')) {
+                        setSelectedBrand('All Brands');
+                    } else {
+                        setSelectedBrand(availableBrands[0]);
+                    }
+                }
+            }, [availableBrands]);
+            
             // Handle login
             const handleLogin = async (user) => {
-                // Set permissions based on role or fetch from database
                 let permissions = { brands: [], channels: [] };
                 
                 if (config.FEATURES.ENABLE_SUPABASE && APP_STATE.supabaseClient) {
@@ -298,10 +347,10 @@
                     // Demo mode permissions
                     if (user.role === 'Admin') {
                         permissions = { brands: ['All Brands'], channels: ['All Channels'] };
-                    } else if (user.email === 'john@chaivision.com') {
+                    } else if (user.email === 'demo-manager@chaivision.com') {
                         permissions = { brands: ['LifePro', 'PetCove'], channels: ['Amazon', 'TikTok', 'DTC-Shopify'] };
-                    } else if (user.email === 'sarah@chaivision.com') {
-                        permissions = { brands: ['Joyberri', 'Oaktiv'], channels: ['Retail', 'Wholesale'] };
+                    } else if (user.email === 'demo-user@chaivision.com') {
+                        permissions = { brands: ['LifePro'], channels: ['Amazon', 'TikTok'] };
                     }
                 }
                 
@@ -318,8 +367,8 @@
                     localStorage.setItem('chai_vision_user_session', JSON.stringify(fullUser));
                 }
                 
-                // Set default brand if user only has access to one
-                if (permissions.brands.length === 1 && !permissions.brands.includes('All Brands')) {
+                // Set default brand if user only has access to specific brands
+                if (permissions.brands.length > 0 && !permissions.brands.includes('All Brands')) {
                     setSelectedBrand(permissions.brands[0]);
                 }
                 
@@ -358,7 +407,7 @@
                 }
             }
             
-            // Regenerate sample data when brands change
+            // Regenerate sample data when brands/permissions change
             useEffect(() => {
                 if (isAuthenticated && availableBrands.length > 0) {
                     regenerateSampleData();
@@ -441,10 +490,9 @@
                         await APP_STATE.dataService.updateSettings(updatedData);
                     }
                     
-                    showSuccessMessage('Settings updated successfully');
+                    window.showSuccessMessage && window.showSuccessMessage('Settings updated successfully');
                 } catch (err) {
                     console.error('Failed to update settings:', err);
-                    showErrorMessage('Failed to update settings');
                 }
             };
             
@@ -453,10 +501,9 @@
                 try {
                     const mergedData = [...salesData, ...uploadedData];
                     setSalesData(mergedData);
-                    showSuccessMessage(`Successfully uploaded ${uploadedData.length} records`);
+                    window.showSuccessMessage && window.showSuccessMessage(`Successfully uploaded ${uploadedData.length} records`);
                 } catch (err) {
                     console.error('Failed to process upload:', err);
-                    showErrorMessage('Failed to process uploaded data');
                 }
             };
             
@@ -507,7 +554,7 @@
                 userRole: currentUser?.role
             }) : null;
             
-            // Render sidebar based on user role
+            // Render sidebar
             const sidebar = Sidebar ? h(Sidebar, {
                 activeSection,
                 setActiveSection,
@@ -547,7 +594,8 @@
                             dataService: APP_STATE.dataService,
                             dynamicBrands: availableBrands,
                             dynamicTargets,
-                            userRole: currentUser?.role
+                            userRole: currentUser?.role,
+                            userPermissions  // Added permission passing
                         }) : h('div', null, 'Dashboard component not found');
                         
                     case 'settings':
@@ -563,7 +611,9 @@
                             targets: dynamicTargets,
                             channels: availableChannels,
                             onUpdate: handleSettingsUpdate,
-                            userRole: currentUser?.role
+                            userRole: currentUser?.role,
+                            userPermissions,  // Added permission passing
+                            currentUser      // Added current user for audit logging
                         }) : h('div', null, 'Settings component not found');
                         
                     case 'upload':
@@ -580,7 +630,9 @@
                             config,
                             brands: availableBrands,
                             channels: availableChannels,
-                            userRole: currentUser?.role
+                            userRole: currentUser?.role,
+                            userPermissions,  // Added permission passing
+                            currentUser      // Added current user for audit logging
                         }) : h('div', null, 'Upload component not found');
                         
                     case 'users':
@@ -619,8 +671,6 @@
         ReactDOM.render(React.createElement(App), document.getElementById('root'));
     }
 
-    // ... rest of helper functions (showSuccessMessage, etc.) remain the same ...
-    
     // Export functions and state
     window.APP_STATE = APP_STATE;
     window.initializeApp = initializeApp;
