@@ -1,12 +1,12 @@
 /**
- * Charts Component - Data visualization charts
+ * Charts Component - Data visualization charts with performance optimizations
  */
 
 (function() {
     'use strict';
     
     function Charts(props) {
-        const { useState, useEffect, useMemo, useRef, createElement: h } = React;
+        const { useState, useEffect, useMemo, useRef, useCallback, createElement: h } = React;
         
         const {
             kpis,
@@ -24,6 +24,11 @@
         const lineChartInstance = useRef(null);
         const barChartInstance = useRef(null);
         const pieChartInstance = useRef(null);
+        
+        // Performance optimizations
+        const [isChartsVisible, setIsChartsVisible] = useState(false);
+        const [chartData, setChartData] = useState(null);
+        const chartUpdateTimeout = useRef(null);
         
         // Get formatters from window
         const { formatCurrency } = window.formatters || {};
@@ -46,7 +51,7 @@
         };
         
         // Get display title helper
-        const getDisplayTitle = () => {
+        const getDisplayTitle = useCallback(() => {
             let periodText = '';
             if (view === 'annual') {
                 periodText = selectedYear;
@@ -58,25 +63,18 @@
                 periodText = `${monthNames[selectedMonth]} ${selectedYear}`;
             }
             return periodText;
-        };
+        }, [view, selectedPeriod, selectedMonth, selectedYear]);
         
-        // Create/Update charts
-        useEffect(() => {
-            if (!lineChartRef.current || !barChartRef.current || !pieChartRef.current) return;
+        // Optimized data processing with memoization
+        const processedChartData = useMemo(() => {
+            if (!kpis || !kpis.filteredData) return null;
             
-            // Destroy existing charts
-            if (lineChartInstance.current) lineChartInstance.current.destroy();
-            if (barChartInstance.current) barChartInstance.current.destroy();
-            if (pieChartInstance.current) pieChartInstance.current.destroy();
-            
-            // Filter channels for display
+            const filteredSalesData = kpis.filteredData;
             const displayChannels = ALL_CHANNELS.filter(ch => selectedChannels.includes(ch));
             
             // Prepare trend data based on view
             let trendLabels = [];
             let trendData = [];
-            
-            const filteredSalesData = kpis.filteredData || [];
             
             if (view === 'annual') {
                 // Show monthly trends for the year
@@ -101,6 +99,7 @@
                     'Q3': [{ num: '07', name: 'July' }, { num: '08', name: 'August' }, { num: '09', name: 'September' }],
                     'Q4': [{ num: '10', name: 'October' }, { num: '11', name: 'November' }, { num: '12', name: 'December' }]
                 };
+                
                 const months = quarterMonths[selectedPeriod] || [];
                 trendLabels = months.map(m => m.name);
                 
@@ -115,102 +114,215 @@
                 });
             } else if (view === 'monthly') {
                 // Show daily trends within the month
-                const year = parseInt(selectedYear);
-                const month = parseInt(selectedMonth) - 1;
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+                trendLabels = Array.from({length: daysInMonth}, (_, i) => (i + 1).toString());
                 
                 for (let day = 1; day <= daysInMonth; day++) {
-                    trendLabels.push(day.toString());
-                    const dayStr = `${selectedYear}-${selectedMonth.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                    const dayData = filteredSalesData.filter(d => d.date === dayStr);
+                    const dayStr = day.toString().padStart(2, '0');
+                    const monthStr = selectedMonth.toString().padStart(2, '0');
+                    const dayData = filteredSalesData.filter(d => {
+                        if (!d.date) return false;
+                        const [year, month, d] = d.date.split('-');
+                        return year === selectedYear && month === monthStr && d === dayStr;
+                    });
                     const dayRevenue = dayData.reduce((sum, d) => sum + (d.revenue || 0), 0);
                     trendData.push(dayRevenue);
                 }
             }
             
-            // Add a target line for comparison
-            const targetLine = [];
-            if (view === 'annual') {
-                // Monthly targets (annual target / 12)
-                const monthlyTarget = kpis.totalTarget85 / 12;
-                for (let i = 0; i < 12; i++) {
-                    targetLine.push(monthlyTarget);
-                }
-            } else if (view === 'quarterly') {
-                // Monthly targets within quarter (quarterly target / 3)
-                const monthlyTarget = kpis.totalTarget85 / 3;
-                for (let i = 0; i < 3; i++) {
-                    targetLine.push(monthlyTarget);
-                }
-            } else if (view === 'monthly') {
-                // Daily targets (monthly target / days in month)
-                const dailyTarget = kpis.totalTarget85 / kpis.daysInPeriod;
-                for (let i = 0; i < trendLabels.length; i++) {
-                    targetLine.push(dailyTarget);
-                }
+            // Prepare channel breakdown data
+            const channelData = displayChannels.map(channel => {
+                const channelSales = filteredSalesData.filter(d => d.channel === channel);
+                const totalRevenue = channelSales.reduce((sum, d) => sum + (d.revenue || 0), 0);
+                return {
+                    channel,
+                    revenue: totalRevenue,
+                    color: CHANNEL_COLORS[channel] || '#6B7280'
+                };
+            }).sort((a, b) => b.revenue - a.revenue);
+            
+            return {
+                trendLabels,
+                trendData,
+                channelData,
+                totalRevenue: trendData.reduce((sum, val) => sum + val, 0)
+            };
+        }, [kpis, selectedChannels, view, selectedPeriod, selectedMonth, selectedYear, ALL_CHANNELS, CHANNEL_COLORS]);
+        
+        // Debounced chart update
+        const updateCharts = useCallback(() => {
+            if (chartUpdateTimeout.current) {
+                clearTimeout(chartUpdateTimeout.current);
             }
             
-            // Bar Chart - Channel Comparison
-            const barCtx = barChartRef.current.getContext('2d');
-            barChartInstance.current = new Chart(barCtx, {
-                type: 'bar',
+            chartUpdateTimeout.current = setTimeout(() => {
+                if (!processedChartData) return;
+                
+                // Update chart data state
+                setChartData(processedChartData);
+                
+                // Create/Update charts
+                createCharts(processedChartData);
+            }, 100);
+        }, [processedChartData]);
+        
+        // Create charts with performance optimizations
+        const createCharts = useCallback((data) => {
+            if (!data || !lineChartRef.current || !barChartRef.current || !pieChartRef.current) return;
+            
+            // Destroy existing charts to prevent memory leaks
+            destroyCharts();
+            
+            // Create new charts
+            createLineChart(data);
+            createBarChart(data);
+            createPieChart(data);
+        }, []);
+        
+        // Destroy charts to prevent memory leaks
+        const destroyCharts = useCallback(() => {
+            if (lineChartInstance.current) {
+                lineChartInstance.current.destroy();
+                lineChartInstance.current = null;
+            }
+            if (barChartInstance.current) {
+                barChartInstance.current.destroy();
+                barChartInstance.current = null;
+            }
+            if (pieChartInstance.current) {
+                pieChartInstance.current.destroy();
+                pieChartInstance.current = null;
+            }
+        }, []);
+        
+        // Create line chart
+        const createLineChart = useCallback((data) => {
+            if (!lineChartRef.current || !data.trendLabels || !data.trendData) return;
+            
+            const ctx = lineChartRef.current.getContext('2d');
+            
+            lineChartInstance.current = new Chart(ctx, {
+                type: 'line',
                 data: {
-                    labels: displayChannels,
-                    datasets: [
-                        {
-                            label: 'Actual Revenue',
-                            data: displayChannels.map(ch => kpis.channelRevenues[ch] || 0),
-                            backgroundColor: displayChannels.map(ch => (CHANNEL_COLORS[ch] || '#667eea') + '99'),
-                            borderColor: displayChannels.map(ch => CHANNEL_COLORS[ch] || '#667eea'),
-                            borderWidth: 2
-                        },
-                        {
-                            label: '85% Target',
-                            data: displayChannels.map(ch => kpis.channelTargets85[ch] || 0),
-                            backgroundColor: 'rgba(251, 191, 36, 0.3)',
-                            borderColor: 'rgb(251, 191, 36)',
-                            borderWidth: 2
-                        }
-                    ]
+                    labels: data.trendLabels,
+                    datasets: [{
+                        label: 'Revenue Trend',
+                        data: data.trendData,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#667eea',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: {
+                        title: {
                             display: true,
-                            position: 'top'
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: (context) => {
-                                    const value = context.parsed.y;
-                                    return `${context.dataset.label}: ${formatCurrency ? formatCurrency(value) : '$' + value}`;
-                                }
+                            text: `Revenue Trend - ${getDisplayTitle()}`,
+                            font: {
+                                size: 16,
+                                weight: 'bold'
                             }
+                        },
+                        legend: {
+                            display: false
                         }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                callback: (value) => formatCurrency ? formatCurrency(value) : '$' + value
+                                callback: function(value) {
+                                    return formatCurrency ? formatCurrency(value) : `$${value.toLocaleString()}`;
+                                }
                             }
                         }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    animation: {
+                        duration: 750
                     }
                 }
             });
+        }, [getDisplayTitle, formatCurrency]);
+        
+        // Create bar chart
+        const createBarChart = useCallback((data) => {
+            if (!barChartRef.current || !data.channelData) return;
             
-            // Pie Chart - Revenue Distribution
-            const pieCtx = pieChartRef.current.getContext('2d');
-            pieChartInstance.current = new Chart(pieCtx, {
+            const ctx = barChartRef.current.getContext('2d');
+            
+            barChartInstance.current = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.channelData.map(d => d.channel),
+                    datasets: [{
+                        label: 'Channel Revenue',
+                        data: data.channelData.map(d => d.revenue),
+                        backgroundColor: data.channelData.map(d => d.color),
+                        borderColor: data.channelData.map(d => d.color),
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Channel Performance - ${getDisplayTitle()}`,
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency ? formatCurrency(value) : `$${value.toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 750
+                    }
+                }
+            });
+        }, [getDisplayTitle, formatCurrency]);
+        
+        // Create pie chart
+        const createPieChart = useCallback((data) => {
+            if (!pieChartRef.current || !data.channelData) return;
+            
+            const ctx = pieChartRef.current.getContext('2d');
+            
+            pieChartInstance.current = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: displayChannels,
+                    labels: data.channelData.map(d => d.channel),
                     datasets: [{
-                        data: displayChannels.map(ch => kpis.channelRevenues[ch] || 0),
-                        backgroundColor: displayChannels.map(ch => (CHANNEL_COLORS[ch] || '#667eea') + '99'),
-                        borderColor: displayChannels.map(ch => CHANNEL_COLORS[ch] || '#667eea'),
+                        data: data.channelData.map(d => d.revenue),
+                        backgroundColor: data.channelData.map(d => d.color),
+                        borderColor: '#ffffff',
                         borderWidth: 2
                     }]
                 },
@@ -218,186 +330,165 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: {
+                        title: {
                             display: true,
-                            position: 'right'
+                            text: `Revenue Distribution - ${getDisplayTitle()}`,
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
+                            }
                         },
                         tooltip: {
                             callbacks: {
-                                label: (context) => {
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                                label: function(context) {
                                     const value = context.parsed;
-                                    return `${context.label}: ${formatCurrency ? formatCurrency(value) : '$' + value} (${percentage}%)`;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${context.label}: ${formatCurrency ? formatCurrency(value) : `$${value.toLocaleString()}`} (${percentage}%)`;
                                 }
                             }
                         }
+                    },
+                    animation: {
+                        duration: 750
                     }
                 }
             });
-            
-            // Line Chart - Revenue Trend (Updated with target line and enhanced styling)
-            const lineCtx = lineChartRef.current.getContext('2d');
-            
-            lineChartInstance.current = new Chart(lineCtx, {
-                type: 'line',
-                data: {
-                    labels: trendLabels,
-                    datasets: [
-                        {
-                            label: view === 'annual' ? 'Monthly Revenue' : 
-                                   view === 'quarterly' ? 'Monthly Revenue' : 
-                                   'Daily Revenue',
-                            data: trendData,
-                            borderColor: 'rgb(102, 126, 234)',
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                            tension: 0.4,
-                            fill: true,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            pointBackgroundColor: 'rgb(102, 126, 234)',
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 2
-                        },
-                        {
-                            label: '85% Target Line',
-                            data: targetLine,
-                            borderColor: 'rgba(251, 191, 36, 0.8)',
-                            backgroundColor: 'transparent',
-                            borderDash: [5, 5],
-                            borderWidth: 2,
-                            pointRadius: 0,
-                            pointHoverRadius: 0,
-                            fill: false
+        }, [getDisplayTitle, formatCurrency]);
+        
+        // Intersection Observer for lazy loading
+        useEffect(() => {
+            const observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            setIsChartsVisible(true);
+                            observer.disconnect();
                         }
-                    ]
+                    });
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: (context) => {
-                                    if (context.dataset.label.includes('Target')) {
-                                        return `Target: ${formatCurrency ? formatCurrency(context.parsed.y) : '$' + context.parsed.y}`;
-                                    }
-                                    return `Revenue: ${formatCurrency ? formatCurrency(context.parsed.y) : '$' + context.parsed.y}`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: (value) => formatCurrency ? formatCurrency(value) : '$' + value
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                maxRotation: view === 'monthly' ? 45 : 0,
-                                minRotation: view === 'monthly' ? 45 : 0
-                            }
-                        }
-                    }
+                { threshold: 0.1 }
+            );
+            
+            const chartsContainer = document.querySelector('.charts-container');
+            if (chartsContainer) {
+                observer.observe(chartsContainer);
+            }
+            
+            return () => observer.disconnect();
+        }, []);
+        
+        // Update charts when data changes
+        useEffect(() => {
+            if (isChartsVisible && processedChartData) {
+                updateCharts();
+            }
+        }, [isChartsVisible, processedChartData, updateCharts]);
+        
+        // Cleanup on unmount
+        useEffect(() => {
+            return () => {
+                destroyCharts();
+                if (chartUpdateTimeout.current) {
+                    clearTimeout(chartUpdateTimeout.current);
+                }
+            };
+        }, [destroyCharts]);
+        
+        // Channel selection handler with debouncing
+        const handleChannelToggle = useCallback((channel) => {
+            setSelectedChannels(prev => {
+                if (prev.includes(channel)) {
+                    return prev.filter(ch => ch !== channel);
+                } else {
+                    return [...prev, channel];
                 }
             });
-            
-        }, [kpis, selectedChannels, view, selectedPeriod, selectedMonth, selectedYear]);
+        }, [setSelectedChannels]);
         
-        // Handle channel selection toggle
-        const handleChannelToggle = (channel) => {
-            if (selectedChannels.includes(channel)) {
-                setSelectedChannels(selectedChannels.filter(ch => ch !== channel));
-            } else {
-                setSelectedChannels([...selectedChannels, channel]);
-            }
-        };
+        if (!isChartsVisible) {
+            return h('div', { className: 'charts-container' },
+                h('div', { className: 'charts-loading' },
+                    h('div', { className: 'loading-spinner' }),
+                    h('p', null, 'Loading charts...')
+                )
+            );
+        }
         
-        return h('div', null,
-            // Charts Section
-            h('div', { className: 'chart-card' },
-                h('div', { className: 'chart-header' },
-                    h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' } },
-                        h('h3', { className: 'chart-title' }, '📊 Channel Performance Analysis'),
-                        h('div', { className: 'chart-filters' },
-                            h('span', { className: 'filter-label' }, 'Show Channels:'),
-                            h('div', { className: 'filter-buttons' },
-                                ...ALL_CHANNELS.map(channel =>
-                                    h('button', {
-                                        key: channel,
-                                        className: `filter-btn ${selectedChannels.includes(channel) ? 'selected' : ''}`,
-                                        onClick: () => handleChannelToggle(channel),
-                                        style: {
-                                            backgroundColor: selectedChannels.includes(channel) ? CHANNEL_COLORS[channel] : 'transparent',
-                                            borderColor: CHANNEL_COLORS[channel]
-                                        }
-                                    }, channel)
-                                )
-                            )
-                        )
-                    )
-                ),
-                h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' } },
-                    h('div', null,
-                        h('h4', { style: { marginBottom: '12px' } }, 'Revenue by Channel'),
-                        h('div', { className: 'chart-container' },
-                            h('canvas', { ref: barChartRef })
-                        )
-                    ),
-                    h('div', null,
-                        h('h4', { style: { marginBottom: '12px' } }, 'Channel Distribution'),
-                        h('div', { className: 'chart-container' },
-                            h('canvas', { ref: pieChartRef })
+        return h('div', { className: 'charts-container' },
+            // Chart controls
+            h('div', { className: 'chart-controls' },
+                h('div', { className: 'channel-selector' },
+                    h('h3', null, 'Select Channels:'),
+                    h('div', { className: 'channel-buttons' },
+                        ALL_CHANNELS.map(channel => 
+                            h('button', {
+                                key: channel,
+                                className: `channel-btn ${selectedChannels.includes(channel) ? 'active' : ''}`,
+                                onClick: () => handleChannelToggle(channel),
+                                style: {
+                                    backgroundColor: selectedChannels.includes(channel) ? CHANNEL_COLORS[channel] : 'transparent',
+                                    borderColor: CHANNEL_COLORS[channel],
+                                    color: selectedChannels.includes(channel) ? 'white' : CHANNEL_COLORS[channel]
+                                }
+                            }, channel)
                         )
                     )
                 )
             ),
             
-            // Revenue Trend Chart with enhanced header
-            h('div', { className: 'chart-card' },
-                h('div', { className: 'chart-header' },
-                    h('div', null,
-                        h('h3', { className: 'chart-title' }, 
-                            view === 'annual' ? '📈 Monthly Revenue Trend' :
-                            view === 'quarterly' ? '📈 Monthly Revenue Trend' :
-                            '📈 Daily Revenue Trend'
-                        ),
-                        h('p', { 
-                            style: { 
-                                fontSize: '13px', 
-                                color: '#6B7280', 
-                                marginTop: '4px' 
-                            }
-                        }, 
-                            view === 'annual' ? `Showing all 12 months of ${selectedYear}` :
-                            view === 'quarterly' ? `Showing 3 months in ${selectedPeriod} ${selectedYear}` :
-                            `Showing daily performance for ${getDisplayTitle()}`
-                        )
+            // Charts grid
+            h('div', { className: 'charts-grid' },
+                // Line chart
+                h('div', { className: 'chart-card' },
+                    h('div', { className: 'chart-header' },
+                        h('h3', null, 'Revenue Trend'),
+                        h('p', null, getDisplayTitle())
+                    ),
+                    h('div', { className: 'chart-container' },
+                        h('canvas', { ref: lineChartRef })
                     )
                 ),
-                h('div', { className: 'chart-container' },
-                    h('canvas', { ref: lineChartRef })
+                
+                // Bar chart
+                h('div', { className: 'chart-card' },
+                    h('div', { className: 'chart-header' },
+                        h('h3', null, 'Channel Performance'),
+                        h('p', null, getDisplayTitle())
+                    ),
+                    h('div', { className: 'chart-container' },
+                        h('canvas', { ref: barChartRef })
+                    )
+                ),
+                
+                // Pie chart
+                h('div', { className: 'chart-card full-width' },
+                    h('div', { className: 'chart-header' },
+                        h('h3', null, 'Revenue Distribution'),
+                        h('p', null, getDisplayTitle())
+                    ),
+                    h('div', { className: 'chart-container' },
+                        h('canvas', { ref: pieChartRef })
+                    )
                 )
             )
         );
     }
     
-    // Make Charts available globally
+    // Make available globally
     window.Charts = Charts;
+    
+    // Also add to ChaiVision namespace
     window.ChaiVision = window.ChaiVision || {};
     window.ChaiVision.components = window.ChaiVision.components || {};
     window.ChaiVision.components.Charts = Charts;
+    
+    console.log('✅ Charts component loaded with performance optimizations');
 })();

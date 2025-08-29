@@ -1,6 +1,6 @@
 /**
  * Chai Vision Dashboard - Configuration Module
- * Central configuration for all application settings
+ * Central configuration for all application settings with performance optimizations
  */
 
 (function() {
@@ -99,120 +99,37 @@
                     path: '/',
                     sameSite: 'lax'
                 }
+            },
+            
+            // Performance settings for Supabase
+            PERFORMANCE: {
+                CONNECTION_POOL_SIZE: 10,
+                REQUEST_TIMEOUT: 30000,
+                RETRY_ATTEMPTS: 3,
+                RETRY_DELAY: 1000,
+                BATCH_SIZE: 1000,
+                CACHE_DURATION: 5 * 60 * 1000 // 5 minutes
             }
         },
 
         // Feature Flags
         FEATURES: {
-            ENABLE_SUPABASE: false, // Temporarily disabled to fix auth loop
-            ENABLE_DEMO_MODE: true, // Keep demo mode available
-            ENABLE_DARK_MODE: false,
-            ENABLE_EXPORT: true,
-            ENABLE_NOTIFICATIONS: false, // Set to false as per requirements
-            ENABLE_ADVANCED_ANALYTICS: false,
-            ENABLE_AI_INSIGHTS: false,
-            ENABLE_AUTH: true, // Enable authentication
-            REQUIRE_LOGIN: true, // Require login to access dashboard
-            ENABLE_PASSWORD_RESET: true, // Enable password reset functionality
-            ENABLE_USER_MANAGEMENT: true, // Enable user management for admins
-            ENABLE_AUDIT_LOGS: true, // Enable audit logging
-            ENABLE_USER_PREFERENCES: true // Enable saving user preferences
-        },
-
-        // User Roles Configuration
-        ROLES: {
-            ADMIN: 'Admin',
-            MANAGER: 'Manager',
-            USER: 'User',
-            
-            // Role permissions
-            PERMISSIONS: {
-                'Admin': {
-                    canViewDashboard: true,
-                    canEditKPIs: true,
-                    canUploadData: true,
-                    canManageUsers: true,
-                    canViewAuditLogs: true,
-                    canExportData: true,
-                    canEditSettings: true,
-                    canDeleteData: true
-                },
-                'Manager': {
-                    canViewDashboard: true,
-                    canEditKPIs: true,
-                    canUploadData: true,
-                    canManageUsers: false,
-                    canViewAuditLogs: false,
-                    canExportData: true,
-                    canEditSettings: true,
-                    canDeleteData: false
-                },
-                'User': {
-                    canViewDashboard: true,
-                    canEditKPIs: false,
-                    canUploadData: false,
-                    canManageUsers: false,
-                    canViewAuditLogs: false,
-                    canExportData: false,
-                    canEditSettings: false,
-                    canDeleteData: false
-                }
-            }
-        },
-
-        // Demo Accounts Configuration
-        DEMO_ACCOUNTS: {
-            ENABLED: true,
-            ACCOUNTS: [
-                {
-                    email: 'demo-admin@chaivision.com',
-                    password: 'demo123',
-                    role: 'Admin',
-                    name: 'Demo Admin'
-                },
-                {
-                    email: 'demo-manager@chaivision.com',
-                    password: 'demo123',
-                    role: 'Manager',
-                    name: 'Demo Manager'
-                },
-                {
-                    email: 'demo-user@chaivision.com',
-                    password: 'demo123',
-                    role: 'User',
-                    name: 'Demo User'
-                }
-            ]
-        },
-
-        // Data Settings
-        DATA: {
-            // Cache duration in milliseconds
-            CACHE_DURATION: ENV.PRODUCTION ? 5 * 60 * 1000 : 1000, // 5 min in prod, 1 sec in dev
-            
-            // Max file upload size in bytes (10MB)
-            MAX_UPLOAD_SIZE: 10 * 1024 * 1024,
-            
-            // Supported file formats
-            SUPPORTED_FORMATS: ['.csv', '.xlsx', '.xls'],
-            
-            // Batch size for uploads
-            UPLOAD_BATCH_SIZE: 1000,
-            
-            // Auto-save interval (milliseconds)
-            AUTO_SAVE_INTERVAL: 30000, // 30 seconds
-            
-            // Local storage keys
-            STORAGE_KEYS: {
-                SALES_DATA: 'chai_vision_sales_data',
-                USER_PREFERENCES: 'chai_vision_preferences',
-                CACHED_TARGETS: 'chai_vision_targets',
-                SESSION_DATA: 'chai_vision_session',
-                REMEMBER_ME: 'chai_vision_remember',
-                LAST_SELECTED_BRAND: 'chai_vision_last_brand',
-                LAST_SELECTED_PERIOD: 'chai_vision_last_period',
-                LAST_SELECTED_VIEW: 'chai_vision_last_view'
-            }
+            ENABLE_SUPABASE: true,
+            ENABLE_AUTH: true,
+            ENABLE_DEMO_MODE: true,
+            ENABLE_DARK_MODE: true,
+            ENABLE_NOTIFICATIONS: true,
+            ENABLE_AUDIT_LOGS: true,
+            ENABLE_USER_MANAGEMENT: true,
+            ENABLE_DATA_EXPORT: true,
+            ENABLE_REAL_TIME_UPDATES: false, // Disabled for performance
+            ENABLE_OFFLINE_MODE: true,
+            ENABLE_PWA: false, // Disabled for now
+            ENABLE_ANALYTICS: false, // Disabled for privacy
+            ENABLE_TUTORIALS: false,
+            ENABLE_KEYBOARD_SHORTCUTS: true,
+            ENABLE_AUTO_SAVE: true,
+            ENABLE_BATCH_OPERATIONS: true
         },
 
         // API Endpoints (for future use)
@@ -229,15 +146,23 @@
                 AUTH: '/api/auth'
             },
             TIMEOUT: 30000, // 30 seconds
-            RETRY_ATTEMPTS: 3
+            RETRY_ATTEMPTS: 3,
+            RATE_LIMIT: {
+                REQUESTS_PER_MINUTE: 60,
+                BURST_LIMIT: 10
+            }
         },
 
-        // Chart Configuration
+        // Chart Configuration with performance optimizations
         CHARTS: {
             DEFAULT_HEIGHT: 400,
             ANIMATION_DURATION: 750,
             RESPONSIVE: true,
             MAINTAIN_ASPECT_RATIO: false,
+            LAZY_LOADING: true,
+            VIRTUALIZATION_THRESHOLD: 1000,
+            MAX_DATA_POINTS: 365,
+            REDUCE_MOTION: true,
             
             // Chart.js global defaults
             DEFAULTS: {
@@ -245,7 +170,23 @@
                     family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                     size: 12
                 },
-                color: '#6B7280'
+                color: '#6B7280',
+                animation: {
+                    duration: 750,
+                    easing: 'easeOutQuart'
+                },
+                responsiveAnimationDuration: 500
+            },
+            
+            // Performance settings
+            PERFORMANCE: {
+                ENABLE_LAZY_LOADING: true,
+                ENABLE_VIRTUALIZATION: true,
+                ENABLE_DEBOUNCING: true,
+                DEBOUNCE_DELAY: 100,
+                ENABLE_MEMOIZATION: true,
+                CACHE_DURATION: 5 * 60 * 1000, // 5 minutes
+                MAX_CACHE_SIZE: 50 // Maximum number of cached chart configurations
             }
         },
 
@@ -258,75 +199,264 @@
             TIMEZONE: 'America/New_York',
             DEFAULT_PERIOD: 'quarterly',
             DEFAULT_QUARTER: 'Q4', // Current quarter
-            DEFAULT_YEAR: '2025'
+            DEFAULT_YEAR: '2025',
+            CACHE_DURATION: 24 * 60 * 60 * 1000 // 24 hours
         },
 
-        // Performance Settings
+        // Performance Settings - Enhanced
         PERFORMANCE: {
+            // Debouncing and throttling
             DEBOUNCE_DELAY: 300,
             THROTTLE_DELAY: 100,
+            SEARCH_DEBOUNCE: 500,
+            SCROLL_THROTTLE: 16, // ~60fps
+            
+            // Lazy loading
             LAZY_LOAD: true,
+            LAZY_LOAD_THRESHOLD: 0.1,
+            LAZY_LOAD_ROOT_MARGIN: '50px',
+            
+            // Virtualization
             VIRTUAL_SCROLL_THRESHOLD: 100,
+            VIRTUAL_SCROLL_ITEM_HEIGHT: 50,
+            
+            // Data management
             MAX_CHART_DATA_POINTS: 365,
+            MAX_TABLE_ROWS: 1000,
+            BATCH_SIZE: 100,
+            
+            // Caching
+            CACHE_DURATION: 5 * 60 * 1000, // 5 minutes
+            MEMORY_CACHE_SIZE: 100,
+            DISK_CACHE_SIZE: 50 * 1024 * 1024, // 50MB
+            
+            // Real-time updates
             REALTIME_UPDATE_INTERVAL: 30000, // 30 seconds for real-time updates
-            MAX_CONCURRENT_REQUESTS: 5
+            MAX_CONCURRENT_REQUESTS: 5,
+            REQUEST_QUEUE_SIZE: 10,
+            
+            // Rendering optimizations
+            ENABLE_VIRTUAL_DOM: true,
+            ENABLE_MEMOIZATION: true,
+            ENABLE_DEBOUNCING: true,
+            ENABLE_THROTTLING: true,
+            
+            // Memory management
+            GARBAGE_COLLECTION_INTERVAL: 60000, // 1 minute
+            MAX_MEMORY_USAGE: 100 * 1024 * 1024, // 100MB
+            MEMORY_WARNING_THRESHOLD: 80 * 1024 * 1024, // 80MB
+            
+            // Network optimizations
+            ENABLE_REQUEST_CACHING: true,
+            ENABLE_RESPONSE_COMPRESSION: true,
+            ENABLE_CONNECTION_POOLING: true,
+            
+            // UI optimizations
+            ENABLE_SMOOTH_SCROLLING: true,
+            ENABLE_HARDWARE_ACCELERATION: true,
+            ENABLE_REDUCED_MOTION: true,
+            
+            // Monitoring
+            ENABLE_PERFORMANCE_MONITORING: true,
+            PERFORMANCE_LOG_INTERVAL: 30000, // 30 seconds
+            SLOW_RENDER_THRESHOLD: 16, // 16ms = 60fps
+            SLOW_NETWORK_THRESHOLD: 1000 // 1 second
         },
 
         // Security Settings
         SECURITY: {
+            ENABLE_CSRF_PROTECTION: true,
+            ENABLE_XSS_PROTECTION: true,
+            ENABLE_CONTENT_SECURITY_POLICY: true,
             ENABLE_HTTPS_ONLY: ENV.PRODUCTION,
-            CSP_ENABLED: false,
-            SANITIZE_INPUTS: true,
-            MAX_LOGIN_ATTEMPTS: 5,
             SESSION_TIMEOUT: 30 * 60 * 1000, // 30 minutes
-            PASSWORD_MIN_LENGTH: 6,
-            REQUIRE_STRONG_PASSWORD: false,
-            ENABLE_TWO_FACTOR: false,
-            ALLOWED_EMAIL_DOMAINS: [], // Empty = allow all
-            IP_WHITELIST: [] // Empty = allow all
+            MAX_LOGIN_ATTEMPTS: 5,
+            LOCKOUT_DURATION: 15 * 60 * 1000, // 15 minutes
+            PASSWORD_MIN_LENGTH: 8,
+            REQUIRE_STRONG_PASSWORDS: true,
+            ENABLE_2FA: false,
+            ENABLE_AUDIT_LOGGING: true,
+            SENSITIVE_FIELDS: ['password', 'token', 'key', 'secret'],
+            ALLOWED_ORIGINS: ENV.PRODUCTION ? ['https://chaivision.com'] : ['http://localhost:3000'],
+            CORS_SETTINGS: {
+                credentials: true,
+                methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+                allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+            }
         },
 
-        // Analytics (Optional)
-        ANALYTICS: {
-            GOOGLE_ANALYTICS_ID: getEnvVar('GOOGLE_ANALYTICS_ID', ''),
-            MIXPANEL_TOKEN: getEnvVar('MIXPANEL_TOKEN', ''),
-            ENABLE_TRACKING: ENV.PRODUCTION && false // Disabled for now
-        },
-
-        // Error Reporting (Optional)
-        ERROR_REPORTING: {
-            ENABLED: ENV.PRODUCTION,
-            SENTRY_DSN: getEnvVar('SENTRY_DSN', ''),
-            LOG_LEVEL: ENV.PRODUCTION ? 'error' : 'debug'
-        },
-
-        // Notification Settings (Currently disabled)
-        NOTIFICATIONS: {
-            ENABLED: false,
-            POSITION: 'top-right',
-            DURATION: 5000,
-            MAX_STACK: 3,
-            ENABLE_SOUND: false
-        },
-
-        // Export Settings
-        EXPORT: {
-            CSV_DELIMITER: ',',
-            EXCEL_SHEET_NAME: 'Sales Data',
-            PDF_ORIENTATION: 'landscape',
-            PDF_FORMAT: 'A4',
-            INCLUDE_TIMESTAMPS: true,
-            INCLUDE_USER_INFO: true
-        },
-
-        // Development Tools
+        // Development Settings
         DEV: {
-            ENABLE_LOGGING: ENV.DEVELOPMENT,
-            ENABLE_PERFORMANCE_MONITORING: ENV.DEVELOPMENT,
-            MOCK_API_DELAY: 500,
-            SHOW_DEBUG_INFO: ENV.DEVELOPMENT,
-            BYPASS_AUTH: false, // Set to true to bypass auth in development
-            USE_LOCAL_DATA: false // Set to true to use localStorage instead of Supabase
+            ENABLE_LOGGING: !ENV.PRODUCTION,
+            ENABLE_DEBUG_MODE: !ENV.PRODUCTION,
+            ENABLE_HOT_RELOAD: !ENV.PRODUCTION,
+            ENABLE_SOURCE_MAPS: !ENV.PRODUCTION,
+            ENABLE_ERROR_BOUNDARIES: true,
+            ENABLE_PERFORMANCE_PROFILING: !ENV.PRODUCTION,
+            ENABLE_MEMORY_LEAK_DETECTION: !ENV.PRODUCTION,
+            LOG_LEVEL: ENV.PRODUCTION ? 'error' : 'debug',
+            MAX_LOG_ENTRIES: 1000,
+            ENABLE_CONSOLE_OVERRIDE: !ENV.PRODUCTION,
+            ENABLE_NETWORK_MONITORING: !ENV.PRODUCTION,
+            ENABLE_RENDER_PROFILING: !ENV.PRODUCTION,
+            ENABLE_STATE_INSPECTOR: !ENV.PRODUCTION,
+            ENABLE_COMPONENT_TREE: !ENV.PRODUCTION,
+            ENABLE_PERFORMANCE_METRICS: true,
+            ENABLE_ERROR_REPORTING: ENV.PRODUCTION,
+            ERROR_REPORTING_ENDPOINT: ENV.PRODUCTION ? 'https://errors.chaivision.com' : null
+        },
+
+        // User Interface Settings
+        UI: {
+            THEME: 'light', // 'light', 'dark', 'auto'
+            LANGUAGE: 'en',
+            CURRENCY: 'USD',
+            TIMEZONE: 'America/New_York',
+            DATE_FORMAT: 'MM/DD/YYYY',
+            TIME_FORMAT: '12', // '12' or '24'
+            DECIMAL_PLACES: 2,
+            THOUSANDS_SEPARATOR: ',',
+            DECIMAL_SEPARATOR: '.',
+            ENABLE_ANIMATIONS: true,
+            ENABLE_TRANSITIONS: true,
+            ENABLE_HOVER_EFFECTS: true,
+            ENABLE_FOCUS_INDICATORS: true,
+            ENABLE_KEYBOARD_NAVIGATION: true,
+            ENABLE_SCREEN_READER_SUPPORT: true,
+            ENABLE_HIGH_CONTRAST_MODE: false,
+            ENABLE_LARGE_TEXT_MODE: false,
+            ENABLE_REDUCED_MOTION: false,
+            ENABLE_COMPACT_MODE: false,
+            SIDEBAR_COLLAPSED: false,
+            DASHBOARD_LAYOUT: 'grid', // 'grid', 'list', 'compact'
+            CHART_DEFAULT_TYPE: 'line', // 'line', 'bar', 'pie', 'doughnut'
+            TABLE_PAGE_SIZE: 25,
+            ENABLE_INFINITE_SCROLL: true,
+            ENABLE_VIRTUAL_SCROLLING: true,
+            ENABLE_LAZY_LOADING: true,
+            ENABLE_PROGRESSIVE_LOADING: true,
+            ENABLE_SKELETON_LOADING: true,
+            ENABLE_ERROR_BOUNDARIES: true,
+            ENABLE_OFFLINE_INDICATOR: true,
+            ENABLE_LOADING_STATES: true,
+            ENABLE_EMPTY_STATES: true,
+            ENABLE_ERROR_STATES: true,
+            ENABLE_SUCCESS_STATES: true,
+            ENABLE_WARNING_STATES: true,
+            ENABLE_INFO_STATES: true
+        },
+
+        // Data Settings
+        DATA: {
+            CACHE_DURATION: 5 * 60 * 1000, // 5 minutes
+            MAX_UPLOAD_SIZE: 10 * 1024 * 1024, // 10MB
+            SUPPORTED_FORMATS: ['.csv', '.xlsx', '.xls'],
+            STORAGE_KEYS: {
+                SALES_DATA: 'chai_vision_sales_data',
+                USER_PREFERENCES: 'chai_vision_preferences',
+                CACHED_TARGETS: 'chai_vision_targets',
+                SESSION_DATA: 'chai_vision_session',
+                CACHE_DATA: 'chai_vision_cache',
+                OFFLINE_DATA: 'chai_vision_offline'
+            },
+            VALIDATION: {
+                MAX_ROWS: 100000,
+                MAX_COLUMNS: 50,
+                REQUIRED_COLUMNS: ['date', 'channel', 'brand', 'revenue'],
+                DATE_FORMATS: ['YYYY-MM-DD', 'MM/DD/YYYY', 'DD/MM/YYYY'],
+                CURRENCY_FORMATS: ['$', '€', '£', '¥'],
+                NUMBER_FORMATS: ['1,234.56', '1.234,56', '1 234.56']
+            },
+            EXPORT: {
+                FORMATS: ['csv', 'xlsx', 'pdf'],
+                MAX_EXPORT_SIZE: 10000,
+                INCLUDE_CHARTS: true,
+                INCLUDE_METADATA: true
+            },
+            BACKUP: {
+                ENABLE_AUTO_BACKUP: true,
+                BACKUP_INTERVAL: 24 * 60 * 60 * 1000, // 24 hours
+                MAX_BACKUP_SIZE: 100 * 1024 * 1024, // 100MB
+                BACKUP_RETENTION: 7 // days
+            }
+        },
+
+        // Role-based permissions
+        ROLES: {
+            PERMISSIONS: {
+                Admin: {
+                    view_dashboard: true,
+                    edit_data: true,
+                    upload_data: true,
+                    export_data: true,
+                    manage_users: true,
+                    view_audit_logs: true,
+                    manage_settings: true,
+                    view_analytics: true,
+                    manage_brands: true,
+                    manage_channels: true,
+                    manage_targets: true,
+                    view_reports: true,
+                    create_reports: true,
+                    share_reports: true,
+                    delete_data: true,
+                    manage_permissions: true
+                },
+                Manager: {
+                    view_dashboard: true,
+                    edit_data: true,
+                    upload_data: true,
+                    export_data: true,
+                    manage_users: false,
+                    view_audit_logs: true,
+                    manage_settings: false,
+                    view_analytics: true,
+                    manage_brands: false,
+                    manage_channels: false,
+                    manage_targets: false,
+                    view_reports: true,
+                    create_reports: true,
+                    share_reports: true,
+                    delete_data: false,
+                    manage_permissions: false
+                },
+                Analyst: {
+                    view_dashboard: true,
+                    edit_data: false,
+                    upload_data: false,
+                    export_data: true,
+                    manage_users: false,
+                    view_audit_logs: false,
+                    manage_settings: false,
+                    view_analytics: true,
+                    manage_brands: false,
+                    manage_channels: false,
+                    manage_targets: false,
+                    view_reports: true,
+                    create_reports: true,
+                    share_reports: false,
+                    delete_data: false,
+                    manage_permissions: false
+                },
+                Viewer: {
+                    view_dashboard: true,
+                    edit_data: false,
+                    upload_data: false,
+                    export_data: false,
+                    manage_users: false,
+                    view_audit_logs: false,
+                    manage_settings: false,
+                    view_analytics: true,
+                    manage_brands: false,
+                    manage_channels: false,
+                    manage_targets: false,
+                    view_reports: true,
+                    create_reports: false,
+                    share_reports: false,
+                    delete_data: false,
+                    manage_permissions: false
+                }
+            }
         }
     };
 
@@ -354,6 +484,15 @@
             console.info('No logo configured. Using default CV design.');
         }
         
+        // Performance validation
+        if (CONFIG.PERFORMANCE.CACHE_DURATION < 60000) {
+            console.warn('Cache duration is very short. Consider increasing for better performance.');
+        }
+        
+        if (CONFIG.PERFORMANCE.MAX_CONCURRENT_REQUESTS > 10) {
+            console.warn('High concurrent request limit may impact performance.');
+        }
+        
         // Log configuration status
         if (CONFIG.DEV.ENABLE_LOGGING) {
             console.log('🔧 Configuration loaded:', {
@@ -362,7 +501,12 @@
                 features: CONFIG.FEATURES,
                 supabase: CONFIG.FEATURES.ENABLE_SUPABASE ? 'enabled' : 'disabled',
                 auth: CONFIG.FEATURES.ENABLE_AUTH ? 'enabled' : 'disabled',
-                demoMode: CONFIG.FEATURES.ENABLE_DEMO_MODE ? 'enabled' : 'disabled'
+                demoMode: CONFIG.FEATURES.ENABLE_DEMO_MODE ? 'enabled' : 'disabled',
+                performance: {
+                    lazyLoading: CONFIG.PERFORMANCE.LAZY_LOAD,
+                    virtualization: CONFIG.PERFORMANCE.ENABLE_VIRTUALIZATION,
+                    caching: CONFIG.PERFORMANCE.ENABLE_REQUEST_CACHING
+                }
             });
         }
         
@@ -385,7 +529,15 @@
                     CONFIG.SUPABASE.URL,
                     CONFIG.SUPABASE.ANON_KEY,
                     {
-                        auth: CONFIG.SUPABASE.AUTH
+                        auth: CONFIG.SUPABASE.AUTH,
+                        db: {
+                            schema: 'public'
+                        },
+                        global: {
+                            headers: {
+                                'X-Client-Info': 'chai-vision-dashboard'
+                            }
+                        }
                     }
                 );
                 
@@ -407,11 +559,73 @@
         return rolePermissions ? rolePermissions[permission] : false;
     };
 
+    // Performance monitoring utilities
+    const performanceUtils = {
+        // Measure function execution time
+        measureTime: (name, fn) => {
+            const start = performance.now();
+            const result = fn();
+            const end = performance.now();
+            console.log(`⏱️ ${name} took ${(end - start).toFixed(2)}ms`);
+            return result;
+        },
+        
+        // Debounce function
+        debounce: (func, wait) => {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        },
+        
+        // Throttle function
+        throttle: (func, limit) => {
+            let inThrottle;
+            return function() {
+                const args = arguments;
+                const context = this;
+                if (!inThrottle) {
+                    func.apply(context, args);
+                    inThrottle = true;
+                    setTimeout(() => inThrottle = false, limit);
+                }
+            };
+        },
+        
+        // Memory usage monitoring
+        getMemoryUsage: () => {
+            if ('memory' in performance) {
+                return {
+                    used: performance.memory.usedJSHeapSize,
+                    total: performance.memory.totalJSHeapSize,
+                    limit: performance.memory.jsHeapSizeLimit
+                };
+            }
+            return null;
+        },
+        
+        // Check if memory usage is high
+        isMemoryUsageHigh: () => {
+            const memory = performanceUtils.getMemoryUsage();
+            if (memory && memory.used > CONFIG.PERFORMANCE.MEMORY_WARNING_THRESHOLD) {
+                console.warn('⚠️ High memory usage detected:', memory);
+                return true;
+            }
+            return false;
+        }
+    };
+
     // Make available globally
     window.CONFIG = CONFIG;
     window.validateConfig = validateConfig;
     window.initSupabase = initSupabase;
     window.hasPermission = hasPermission;
+    window.performanceUtils = performanceUtils;
     
     // Also add to ChaiVision namespace
     window.ChaiVision = window.ChaiVision || {};
@@ -419,10 +633,20 @@
     window.ChaiVision.validateConfig = validateConfig;
     window.ChaiVision.initSupabase = initSupabase;
     window.ChaiVision.hasPermission = hasPermission;
+    window.ChaiVision.performanceUtils = performanceUtils;
     
     // Run validation on load
     const configErrors = validateConfig();
     if (configErrors.length > 0 && CONFIG.DEV.ENABLE_LOGGING) {
         console.warn('⚠️ Configuration issues detected:', configErrors);
     }
+    
+    // Initialize performance monitoring
+    if (CONFIG.PERFORMANCE.ENABLE_PERFORMANCE_MONITORING) {
+        setInterval(() => {
+            performanceUtils.isMemoryUsageHigh();
+        }, CONFIG.PERFORMANCE.PERFORMANCE_LOG_INTERVAL);
+    }
+    
+    console.log('✅ Configuration module loaded with performance optimizations');
 })();
