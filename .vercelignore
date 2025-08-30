@@ -1,0 +1,13 @@
+# Explicitly include all HTML files
+!*.html
+!public/*.html
+
+# Exclude only specific files we don't want
+node_modules/
+.env
+.env.local
+.git/
+.gitignore
+README.md
+*.log
+.DS_Store

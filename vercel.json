@@ -6,30 +6,6 @@
       "use": "@vercel/static"
     }
   ],
-  "routes": [
-    {
-      "src": "/test-data-sync-root.html",
-      "dest": "/test-data-sync-root.html"
-    },
-    {
-      "src": "/google-sheets-test-root.html",
-      "dest": "/google-sheets-test-root.html"
-    },
-    {
-      "src": "/test-data-sync.html",
-      "dest": "/public/test-data-sync.html"
-    },
-    {
-      "src": "/google-sheets-test.html",
-      "dest": "/public/google-sheets-test.html"
-    },
-    {
-      "src": "/test-(.*)",
-      "dest": "/public/test-$1.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
-  ]
+  "cleanUrls": true,
+  "trailingSlash": false
 }
