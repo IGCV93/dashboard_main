@@ -6,11 +6,11 @@
   "scripts": {
     "dev": "npx serve",
     "start": "npx serve",
-    "build": "echo 'Static site - no build required'",
+    "build": "./vercel-build.sh",
     "serve": "npx serve",
     "preview": "npx serve",
     "test": "echo 'No tests configured yet'",
-    "vercel-build": "echo 'Static site deployment'"
+    "vercel-build": "./vercel-build.sh"
   },
   "keywords": [
     "dashboard",
