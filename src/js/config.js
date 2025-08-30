@@ -263,6 +263,279 @@
             SLOW_NETWORK_THRESHOLD: 1000 // 1 second
         },
 
+        // Data Sources Configuration
+        DATA_SOURCES: {
+            // Google Sheets Configuration
+            GOOGLE_SHEETS: {
+                API_KEY: 'AIzaSyDfJGTuwiziOzYl9FXzbyLg_Ha79i-TQKM',
+                SPREADSHEET_ID: '1T8RRV8zuo_zcvcSLcJ1068kmsjCe1dDHMWI8gLiBVwE',
+                SHEET_NAME: 'Goflow - Sales Data - Reports',
+                RANGES: {
+                    SALES: 'Goflow - Sales Data - Reports!A:Q',
+                    PRODUCTS: 'Products!A:Z',
+                    CUSTOMERS: 'Customers!A:Z',
+                    INVENTORY: 'Inventory!A:Z',
+                    ORDERS: 'Orders!A:Z'
+                },
+                REFRESH_INTERVAL: 24 * 60 * 60 * 1000, // 24 hours
+                ENABLED: true, // Enabled for testing
+                MAX_ROWS: 10000,
+                CACHE_DURATION: 5 * 60 * 1000, // 5 minutes
+                FIELD_MAPPING: {
+                    // Goflow Sales Data field mappings
+                    id: 'id',
+                    orderNumber: 'order_number',
+                    date: 'date',
+                    status: 'status',
+                    statusUpdatedAt: 'status_updated_at',
+                    fulfilledBy: 'fulfilled_by',
+                    source: 'source',
+                    storeName: 'store->name',
+                    warehouseName: 'warehouse->name',
+                    productItemNumber: 'lines->product->item_number',
+                    productName: 'lines->product->name',
+                    listingSku: 'lines->listing->sku',
+                    listingDescription: 'lines->listing->description',
+                    storeProvidedId: 'lines->listing->store_provided_id',
+                    quantity: 'lines->quantity->amount',
+                    chargesAmount: 'lines->charges->amount',
+                    currencyCode: 'lines->charges->currency->code'
+                }
+            },
+            
+            // External APIs Configuration
+            EXTERNAL_APIS: {
+                ENABLED: false, // Set to true when configured
+                TIMEOUT: 30000, // 30 seconds
+                RETRY_ATTEMPTS: 3,
+                RETRY_DELAY: 1000, // 1 second
+                
+                // Sales API
+                SALES_API: {
+                    name: 'sales_api',
+                    url: 'https://api.example.com/sales',
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer YOUR_API_TOKEN',
+                        'Content-Type': 'application/json'
+                    },
+                    refreshInterval: 2 * 60 * 60 * 1000, // 2 hours
+                    enabled: false,
+                    params: {
+                        limit: 1000,
+                        offset: 0
+                    }
+                },
+                
+                // Shopify API
+                SHOPIFY_API: {
+                    name: 'shopify_api',
+                    url: 'https://your-store.myshopify.com/admin/api/2023-10',
+                    method: 'GET',
+                    headers: {
+                        'X-Shopify-Access-Token': 'YOUR_SHOPIFY_TOKEN',
+                        'Content-Type': 'application/json'
+                    },
+                    refreshInterval: 1 * 60 * 60 * 1000, // 1 hour
+                    enabled: false,
+                    endpoints: {
+                        orders: '/orders.json',
+                        products: '/products.json',
+                        customers: '/customers.json'
+                    }
+                },
+                
+                // Amazon API
+                AMAZON_API: {
+                    name: 'amazon_api',
+                    url: 'https://sellingpartnerapi-na.amazon.com',
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer YOUR_AMAZON_TOKEN',
+                        'Content-Type': 'application/json'
+                    },
+                    refreshInterval: 2 * 60 * 60 * 1000, // 2 hours
+                    enabled: false,
+                    endpoints: {
+                        orders: '/orders/v0/orders',
+                        reports: '/reports/2021-06-30/reports'
+                    }
+                },
+                
+                // TikTok Shop API
+                TIKTOK_API: {
+                    name: 'tiktok_api',
+                    url: 'https://open-api.tiktokglobalshop.com',
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer YOUR_TIKTOK_TOKEN',
+                        'Content-Type': 'application/json'
+                    },
+                    refreshInterval: 2 * 60 * 60 * 1000, // 2 hours
+                    enabled: false,
+                    endpoints: {
+                        orders: '/api/orders/search',
+                        products: '/api/products/search'
+                    }
+                }
+            },
+            
+            // Database Sources
+            DATABASES: {
+                // Supabase (already configured above)
+                SUPABASE: {
+                    enabled: true,
+                    refreshInterval: 60 * 60 * 1000, // 1 hour
+                    tables: ['sales_data', 'products', 'customers', 'orders', 'inventory']
+                },
+                
+                // MySQL Database
+                MYSQL: {
+                    enabled: false,
+                    host: 'localhost',
+                    port: 3306,
+                    database: 'sales_db',
+                    username: 'username',
+                    password: 'password',
+                    refreshInterval: 30 * 60 * 1000, // 30 minutes
+                    tables: ['sales', 'products', 'customers']
+                },
+                
+                // PostgreSQL Database
+                POSTGRESQL: {
+                    enabled: false,
+                    host: 'localhost',
+                    port: 5432,
+                    database: 'sales_db',
+                    username: 'username',
+                    password: 'password',
+                    refreshInterval: 30 * 60 * 1000, // 30 minutes
+                    tables: ['sales', 'products', 'customers']
+                },
+                
+                // SQL Server Database
+                SQLSERVER: {
+                    enabled: false,
+                    host: 'localhost',
+                    port: 1433,
+                    database: 'sales_db',
+                    username: 'username',
+                    password: 'password',
+                    refreshInterval: 30 * 60 * 1000, // 30 minutes
+                    tables: ['sales', 'products', 'customers']
+                }
+            },
+            
+            // File-based Sources
+            FILES: {
+                // CSV Files
+                CSV: {
+                    enabled: false,
+                    paths: [
+                        '/data/sales.csv',
+                        '/data/products.csv',
+                        '/data/customers.csv'
+                    ],
+                    refreshInterval: 24 * 60 * 60 * 1000, // 24 hours
+                    delimiter: ',',
+                    hasHeader: true
+                },
+                
+                // Excel Files
+                EXCEL: {
+                    enabled: false,
+                    paths: [
+                        '/data/sales.xlsx',
+                        '/data/products.xlsx',
+                        '/data/customers.xlsx'
+                    ],
+                    refreshInterval: 24 * 60 * 60 * 1000, // 24 hours
+                    sheets: ['Sheet1', 'Data', 'Sales']
+                }
+            },
+            
+            // Local Storage
+            LOCAL_STORAGE: {
+                enabled: true,
+                keys: [
+                    'chai_vision_sales_data',
+                    'chai_vision_products',
+                    'chai_vision_customers',
+                    'chai_vision_orders',
+                    'chai_vision_inventory'
+                ],
+                refreshInterval: 60 * 60 * 1000 // 1 hour
+            },
+            
+            // Scheduling Configuration
+            SCHEDULING: {
+                // Daily sync at 2 AM
+                DAILY_SYNC_TIME: '02:00',
+                DAILY_SYNC_ENABLED: true,
+                
+                // Individual source sync intervals
+                SOURCE_SYNC_INTERVALS: {
+                    google_sheets: 24 * 60 * 60 * 1000, // 24 hours
+                    supabase: 60 * 60 * 1000, // 1 hour
+                    external_apis: 2 * 60 * 60 * 1000, // 2 hours
+                    local_storage: 60 * 60 * 1000, // 1 hour
+                    files: 24 * 60 * 60 * 1000 // 24 hours
+                },
+                
+                // Retry configuration
+                RETRY: {
+                    attempts: 3,
+                    delay: 1000, // 1 second
+                    backoff: 2, // Exponential backoff multiplier
+                    maxDelay: 60000 // 1 minute
+                }
+            },
+            
+            // Data Transformation Rules
+            TRANSFORMATIONS: {
+                // Field mapping for different sources
+                FIELD_MAPPING: {
+                    google_sheets: {
+                        date: 'Date',
+                        revenue: 'Revenue',
+                        brand: 'Brand',
+                        channel: 'Channel',
+                        product: 'Product'
+                    },
+                    external_api: {
+                        date: 'created_at',
+                        revenue: 'total_amount',
+                        brand: 'brand_name',
+                        channel: 'sales_channel',
+                        product: 'product_name'
+                    },
+                    supabase: {
+                        date: 'date',
+                        revenue: 'revenue',
+                        brand: 'brand',
+                        channel: 'channel',
+                        product: 'product'
+                    }
+                },
+                
+                // Data validation rules
+                VALIDATION: {
+                    required_fields: ['date', 'revenue', 'brand', 'channel'],
+                    date_format: 'YYYY-MM-DD',
+                    revenue_min: 0,
+                    revenue_max: 1000000
+                },
+                
+                // Data cleaning rules
+                CLEANING: {
+                    remove_duplicates: true,
+                    fill_missing_dates: true,
+                    normalize_currency: true,
+                    trim_whitespace: true
+                }
+            }
+        },
+
         // Security Settings
         SECURITY: {
             ENABLE_CSRF_PROTECTION: true,
