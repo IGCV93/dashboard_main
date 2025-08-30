@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Sync Test Environment - Updated</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+        }
+        
+        .test-section h2 {
+            color: #555;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .results {
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .config-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .config-section h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        
+        .test-all-btn {
+            background: #28a745;
+            font-size: 16px;
+            padding: 15px 30px;
+        }
+        
+        .test-all-btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Data Sync Test Environment</h1>
+        
+        <div class="config-section">
+            <h3>📋 Test Configuration</h3>
+            <p>This test environment will help you verify all data source connections before implementing the full sync system. Fill in your connection details and test each source individually.</p>
+        </div>
+        
+        <!-- Google Sheets Test -->
+        <div class="test-section">
+            <h2>📊 Google Sheets</h2>
+            <div class="form-group">
+                <label for="sheets-api-key">API Key:</label>
+                <input type="password" id="sheets-api-key" placeholder="Enter your Google Sheets API key" value="AIzaSyDfJGTuwiziOzYl9FXzbyLg_Ha79i-TQKM">
+            </div>
+            <div class="form-group">
+                <label for="sheets-spreadsheet-id">Spreadsheet ID:</label>
+                <input type="text" id="sheets-spreadsheet-id" placeholder="Enter your spreadsheet ID" value="1T8RRV8zuo_zcvcSLcJ1068kmsjCe1dDHMWI8gLiBVwE">
+            </div>
+            <div class="form-group">
+                <label for="sheets-range">Sheet Range:</label>
+                <input type="text" id="sheets-range" placeholder="e.g., Sheet1!A:Z" value="Goflow - Sales Data - Reports!A:Q">
+            </div>
+            <button onclick="testGoogleSheets()">Test Google Sheets Connection</button>
+            <div id="sheets-status" class="status info">Ready to test Google Sheets connection...</div>
+            <div id="sheets-results" class="results" style="display: none;"></div>
+        </div>
+        
+        <!-- MySQL Test -->
+        <div class="test-section">
+            <h2>🗄️ MySQL Database</h2>
+            <div class="form-group">
+                <label for="mysql-host">Host:</label>
+                <input type="text" id="mysql-host" placeholder="localhost or IP address">
+            </div>
+            <div class="form-group">
+                <label for="mysql-port">Port:</label>
+                <input type="number" id="mysql-port" value="3306">
+            </div>
+            <div class="form-group">
+                <label for="mysql-database">Database Name:</label>
+                <input type="text" id="mysql-database" placeholder="Enter database name">
+            </div>
+            <div class="form-group">
+                <label for="mysql-username">Username:</label>
+                <input type="text" id="mysql-username" placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label for="mysql-password">Password:</label>
+                <input type="password" id="mysql-password" placeholder="Enter password">
+            </div>
+            <div class="form-group">
+                <label for="mysql-table">Table Name:</label>
+                <input type="text" id="mysql-table" placeholder="Enter table name to test">
+            </div>
+            <button onclick="testMySQL()">Test MySQL Connection</button>
+            <div id="mysql-status" class="status info">Ready to test MySQL connection...</div>
+            <div id="mysql-results" class="results" style="display: none;"></div>
+        </div>
+        
+        <!-- PostgreSQL Test -->
+        <div class="test-section">
+            <h2>🗄️ PostgreSQL Database</h2>
+            <div class="form-group">
+                <label for="postgres-host">Host:</label>
+                <input type="text" id="postgres-host" placeholder="localhost or IP address">
+            </div>
+            <div class="form-group">
+                <label for="postgres-port">Port:</label>
+                <input type="number" id="postgres-port" value="5432">
+            </div>
+            <div class="form-group">
+                <label for="postgres-database">Database Name:</label>
+                <input type="text" id="postgres-database" placeholder="Enter database name">
+            </div>
+            <div class="form-group">
+                <label for="postgres-username">Username:</label>
+                <input type="text" id="postgres-username" placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label for="postgres-password">Password:</label>
+                <input type="password" id="postgres-password" placeholder="Enter password">
+            </div>
+            <div class="form-group">
+                <label for="postgres-table">Table Name:</label>
+                <input type="text" id="postgres-table" placeholder="Enter table name to test">
+            </div>
+            <button onclick="testPostgreSQL()">Test PostgreSQL Connection</button>
+            <div id="postgres-status" class="status info">Ready to test PostgreSQL connection...</div>
+            <div id="postgres-results" class="results" style="display: none;"></div>
+        </div>
+        
+        <!-- SQL Server Test -->
+        <div class="test-section">
+            <h2>🗄️ SQL Server Database</h2>
+            <div class="form-group">
+                <label for="sqlserver-host">Host:</label>
+                <input type="text" id="sqlserver-host" placeholder="localhost or IP address">
+            </div>
+            <div class="form-group">
+                <label for="sqlserver-port">Port:</label>
+                <input type="number" id="sqlserver-port" value="1433">
+            </div>
+            <div class="form-group">
+                <label for="sqlserver-database">Database Name:</label>
+                <input type="text" id="sqlserver-database" placeholder="Enter database name">
+            </div>
+            <div class="form-group">
+                <label for="sqlserver-username">Username:</label>
+                <input type="text" id="sqlserver-username" placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label for="sqlserver-password">Password:</label>
+                <input type="password" id="sqlserver-password" placeholder="Enter password">
+            </div>
+            <div class="form-group">
+                <label for="sqlserver-table">Table Name:</label>
+                <input type="text" id="sqlserver-table" placeholder="Enter table name to test">
+            </div>
+            <button onclick="testSQLServer()">Test SQL Server Connection</button>
+            <div id="sqlserver-status" class="status info">Ready to test SQL Server connection...</div>
+            <div id="sqlserver-results" class="results" style="display: none;"></div>
+        </div>
+        
+        <!-- Test All Button -->
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="test-all-btn" onclick="testAllConnections()">🧪 Test All Connections</button>
+        </div>
+        
+        <!-- Overall Results -->
+        <div id="overall-status" class="status info" style="margin-top: 20px; text-align: center;">
+            Ready to test all connections...
+        </div>
+    </div>
+
+    <script>
+        // Test Google Sheets Connection
+        async function testGoogleSheets() {
+            const statusEl = document.getElementById('sheets-status');
+            const resultsEl = document.getElementById('sheets-results');
+            
+            const apiKey = document.getElementById('sheets-api-key').value;
+            const spreadsheetId = document.getElementById('sheets-spreadsheet-id').value;
+            const range = document.getElementById('sheets-range').value;
+            
+            if (!apiKey || !spreadsheetId) {
+                statusEl.className = 'status error';
+                statusEl.textContent = '❌ Please provide API key and spreadsheet ID';
+                return;
+            }
+            
+            statusEl.className = 'status info';
+            statusEl.textContent = '🔄 Testing Google Sheets connection...';
+            
+            try {
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`;
+                const response = await fetch(url);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const rows = data.values || [];
+                    
+                    statusEl.className = 'status success';
+                    statusEl.textContent = `✅ Google Sheets connection successful! Found ${rows.length} rows`;
+                    
+                    resultsEl.style.display = 'block';
+                    resultsEl.innerHTML = `
+                        <strong>Headers:</strong> ${rows[0]?.join(', ') || 'No headers found'}<br>
+                        <strong>Total Rows:</strong> ${rows.length}<br>
+                        <strong>Sample Data:</strong><br>
+                        <pre>${JSON.stringify(rows.slice(0, 3), null, 2)}</pre>
+                    `;
+                } else {
+                    statusEl.className = 'status error';
+                    statusEl.textContent = `❌ Google Sheets connection failed: ${response.status} ${response.statusText}`;
+                }
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+        
+        // Test MySQL Connection (Mock - would need backend API)
+        async function testMySQL() {
+            const statusEl = document.getElementById('mysql-status');
+            const resultsEl = document.getElementById('mysql-results');
+            
+            const config = {
+                host: document.getElementById('mysql-host').value,
+                port: document.getElementById('mysql-port').value,
+                database: document.getElementById('mysql-database').value,
+                username: document.getElementById('mysql-username').value,
+                password: document.getElementById('mysql-password').value,
+                table: document.getElementById('mysql-table').value
+            };
+            
+            if (!config.host || !config.database || !config.username) {
+                statusEl.className = 'status error';
+                statusEl.textContent = '❌ Please provide host, database, and username';
+                return;
+            }
+            
+            statusEl.className = 'status info';
+            statusEl.textContent = '🔄 Testing MySQL connection...';
+            
+            // Mock test - in real implementation, this would call your backend API
+            setTimeout(() => {
+                statusEl.className = 'status info';
+                statusEl.textContent = '⚠️ MySQL test requires backend API implementation. Please provide connection details for manual verification.';
+                
+                resultsEl.style.display = 'block';
+                resultsEl.innerHTML = `
+                    <strong>Configuration:</strong><br>
+                    <pre>${JSON.stringify(config, null, 2)}</pre>
+                    <br>
+                    <strong>Next Steps:</strong><br>
+                    1. Verify these connection details are correct<br>
+                    2. Ensure MySQL server is accessible<br>
+                    3. Check user permissions<br>
+                    4. Test with a database client
+                `;
+            }, 1000);
+        }
+        
+        // Test PostgreSQL Connection (Mock - would need backend API)
+        async function testPostgreSQL() {
+            const statusEl = document.getElementById('postgres-status');
+            const resultsEl = document.getElementById('postgres-results');
+            
+            const config = {
+                host: document.getElementById('postgres-host').value,
+                port: document.getElementById('postgres-port').value,
+                database: document.getElementById('postgres-database').value,
+                username: document.getElementById('postgres-username').value,
+                password: document.getElementById('postgres-password').value,
+                table: document.getElementById('postgres-table').value
+            };
+            
+            if (!config.host || !config.database || !config.username) {
+                statusEl.className = 'status error';
+                statusEl.textContent = '❌ Please provide host, database, and username';
+                return;
+            }
+            
+            statusEl.className = 'status info';
+            statusEl.textContent = '🔄 Testing PostgreSQL connection...';
+            
+            // Mock test - in real implementation, this would call your backend API
+            setTimeout(() => {
+                statusEl.className = 'status info';
+                statusEl.textContent = '⚠️ PostgreSQL test requires backend API implementation. Please provide connection details for manual verification.';
+                
+                resultsEl.style.display = 'block';
+                resultsEl.innerHTML = `
+                    <strong>Configuration:</strong><br>
+                    <pre>${JSON.stringify(config, null, 2)}</pre>
+                    <br>
+                    <strong>Next Steps:</strong><br>
+                    1. Verify these connection details are correct<br>
+                    2. Ensure PostgreSQL server is accessible<br>
+                    3. Check user permissions<br>
+                    4. Test with a database client
+                `;
+            }, 1000);
+        }
+        
+        // Test SQL Server Connection (Mock - would need backend API)
+        async function testSQLServer() {
+            const statusEl = document.getElementById('sqlserver-status');
+            const resultsEl = document.getElementById('sqlserver-results');
+            
+            const config = {
+                host: document.getElementById('sqlserver-host').value,
+                port: document.getElementById('sqlserver-port').value,
+                database: document.getElementById('sqlserver-database').value,
+                username: document.getElementById('sqlserver-username').value,
+                password: document.getElementById('sqlserver-password').value,
+                table: document.getElementById('sqlserver-table').value
+            };
+            
+            if (!config.host || !config.database || !config.username) {
+                statusEl.className = 'status error';
+                statusEl.textContent = '❌ Please provide host, database, and username';
+                return;
+            }
+            
+            statusEl.className = 'status info';
+            statusEl.textContent = '🔄 Testing SQL Server connection...';
+            
+            // Mock test - in real implementation, this would call your backend API
+            setTimeout(() => {
+                statusEl.className = 'status info';
+                statusEl.textContent = '⚠️ SQL Server test requires backend API implementation. Please provide connection details for manual verification.';
+                
+                resultsEl.style.display = 'block';
+                resultsEl.innerHTML = `
+                    <strong>Configuration:</strong><br>
+                    <pre>${JSON.stringify(config, null, 2)}</pre>
+                    <br>
+                    <strong>Next Steps:</strong><br>
+                    1. Verify these connection details are correct<br>
+                    2. Ensure SQL Server is accessible<br>
+                    3. Check user permissions<br>
+                    4. Test with a database client
+                `;
+            }, 1000);
+        }
+        
+        // Test All Connections
+        async function testAllConnections() {
+            const statusEl = document.getElementById('overall-status');
+            statusEl.className = 'status info';
+            statusEl.textContent = '🔄 Testing all connections...';
+            
+            // Test Google Sheets first (this one works client-side)
+            await testGoogleSheets();
+            
+            // Test databases (these are mocked)
+            await testMySQL();
+            await testPostgreSQL();
+            await testSQLServer();
+            
+            statusEl.className = 'status info';
+            statusEl.textContent = '✅ All tests completed. Check individual results above.';
+        }
+        
+        // Save configuration to localStorage
+        function saveConfig() {
+            const config = {
+                googleSheets: {
+                    apiKey: document.getElementById('sheets-api-key').value,
+                    spreadsheetId: document.getElementById('sheets-spreadsheet-id').value,
+                    range: document.getElementById('sheets-range').value
+                },
+                mysql: {
+                    host: document.getElementById('mysql-host').value,
+                    port: document.getElementById('mysql-port').value,
+                    database: document.getElementById('mysql-database').value,
+                    username: document.getElementById('mysql-username').value,
+                    table: document.getElementById('mysql-table').value
+                },
+                postgresql: {
+                    host: document.getElementById('postgres-host').value,
+                    port: document.getElementById('postgres-port').value,
+                    database: document.getElementById('postgres-database').value,
+                    username: document.getElementById('postgres-username').value,
+                    table: document.getElementById('postgres-table').value
+                },
+                sqlserver: {
+                    host: document.getElementById('sqlserver-host').value,
+                    port: document.getElementById('sqlserver-port').value,
+                    database: document.getElementById('sqlserver-database').value,
+                    username: document.getElementById('sqlserver-username').value,
+                    table: document.getElementById('sqlserver-table').value
+                }
+            };
+            
+            localStorage.setItem('dataSyncTestConfig', JSON.stringify(config));
+        }
+        
+        // Load configuration from localStorage
+        function loadConfig() {
+            const saved = localStorage.getItem('dataSyncTestConfig');
+            if (saved) {
+                const config = JSON.parse(saved);
+                
+                if (config.googleSheets) {
+                    document.getElementById('sheets-api-key').value = config.googleSheets.apiKey || '';
+                    document.getElementById('sheets-spreadsheet-id').value = config.googleSheets.spreadsheetId || '';
+                    document.getElementById('sheets-range').value = config.googleSheets.range || 'Sheet1!A:Z';
+                }
+                
+                if (config.mysql) {
+                    document.getElementById('mysql-host').value = config.mysql.host || '';
+                    document.getElementById('mysql-port').value = config.mysql.port || '3306';
+                    document.getElementById('mysql-database').value = config.mysql.database || '';
+                    document.getElementById('mysql-username').value = config.mysql.username || '';
+                    document.getElementById('mysql-table').value = config.mysql.table || '';
+                }
+                
+                if (config.postgresql) {
+                    document.getElementById('postgres-host').value = config.postgresql.host || '';
+                    document.getElementById('postgres-port').value = config.postgresql.port || '5432';
+                    document.getElementById('postgres-database').value = config.postgresql.database || '';
+                    document.getElementById('postgres-username').value = config.postgresql.username || '';
+                    document.getElementById('postgres-table').value = config.postgresql.table || '';
+                }
+                
+                if (config.sqlserver) {
+                    document.getElementById('sqlserver-host').value = config.sqlserver.host || '';
+                    document.getElementById('sqlserver-port').value = config.sqlserver.port || '1433';
+                    document.getElementById('sqlserver-database').value = config.sqlserver.database || '';
+                    document.getElementById('sqlserver-username').value = config.sqlserver.username || '';
+                    document.getElementById('sqlserver-table').value = config.sqlserver.table || '';
+                }
+            }
+        }
+        
+        // Auto-save configuration when inputs change
+        document.addEventListener('input', saveConfig);
+        
+        // Load configuration on page load
+        window.addEventListener('load', loadConfig);
+    </script>
+</body>
+</html>
