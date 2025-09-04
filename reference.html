@@ -1,0 +1,2014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chai Vision Sales Dashboard - Full Channel Management</title>
+    
+    <!-- React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Chart.js for better visualizations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.js"></script>
+    
+    <!-- Other Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary-navy: #1E3A5F;
+            --primary-blue: #2563EB;
+            --primary-sky: #60A5FA;
+            --success-green: #10B981;
+            --warning-amber: #F59E0B;
+            --danger-red: #EF4444;
+            --dark-gray: #1A1D23;
+            --medium-gray: #6B7280;
+            --light-gray: #E5E7EB;
+            --bg-gray: #F9FAFB;
+            --white: #FFFFFF;
+            --gradient-blue: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-green: linear-gradient(135deg, #667eea 0%, #10B981 100%);
+            --gradient-amber: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);
+            --gradient-purple: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+            --gradient-teal: linear-gradient(135deg, #14B8A6 0%, #0EA5E9 100%);
+            --gradient-pink: linear-gradient(135deg, #EC4899 0%, #F43F5E 100%);
+            --gradient-indigo: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+            --gradient-orange: linear-gradient(135deg, #FB923C 0%, #F97316 100%);
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--dark-gray);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .app-wrapper {
+            background: var(--bg-gray);
+            min-height: 100vh;
+        }
+        
+        .top-nav {
+            background: var(--white);
+            border-bottom: 1px solid var(--light-gray);
+            padding: 0 24px;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+        
+        .period-selector {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: var(--bg-gray);
+            padding: 4px;
+            border-radius: 10px;
+        }
+        
+        .brand-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 20px;
+            padding-left: 20px;
+            border-left: 2px solid var(--light-gray);
+        }
+        
+        .brand-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--medium-gray);
+        }
+        
+        .period-btn {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--medium-gray);
+            position: relative;
+        }
+        
+        .period-btn.active {
+            background: var(--white);
+            color: var(--primary-blue);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .period-btn:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.5);
+            color: var(--dark-gray);
+        }
+        
+        .app-container {
+            display: flex;
+            min-height: calc(100vh - 72px);
+        }
+        
+        .sidebar {
+            width: 280px;
+            background: var(--white);
+            border-right: 1px solid var(--light-gray);
+            padding: 24px 16px;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            margin-bottom: 8px;
+            border-radius: 12px;
+            color: var(--medium-gray);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 15px;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sidebar-item:hover {
+            background: var(--bg-gray);
+            color: var(--dark-gray);
+            transform: translateX(4px);
+        }
+        
+        .sidebar-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .sidebar-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: white;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 32px;
+            max-width: 1800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        
+        .page-title h1 {
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+        
+        .page-subtitle {
+            color: var(--medium-gray);
+            font-size: 15px;
+            font-weight: 500;
+        }
+        
+        .target-overview {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 32px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .target-overview::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 50%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .target-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .target-item {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        
+        .target-item:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+        
+        .target-label {
+            font-size: 13px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .target-value {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        
+        .target-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .kpi-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+        
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+        
+        .kpi-card.success::before {
+            background: linear-gradient(90deg, var(--success-green), #34D399);
+        }
+        
+        .kpi-card.warning::before {
+            background: linear-gradient(90deg, var(--warning-amber), #FBBF24);
+        }
+        
+        .kpi-card.danger::before {
+            background: linear-gradient(90deg, var(--danger-red), #F87171);
+        }
+        
+        .kpi-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            font-size: 24px;
+        }
+        
+        .kpi-icon.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-green);
+        }
+        
+        .kpi-icon.warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning-amber);
+        }
+        
+        .kpi-icon.danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger-red);
+        }
+        
+        .kpi-label {
+            color: var(--medium-gray);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+        
+        .kpi-value {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--dark-gray);
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+        
+        .kpi-subtitle {
+            font-size: 14px;
+            color: var(--medium-gray);
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+        
+        .kpi-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .change-positive {
+            background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
+            color: #065F46;
+        }
+        
+        .change-negative {
+            background: linear-gradient(135deg, #FEE2E2, #FCA5A5);
+            color: #991B1B;
+        }
+        
+        .change-neutral {
+            background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+            color: #92400E;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 28px;
+            background: var(--bg-gray);
+            border-radius: 14px;
+            overflow: hidden;
+            margin: 16px 0;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 14px;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 12px;
+            position: relative;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3));
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .progress-text {
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+            z-index: 1;
+            position: relative;
+        }
+        
+        .channel-section {
+            margin-top: 40px;
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .channel-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+        
+        .channel-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .channel-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            border-color: var(--primary-blue);
+        }
+        
+        .channel-card.amazon { border-top: 4px solid #FF9900; }
+        .channel-card.tiktok { border-top: 4px solid #000000; }
+        .channel-card.shopify { border-top: 4px solid #96bf48; }
+        .channel-card.retail { border-top: 4px solid #8B5CF6; }
+        .channel-card.ca-intl { border-top: 4px solid #DC2626; }
+        .channel-card.uk-intl { border-top: 4px solid #1E40AF; }
+        .channel-card.wholesale { border-top: 4px solid #14B8A6; }
+        .channel-card.omnichannel { border-top: 4px solid #EC4899; }
+        
+        .channel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--bg-gray);
+        }
+        
+        .channel-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark-gray);
+        }
+        
+        .channel-badge {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .channel-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .metric-item {
+            padding: 10px;
+            background: var(--bg-gray);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .metric-item:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+        }
+        
+        .metric-label {
+            font-size: 11px;
+            color: var(--medium-gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+        
+        .metric-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark-gray);
+        }
+        
+        .chart-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 32px;
+            transition: all 0.3s;
+        }
+        
+        .chart-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .chart-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--dark-gray);
+        }
+        
+        .chart-controls {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .chart-filters {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--bg-gray);
+            border-radius: 12px;
+        }
+        
+        .filter-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .filter-checkbox:hover {
+            border-color: var(--primary-blue);
+        }
+        
+        .filter-checkbox.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .filter-checkbox input {
+            cursor: pointer;
+        }
+        
+        .filter-checkbox label {
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 20px;
+        }
+        
+        .alert-banner {
+            background: linear-gradient(135deg, var(--warning-amber), #F59E0B);
+            color: white;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            animation: slideDown 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+        
+        .alert-banner.danger {
+            background: linear-gradient(135deg, var(--danger-red), #DC2626);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+        
+        .alert-banner.success {
+            background: linear-gradient(135deg, var(--success-green), #059669);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        
+        @keyframes slideDown {
+            from { 
+                transform: translateY(-100%); 
+                opacity: 0; 
+            }
+            to { 
+                transform: translateY(0); 
+                opacity: 1; 
+            }
+        }
+        
+        /* Settings Section Styles */
+        .settings-container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding: 20px 28px;
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        .settings-title {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .year-selector {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .year-selector label {
+            font-weight: 600;
+            color: var(--medium-gray);
+        }
+        
+        .brand-table {
+            background: var(--white);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 24px;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            max-width: 100%;
+        }
+        
+        .brand-table table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1400px;
+        }
+        
+        .brand-table th {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            padding: 14px 12px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--dark-gray);
+            border-bottom: 2px solid var(--light-gray);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .brand-table td {
+            padding: 16px 12px;
+            border-bottom: 1px solid var(--light-gray);
+            font-size: 13px;
+        }
+        
+        .brand-table tr:hover {
+            background: var(--bg-gray);
+        }
+        
+        .brand-name-cell {
+            font-weight: 600;
+            color: var(--dark-gray);
+            position: sticky;
+            left: 0;
+            background: white;
+            z-index: 5;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 6px 10px;
+            border: 2px solid var(--light-gray);
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: var(--success-green);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+        }
+        
+        .btn-secondary {
+            background: var(--bg-gray);
+            color: var(--dark-gray);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--light-gray);
+        }
+        
+        .btn-danger {
+            background: var(--danger-red);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #DC2626;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            white-space: nowrap;
+        }
+        
+        .add-brand-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 24px;
+        }
+        
+        .add-brand-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .form-group label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--medium-gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .quarterly-section {
+            grid-column: span 2;
+        }
+        
+        .quarterly-inputs {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        
+        .channel-inputs {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { padding: 20px; }
+            .kpi-grid { grid-template-columns: 1fr; }
+            .channel-grid { grid-template-columns: 1fr; }
+            .add-brand-form { 
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script>
+        // Complete Configuration with All Channels
+        const ALL_CHANNELS = [
+            'Amazon',
+            'TikTok',
+            'DTC-Shopify',
+            'Retail',
+            'CA International',
+            'UK International',
+            'Wholesale',
+            'Omnichannel'
+        ];
+        
+        const CHANNEL_COLORS = {
+            'Amazon': '#FF9900',
+            'TikTok': '#000000',
+            'DTC-Shopify': '#96bf48',
+            'Retail': '#8B5CF6',
+            'CA International': '#DC2626',
+            'UK International': '#1E40AF',
+            'Wholesale': '#14B8A6',
+            'Omnichannel': '#EC4899'
+        };
+        
+        const INITIAL_CONFIG = {
+            brands: ['LifePro', 'PetCove', 'Joyberri', 'Oaktiv', 'Loft & Ivy', 'New Brands'],
+            channels: ALL_CHANNELS,
+            targets: {
+                2025: {
+                    brands: {
+                        'LifePro': {
+                            annual: {
+                                'Amazon': 90500000,
+                                'TikTok': 10000000,
+                                'DTC-Shopify': 20000000,
+                                'Retail': 4000000,
+                                'CA International': 10000000,
+                                'UK International': 3000000,
+                                'Wholesale': 2000000,
+                                'Omnichannel': 3000000
+                            },
+                            Q1: {
+                                'Amazon': 20000000,
+                                'TikTok': 2000000,
+                                'DTC-Shopify': 4000000,
+                                'Retail': 800000,
+                                'CA International': 2000000,
+                                'UK International': 600000,
+                                'Wholesale': 400000,
+                                'Omnichannel': 600000
+                            },
+                            Q2: {
+                                'Amazon': 30000000,
+                                'TikTok': 3000000,
+                                'DTC-Shopify': 6000000,
+                                'Retail': 1200000,
+                                'CA International': 3000000,
+                                'UK International': 900000,
+                                'Wholesale': 600000,
+                                'Omnichannel': 900000
+                            },
+                            Q3: {
+                                'Amazon': 20000000,
+                                'TikTok': 2500000,
+                                'DTC-Shopify': 5000000,
+                                'Retail': 1000000,
+                                'CA International': 2500000,
+                                'UK International': 750000,
+                                'Wholesale': 500000,
+                                'Omnichannel': 750000
+                            },
+                            Q4: {
+                                'Amazon': 20500000,
+                                'TikTok': 2500000,
+                                'DTC-Shopify': 5000000,
+                                'Retail': 1000000,
+                                'CA International': 2500000,
+                                'UK International': 750000,
+                                'Wholesale': 500000,
+                                'Omnichannel': 750000
+                            }
+                        },
+                        'PetCove': {
+                            annual: {
+                                'Amazon': 9600000,
+                                'TikTok': 1200000,
+                                'DTC-Shopify': 2400000,
+                                'Retail': 360000,
+                                'CA International': 1200000,
+                                'UK International': 400000,
+                                'Wholesale': 240000,
+                                'Omnichannel': 360000
+                            },
+                            Q1: {
+                                'Amazon': 2400000,
+                                'TikTok': 300000,
+                                'DTC-Shopify': 600000,
+                                'Retail': 90000,
+                                'CA International': 300000,
+                                'UK International': 100000,
+                                'Wholesale': 60000,
+                                'Omnichannel': 90000
+                            },
+                            Q2: {
+                                'Amazon': 2400000,
+                                'TikTok': 300000,
+                                'DTC-Shopify': 600000,
+                                'Retail': 90000,
+                                'CA International': 300000,
+                                'UK International': 100000,
+                                'Wholesale': 60000,
+                                'Omnichannel': 90000
+                            },
+                            Q3: {
+                                'Amazon': 2400000,
+                                'TikTok': 300000,
+                                'DTC-Shopify': 600000,
+                                'Retail': 90000,
+                                'CA International': 300000,
+                                'UK International': 100000,
+                                'Wholesale': 60000,
+                                'Omnichannel': 90000
+                            },
+                            Q4: {
+                                'Amazon': 2400000,
+                                'TikTok': 300000,
+                                'DTC-Shopify': 600000,
+                                'Retail': 90000,
+                                'CA International': 300000,
+                                'UK International': 100000,
+                                'Wholesale': 60000,
+                                'Omnichannel': 90000
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        
+        // Wait for libraries to load
+        window.addEventListener('DOMContentLoaded', () => {
+            const { useState, useEffect, useMemo, useRef } = React;
+            const { createElement: h } = React;
+            
+            // Utility Functions
+            const formatCurrency = (value) => {
+                if (value >= 1000000) {
+                    return `$${(value / 1000000).toFixed(1)}M`;
+                } else if (value >= 1000) {
+                    return `$${(value / 1000).toFixed(0)}K`;
+                }
+                return new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(value);
+            };
+            
+            const formatPercent = (value) => {
+                return `${(value * 100).toFixed(1)}%`;
+            };
+            
+            const getTwoBusinessDaysAgo = () => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                today.setDate(today.getDate() - 2);
+                return today;
+            };
+            
+            const getCurrentQuarter = () => {
+                const month = new Date().getMonth();
+                return `Q${Math.floor(month / 3) + 1}`;
+            };
+            
+            const getCurrentYear = () => {
+                return new Date().getFullYear().toString();
+            };
+            
+            const getDaysInPeriod = (view, selectedPeriod, selectedYear) => {
+                const year = parseInt(selectedYear);
+                
+                if (view === 'annual') {
+                    const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+                    return isLeapYear ? 366 : 365;
+                } else if (view === 'quarterly') {
+                    const quarterDays = {
+                        'Q1': (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0) ? 91 : 90,
+                        'Q2': 91,
+                        'Q3': 92,
+                        'Q4': 92
+                    };
+                    return quarterDays[selectedPeriod] || 90;
+                }
+                return 30;
+            };
+            
+            const getDaysElapsed = (view, selectedPeriod, selectedYear) => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                let startDate, endDate;
+                
+                if (view === 'annual') {
+                    startDate = new Date(parseInt(selectedYear), 0, 1);
+                    endDate = new Date(parseInt(selectedYear), 11, 31);
+                } else if (view === 'quarterly') {
+                    const quarterStarts = {
+                        'Q1': 0,
+                        'Q2': 3,
+                        'Q3': 6,
+                        'Q4': 9
+                    };
+                    const quarterEnds = {
+                        'Q1': 2,
+                        'Q2': 5,
+                        'Q3': 8,
+                        'Q4': 11
+                    };
+                    startDate = new Date(parseInt(selectedYear), quarterStarts[selectedPeriod], 1);
+                    endDate = new Date(parseInt(selectedYear), quarterEnds[selectedPeriod] + 1, 0);
+                }
+                
+                if (today < startDate) return 0;
+                if (today > endDate) return getDaysInPeriod(view, selectedPeriod, selectedYear);
+                
+                const elapsed = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
+                return elapsed;
+            };
+            
+            // Main Dashboard Component with Full Channel Support
+            function Dashboard() {
+                const [view, setView] = useState('quarterly');
+                const [selectedPeriod, setSelectedPeriod] = useState(getCurrentQuarter());
+                const [selectedYear, setSelectedYear] = useState('2025');
+                const [selectedBrand, setSelectedBrand] = useState('All Brands');
+                const [salesData, setSalesData] = useState([]);
+                const [alerts, setAlerts] = useState([]);
+                const [activeSection, setActiveSection] = useState('dashboard');
+                const [selectedChannels, setSelectedChannels] = useState(ALL_CHANNELS);
+                
+                // KPI Settings State
+                const [settingsYear, setSettingsYear] = useState('2025');
+                const [editingBrand, setEditingBrand] = useState(null);
+                const [editingValues, setEditingValues] = useState({});
+                const [showAddBrand, setShowAddBrand] = useState(false);
+                const [newBrand, setNewBrand] = useState({
+                    name: '',
+                    annual: {},
+                    Q1: {},
+                    Q2: {},
+                    Q3: {},
+                    Q4: {}
+                });
+                
+                // Initialize channel values for new brand
+                useEffect(() => {
+                    const channelDefaults = {};
+                    ALL_CHANNELS.forEach(channel => {
+                        channelDefaults[channel] = 0;
+                    });
+                    setNewBrand({
+                        name: '',
+                        annual: { ...channelDefaults },
+                        Q1: { ...channelDefaults },
+                        Q2: { ...channelDefaults },
+                        Q3: { ...channelDefaults },
+                        Q4: { ...channelDefaults }
+                    });
+                }, []);
+                
+                // Dynamic state for brands and targets
+                const [dynamicBrands, setDynamicBrands] = useState(INITIAL_CONFIG.brands);
+                const [dynamicTargets, setDynamicTargets] = useState(INITIAL_CONFIG.targets);
+                
+                const lineChartRef = useRef(null);
+                const barChartRef = useRef(null);
+                const pieChartRef = useRef(null);
+                const lineChartInstance = useRef(null);
+                const barChartInstance = useRef(null);
+                const pieChartInstance = useRef(null);
+                
+                // Generate sample data for all channels
+                useEffect(() => {
+                    const data = [];
+                    const startDate = new Date('2025-01-01');
+                    const endDate = getTwoBusinessDaysAgo();
+                    
+                    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                        const dayOfWeek = d.getDay();
+                        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                        
+                        dynamicBrands.forEach(brand => {
+                            ALL_CHANNELS.forEach(channel => {
+                                // Generate different patterns for different channels
+                                let baseRevenue = 0;
+                                switch(channel) {
+                                    case 'Amazon':
+                                        baseRevenue = brand === 'LifePro' ? 250000 : 30000;
+                                        break;
+                                    case 'TikTok':
+                                        baseRevenue = brand === 'LifePro' ? 30000 : 3500;
+                                        break;
+                                    case 'DTC-Shopify':
+                                        baseRevenue = brand === 'LifePro' ? 55000 : 6500;
+                                        break;
+                                    case 'Retail':
+                                        baseRevenue = brand === 'LifePro' ? 11000 : 1000;
+                                        break;
+                                    case 'CA International':
+                                        baseRevenue = brand === 'LifePro' ? 27000 : 3300;
+                                        break;
+                                    case 'UK International':
+                                        baseRevenue = brand === 'LifePro' ? 8200 : 1100;
+                                        break;
+                                    case 'Wholesale':
+                                        baseRevenue = brand === 'LifePro' ? 5500 : 650;
+                                        break;
+                                    case 'Omnichannel':
+                                        baseRevenue = brand === 'LifePro' ? 8200 : 1000;
+                                        break;
+                                }
+                                
+                                const weekendMultiplier = isWeekend ? 1.3 : 1;
+                                const variance = (Math.random() - 0.5) * baseRevenue * 0.3;
+                                
+                                if (Math.random() > 0.3) {
+                                    data.push({
+                                        date: d.toISOString().split('T')[0],
+                                        channel,
+                                        brand,
+                                        revenue: Math.max(0, baseRevenue * weekendMultiplier + variance),
+                                        timestamp: new Date().toISOString()
+                                    });
+                                }
+                            });
+                        });
+                    }
+                    setSalesData(data);
+                }, [dynamicBrands]);
+                
+                // Enhanced KPI calculations for all channels
+                const kpis = useMemo(() => {
+                    let filteredData = salesData || [];
+                    
+                    if (selectedBrand !== 'All Brands') {
+                        filteredData = filteredData.filter(d => d.brand === selectedBrand);
+                    }
+                    
+                    if (view === 'annual') {
+                        filteredData = filteredData.filter(d => d.date && d.date.startsWith(selectedYear));
+                    } else if (view === 'quarterly') {
+                        const quarterMonths = {
+                            'Q1': ['01', '02', '03'],
+                            'Q2': ['04', '05', '06'],
+                            'Q3': ['07', '08', '09'],
+                            'Q4': ['10', '11', '12']
+                        };
+                        const months = quarterMonths[selectedPeriod] || [];
+                        filteredData = filteredData.filter(d => {
+                            if (!d.date) return false;
+                            const [year, month] = d.date.split('-');
+                            return year === selectedYear && months.includes(month);
+                        });
+                    }
+                    
+                    // Calculate revenue by channel
+                    const channelRevenues = {};
+                    ALL_CHANNELS.forEach(channel => {
+                        channelRevenues[channel] = filteredData
+                            .filter(d => d.channel === channel)
+                            .reduce((sum, d) => sum + d.revenue, 0);
+                    });
+                    
+                    const totalRevenue = Object.values(channelRevenues).reduce((sum, val) => sum + val, 0);
+                    
+                    // Get targets for all channels
+                    const channelTargets100 = {};
+                    const channelTargets85 = {};
+                    
+                    ALL_CHANNELS.forEach(channel => {
+                        channelTargets100[channel] = 0;
+                        channelTargets85[channel] = 0;
+                    });
+                    
+                    if (selectedBrand === 'All Brands') {
+                        dynamicBrands.forEach(brand => {
+                            const brandData = dynamicTargets[selectedYear]?.brands?.[brand];
+                            if (brandData) {
+                                const periodData = view === 'annual' ? brandData.annual : brandData[selectedPeriod];
+                                if (periodData) {
+                                    ALL_CHANNELS.forEach(channel => {
+                                        channelTargets100[channel] += periodData[channel] || 0;
+                                    });
+                                }
+                            }
+                        });
+                    } else {
+                        const brandData = dynamicTargets[selectedYear]?.brands?.[selectedBrand];
+                        if (brandData) {
+                            const periodData = view === 'annual' ? brandData.annual : brandData[selectedPeriod];
+                            if (periodData) {
+                                ALL_CHANNELS.forEach(channel => {
+                                    channelTargets100[channel] = periodData[channel] || 0;
+                                });
+                            }
+                        }
+                    }
+                    
+                    // Calculate 85% targets
+                    ALL_CHANNELS.forEach(channel => {
+                        channelTargets85[channel] = channelTargets100[channel] * 0.85;
+                    });
+                    
+                    const totalTarget100 = Object.values(channelTargets100).reduce((sum, val) => sum + val, 0);
+                    const totalTarget85 = totalTarget100 * 0.85;
+                    
+                    const daysInPeriod = getDaysInPeriod(view, selectedPeriod, selectedYear);
+                    const daysElapsed = getDaysElapsed(view, selectedPeriod, selectedYear);
+                    const daysRemaining = Math.max(0, daysInPeriod - daysElapsed);
+                    
+                    // Calculate run rate
+                    const sevenDaysAgo = new Date(getTwoBusinessDaysAgo());
+                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                    const last7DaysData = filteredData.filter(d => new Date(d.date) >= sevenDaysAgo);
+                    const runRate = last7DaysData.length > 0 ? 
+                        last7DaysData.reduce((sum, d) => sum + d.revenue, 0) / Math.min(7, last7DaysData.length) : 0;
+                    
+                    // Projections
+                    const projection = totalRevenue + (runRate * daysRemaining);
+                    const projectionPercent85 = totalTarget85 > 0 ? projection / totalTarget85 : 0;
+                    const projectionPercent100 = totalTarget100 > 0 ? projection / totalTarget100 : 0;
+                    
+                    // KPI Achievement
+                    const kpiAchievement = totalTarget85 > 0 ? (totalRevenue / totalTarget85) * 100 : 0;
+                    const achievement100 = totalTarget100 > 0 ? (totalRevenue / totalTarget100) * 100 : 0;
+                    const gapToKPI = Math.max(0, totalTarget85 - totalRevenue);
+                    const gapTo100 = Math.max(0, totalTarget100 - totalRevenue);
+                    
+                    // Channel achievements
+                    const channelAchievements = {};
+                    ALL_CHANNELS.forEach(channel => {
+                        channelAchievements[channel] = channelTargets85[channel] > 0 ? 
+                            (channelRevenues[channel] / channelTargets85[channel]) * 100 : 0;
+                    });
+                    
+                    return {
+                        totalRevenue,
+                        channelRevenues,
+                        totalTarget85,
+                        totalTarget100,
+                        channelTargets85,
+                        channelTargets100,
+                        runRate,
+                        projection,
+                        projectionPercent85,
+                        projectionPercent100,
+                        daysRemaining,
+                        daysElapsed,
+                        daysInPeriod,
+                        kpiAchievement,
+                        achievement100,
+                        gapToKPI,
+                        gapTo100,
+                        channelAchievements
+                    };
+                }, [salesData, view, selectedPeriod, selectedYear, selectedBrand, dynamicTargets, dynamicBrands]);
+                
+                // Create charts
+                useEffect(() => {
+                    if (!lineChartRef.current || !barChartRef.current || !pieChartRef.current) return;
+                    
+                    // Destroy existing charts
+                    if (lineChartInstance.current) lineChartInstance.current.destroy();
+                    if (barChartInstance.current) barChartInstance.current.destroy();
+                    if (pieChartInstance.current) pieChartInstance.current.destroy();
+                    
+                    // Filter channels for display
+                    const displayChannels = ALL_CHANNELS.filter(ch => selectedChannels.includes(ch));
+                    
+                    // Bar Chart - Channel Comparison
+                    const barCtx = barChartRef.current.getContext('2d');
+                    barChartInstance.current = new Chart(barCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: displayChannels,
+                            datasets: [
+                                {
+                                    label: 'Actual Revenue',
+                                    data: displayChannels.map(ch => kpis.channelRevenues[ch] || 0),
+                                    backgroundColor: displayChannels.map(ch => CHANNEL_COLORS[ch] + '99'),
+                                    borderColor: displayChannels.map(ch => CHANNEL_COLORS[ch]),
+                                    borderWidth: 2
+                                },
+                                {
+                                    label: '85% Target',
+                                    data: displayChannels.map(ch => kpis.channelTargets85[ch] || 0),
+                                    backgroundColor: 'rgba(251, 191, 36, 0.3)',
+                                    borderColor: 'rgb(251, 191, 36)',
+                                    borderWidth: 2
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: (context) => {
+                                            return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: (value) => formatCurrency(value)
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Pie Chart - Revenue Distribution
+                    const pieCtx = pieChartRef.current.getContext('2d');
+                    pieChartInstance.current = new Chart(pieCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: displayChannels,
+                            datasets: [{
+                                data: displayChannels.map(ch => kpis.channelRevenues[ch] || 0),
+                                backgroundColor: displayChannels.map(ch => CHANNEL_COLORS[ch] + '99'),
+                                borderColor: displayChannels.map(ch => CHANNEL_COLORS[ch]),
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'right'
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: (context) => {
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                            return `${context.label}: ${formatCurrency(context.parsed)} (${percentage}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Line Chart - Trend (simplified for now)
+                    const lineCtx = lineChartRef.current.getContext('2d');
+                    lineChartInstance.current = new Chart(lineCtx, {
+                        type: 'line',
+                        data: {
+                            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Current'],
+                            datasets: [{
+                                label: 'Total Revenue Trend',
+                                data: [
+                                    kpis.totalRevenue * 0.2,
+                                    kpis.totalRevenue * 0.4,
+                                    kpis.totalRevenue * 0.6,
+                                    kpis.totalRevenue * 0.8,
+                                    kpis.totalRevenue
+                                ],
+                                borderColor: 'rgb(102, 126, 234)',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: (value) => formatCurrency(value)
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    
+                }, [kpis, selectedChannels]);
+                
+                // Handle channel selection for charts
+                const handleChannelToggle = (channel) => {
+                    if (selectedChannels.includes(channel)) {
+                        setSelectedChannels(selectedChannels.filter(ch => ch !== channel));
+                    } else {
+                        setSelectedChannels([...selectedChannels, channel]);
+                    }
+                };
+                
+                // Handle adding a new brand
+                const handleAddBrand = () => {
+                    if (!newBrand.name) {
+                        alert('Please enter a brand name');
+                        return;
+                    }
+                    
+                    setDynamicBrands([...dynamicBrands, newBrand.name]);
+                    
+                    const updatedTargets = { ...dynamicTargets };
+                    if (!updatedTargets[settingsYear]) {
+                        updatedTargets[settingsYear] = { brands: {} };
+                    }
+                    
+                    updatedTargets[settingsYear].brands[newBrand.name] = {
+                        annual: { ...newBrand.annual },
+                        Q1: { ...newBrand.Q1 },
+                        Q2: { ...newBrand.Q2 },
+                        Q3: { ...newBrand.Q3 },
+                        Q4: { ...newBrand.Q4 }
+                    };
+                    
+                    setDynamicTargets(updatedTargets);
+                    
+                    // Reset form
+                    const channelDefaults = {};
+                    ALL_CHANNELS.forEach(channel => {
+                        channelDefaults[channel] = 0;
+                    });
+                    setNewBrand({
+                        name: '',
+                        annual: { ...channelDefaults },
+                        Q1: { ...channelDefaults },
+                        Q2: { ...channelDefaults },
+                        Q3: { ...channelDefaults },
+                        Q4: { ...channelDefaults }
+                    });
+                    setShowAddBrand(false);
+                };
+                
+                // Get display title
+                const getDisplayTitle = () => {
+                    let periodText = '';
+                    if (view === 'annual') {
+                        periodText = `${selectedYear} Annual`;
+                    } else if (view === 'quarterly') {
+                        periodText = `${selectedPeriod} ${selectedYear}`;
+                    }
+                    
+                    const brandText = selectedBrand === 'All Brands' ? 'Company' : selectedBrand;
+                    return `${brandText} - ${periodText} Performance`;
+                };
+                
+                // Render Settings Section
+                const renderSettingsSection = () => {
+                    return h('div', { className: 'settings-container' },
+                        h('div', { className: 'settings-header' },
+                            h('h2', { className: 'settings-title' }, '⚙️ KPI Settings & Brand Management'),
+                            h('div', { className: 'year-selector' },
+                                h('label', null, 'Year:'),
+                                h('select', {
+                                    value: settingsYear,
+                                    onChange: (e) => setSettingsYear(e.target.value),
+                                    className: 'input-field',
+                                    style: { width: '120px' }
+                                },
+                                    h('option', { value: '2024' }, '2024'),
+                                    h('option', { value: '2025' }, '2025'),
+                                    h('option', { value: '2026' }, '2026')
+                                )
+                            )
+                        ),
+                        
+                        // Add Brand Section
+                        h('div', { className: 'add-brand-section' },
+                            h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' } },
+                                h('h3', { style: { fontSize: '20px', fontWeight: '700' } }, 'Add New Brand'),
+                                h('button', {
+                                    className: 'btn btn-primary',
+                                    onClick: () => setShowAddBrand(!showAddBrand)
+                                }, showAddBrand ? 'Cancel' : '+ Add Brand')
+                            ),
+                            
+                            showAddBrand && h('div', null,
+                                h('div', { className: 'add-brand-form' },
+                                    h('div', { className: 'form-group' },
+                                        h('label', null, 'Brand Name'),
+                                        h('input', {
+                                            type: 'text',
+                                            className: 'input-field',
+                                            value: newBrand.name,
+                                            onChange: (e) => setNewBrand({ ...newBrand, name: e.target.value }),
+                                            placeholder: 'Enter brand name'
+                                        })
+                                    ),
+                                    ...ALL_CHANNELS.map(channel => 
+                                        h('div', { key: channel, className: 'form-group' },
+                                            h('label', null, channel),
+                                            h('input', {
+                                                type: 'number',
+                                                className: 'input-field',
+                                                value: newBrand.annual[channel] || 0,
+                                                onChange: (e) => setNewBrand({
+                                                    ...newBrand,
+                                                    annual: { ...newBrand.annual, [channel]: parseFloat(e.target.value) || 0 }
+                                                }),
+                                                placeholder: 'Annual target'
+                                            })
+                                        )
+                                    )
+                                ),
+                                h('div', { style: { marginTop: '20px' } },
+                                    h('h4', { style: { marginBottom: '12px' } }, 'Quarterly Breakdown'),
+                                    ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter =>
+                                        h('div', { key: quarter, style: { marginBottom: '16px' } },
+                                            h('h5', { style: { marginBottom: '8px', fontWeight: '600' } }, quarter),
+                                            h('div', { className: 'channel-inputs' },
+                                                ALL_CHANNELS.slice(0, 4).map(channel =>
+                                                    h('input', {
+                                                        key: `${quarter}-${channel}`,
+                                                        type: 'number',
+                                                        className: 'input-field',
+                                                        value: newBrand[quarter][channel] || 0,
+                                                        onChange: (e) => setNewBrand({
+                                                            ...newBrand,
+                                                            [quarter]: { ...newBrand[quarter], [channel]: parseFloat(e.target.value) || 0 }
+                                                        }),
+                                                        placeholder: channel.substring(0, 3)
+                                                    })
+                                                )
+                                            ),
+                                            h('div', { className: 'channel-inputs', style: { marginTop: '8px' } },
+                                                ALL_CHANNELS.slice(4).map(channel =>
+                                                    h('input', {
+                                                        key: `${quarter}-${channel}`,
+                                                        type: 'number',
+                                                        className: 'input-field',
+                                                        value: newBrand[quarter][channel] || 0,
+                                                        onChange: (e) => setNewBrand({
+                                                            ...newBrand,
+                                                            [quarter]: { ...newBrand[quarter], [channel]: parseFloat(e.target.value) || 0 }
+                                                        }),
+                                                        placeholder: channel.substring(0, 3)
+                                                    })
+                                                )
+                                            )
+                                        )
+                                    )
+                                ),
+                                h('button', {
+                                    className: 'btn btn-success',
+                                    onClick: handleAddBrand,
+                                    style: { marginTop: '20px' }
+                                }, 'Save Brand')
+                            )
+                        ),
+                        
+                        // Brand Table
+                        h('div', { className: 'brand-table' },
+                            h('div', { className: 'table-wrapper' },
+                                h('table', null,
+                                    h('thead', null,
+                                        h('tr', null,
+                                            h('th', null, 'Brand'),
+                                            ...ALL_CHANNELS.map(channel =>
+                                                h('th', { key: channel }, channel)
+                                            ),
+                                            h('th', null, 'Total'),
+                                            h('th', null, 'Actions')
+                                        )
+                                    ),
+                                    h('tbody', null,
+                                        dynamicBrands.map(brand => {
+                                            const brandData = dynamicTargets[settingsYear]?.brands?.[brand] || {};
+                                            const annualData = brandData.annual || {};
+                                            const total = ALL_CHANNELS.reduce((sum, ch) => sum + (annualData[ch] || 0), 0);
+                                            
+                                            return h('tr', { key: brand },
+                                                h('td', { className: 'brand-name-cell' }, brand),
+                                                ...ALL_CHANNELS.map(channel =>
+                                                    h('td', { key: channel }, formatCurrency(annualData[channel] || 0))
+                                                ),
+                                                h('td', { style: { fontWeight: '700' } }, formatCurrency(total)),
+                                                h('td', null,
+                                                    h('div', { className: 'action-buttons' },
+                                                        h('button', {
+                                                            className: 'btn btn-primary',
+                                                            onClick: () => console.log('Edit', brand),
+                                                            style: { padding: '6px 12px', fontSize: '12px' }
+                                                        }, 'Edit')
+                                                    )
+                                                )
+                                            );
+                                        })
+                                    )
+                                )
+                            )
+                        )
+                    );
+                };
+                
+                // Render main content
+                const renderMainContent = () => {
+                    if (activeSection === 'settings') {
+                        return renderSettingsSection();
+                    }
+                    
+                    // Dashboard content
+                    return h('div', null,
+                        // Page Header
+                        h('div', { className: 'page-header' },
+                            h('div', { className: 'page-title' },
+                                h('h1', null, getDisplayTitle()),
+                                h('div', { className: 'page-subtitle' }, `Last updated: ${new Date().toLocaleTimeString()}`)
+                            )
+                        ),
+                        
+                        // Target Overview
+                        h('div', { className: 'target-overview' },
+                            h('div', { className: 'target-grid' },
+                                h('div', { className: 'target-item' },
+                                    h('div', { className: 'target-label' }, '🎯 Full Projection (100%)'),
+                                    h('div', { className: 'target-value' }, formatCurrency(kpis.totalTarget100)),
+                                    h('div', { className: 'target-subtitle' }, 'Complete target goal')
+                                ),
+                                h('div', { className: 'target-item' },
+                                    h('div', { className: 'target-label' }, '✅ KPI Target (85%)'),
+                                    h('div', { className: 'target-value' }, formatCurrency(kpis.totalTarget85)),
+                                    h('div', { className: 'target-subtitle' }, 'Minimum achievement')
+                                ),
+                                h('div', { className: 'target-item' },
+                                    h('div', { className: 'target-label' }, '📊 Current Achievement'),
+                                    h('div', { className: 'target-value' }, formatCurrency(kpis.totalRevenue)),
+                                    h('div', { className: 'target-subtitle' }, `${kpis.achievement100.toFixed(1)}% of full target`)
+                                ),
+                                h('div', { className: 'target-item' },
+                                    h('div', { className: 'target-label' }, '📈 End Projection'),
+                                    h('div', { className: 'target-value' }, formatCurrency(kpis.projection)),
+                                    h('div', { className: 'target-subtitle' }, `${kpis.projectionPercent100.toFixed(1)}% of full target`)
+                                )
+                            )
+                        ),
+                        
+                        // KPI Cards
+                        h('div', { className: 'kpi-grid' },
+                            h('div', { className: `kpi-card ${kpis.kpiAchievement >= 100 ? 'success' : kpis.kpiAchievement >= 85 ? 'warning' : 'danger'}` },
+                                h('div', { 
+                                    className: `kpi-icon ${kpis.kpiAchievement >= 100 ? 'success' : kpis.kpiAchievement >= 85 ? 'warning' : 'danger'}` 
+                                }, '💰'),
+                                h('div', { className: 'kpi-label' }, 'KPI Achievement (85% Target)'),
+                                h('div', { className: 'kpi-value' }, `${kpis.kpiAchievement.toFixed(1)}%`),
+                                h('div', { className: 'kpi-subtitle' }, `Gap to KPI: ${formatCurrency(kpis.gapToKPI)}`),
+                                h('div', { className: 'progress-bar' },
+                                    h('div', {
+                                        className: 'progress-fill',
+                                        style: { 
+                                            width: `${Math.min(100, kpis.kpiAchievement)}%`,
+                                            background: kpis.kpiAchievement >= 100 ? 
+                                                'linear-gradient(90deg, #10B981, #34D399)' :
+                                                kpis.kpiAchievement >= 85 ? 
+                                                'linear-gradient(90deg, #F59E0B, #FBBF24)' :
+                                                'linear-gradient(90deg, #EF4444, #F87171)'
+                                        }
+                                    },
+                                        h('span', { className: 'progress-text' }, 
+                                            kpis.kpiAchievement >= 100 ? '✓' : `${kpis.kpiAchievement.toFixed(0)}%`
+                                        )
+                                    )
+                                )
+                            ),
+                            h('div', { className: 'kpi-card' },
+                                h('div', { className: 'kpi-icon warning' }, '📅'),
+                                h('div', { className: 'kpi-label' }, 'Days Progress'),
+                                h('div', { className: 'kpi-value' }, `${kpis.daysRemaining}`),
+                                h('div', { className: 'kpi-subtitle' }, `Days remaining of ${kpis.daysInPeriod} total`),
+                                h('div', { className: 'progress-bar' },
+                                    h('div', {
+                                        className: 'progress-fill',
+                                        style: { 
+                                            width: `${(kpis.daysElapsed / kpis.daysInPeriod) * 100}%`
+                                        }
+                                    },
+                                        h('span', { className: 'progress-text' }, 
+                                            `${kpis.daysElapsed} days`
+                                        )
+                                    )
+                                )
+                            ),
+                            h('div', { className: 'kpi-card' },
+                                h('div', { className: 'kpi-icon success' }, '🚀'),
+                                h('div', { className: 'kpi-label' }, 'Daily Run Rate'),
+                                h('div', { className: 'kpi-value' }, formatCurrency(kpis.runRate)),
+                                h('div', { className: 'kpi-subtitle' }, '7-day average'),
+                                h('div', { className: 'kpi-change change-neutral' }, 
+                                    `📊 Required: ${formatCurrency(kpis.gapToKPI / Math.max(1, kpis.daysRemaining))}/day`
+                                )
+                            )
+                        ),
+                        
+                        // Channel Performance Section
+                        h('div', { className: 'channel-section' },
+                            h('div', { className: 'section-header' },
+                                h('h2', { className: 'section-title' }, '🛍️ Channel Performance Breakdown')
+                            ),
+                            h('div', { className: 'channel-grid' },
+                                ALL_CHANNELS.map(channel => {
+                                    const achievement = kpis.channelAchievements[channel] || 0;
+                                    const channelClass = channel.toLowerCase().replace(/[\s-]/g, '-');
+                                    
+                                    return h('div', { key: channel, className: `channel-card ${channelClass}` },
+                                        h('div', { className: 'channel-header' },
+                                            h('h3', { className: 'channel-name' }, channel),
+                                            h('span', { 
+                                                className: 'channel-badge',
+                                                style: {
+                                                    background: achievement >= 100 ? 
+                                                        'linear-gradient(135deg, #D1FAE5, #A7F3D0)' :
+                                                        achievement >= 85 ? 
+                                                        'linear-gradient(135deg, #FEF3C7, #FDE68A)' :
+                                                        'linear-gradient(135deg, #FEE2E2, #FCA5A5)',
+                                                    color: achievement >= 100 ? '#065F46' :
+                                                           achievement >= 85 ? '#92400E' : '#991B1B'
+                                                }
+                                            }, 
+                                                `${achievement.toFixed(1)}%`
+                                            )
+                                        ),
+                                        h('div', { className: 'channel-metrics' },
+                                            h('div', { className: 'metric-item' },
+                                                h('div', { className: 'metric-label' }, 'Revenue'),
+                                                h('div', { className: 'metric-value' }, formatCurrency(kpis.channelRevenues[channel] || 0))
+                                            ),
+                                            h('div', { className: 'metric-item' },
+                                                h('div', { className: 'metric-label' }, '85% Target'),
+                                                h('div', { className: 'metric-value' }, formatCurrency(kpis.channelTargets85[channel] || 0))
+                                            )
+                                        ),
+                                        h('div', { className: 'progress-bar', style: { height: '20px' } },
+                                            h('div', {
+                                                className: 'progress-fill',
+                                                style: { 
+                                                    width: `${Math.min(100, achievement)}%`,
+                                                    background: `linear-gradient(90deg, ${CHANNEL_COLORS[channel]}, ${CHANNEL_COLORS[channel]}99)`
+                                                }
+                                            },
+                                                h('span', { className: 'progress-text', style: { fontSize: '11px' } }, 
+                                                    `${achievement.toFixed(0)}%`
+                                                )
+                                            )
+                                        )
+                                    );
+                                })
+                            )
+                        ),
+                        
+                        // Charts Section
+                        h('div', { className: 'chart-card' },
+                            h('div', { className: 'chart-header' },
+                                h('h3', { className: 'chart-title' }, '📊 Channel Performance Analysis')
+                            ),
+                            h('div', { className: 'chart-filters' },
+                                h('span', { style: { fontWeight: '600', marginRight: '12px' } }, 'Show Channels:'),
+                                ...ALL_CHANNELS.map(channel =>
+                                    h('div', {
+                                        key: channel,
+                                        className: `filter-checkbox ${selectedChannels.includes(channel) ? 'selected' : ''}`,
+                                        onClick: () => handleChannelToggle(channel)
+                                    },
+                                        h('input', {
+                                            type: 'checkbox',
+                                            checked: selectedChannels.includes(channel),
+                                            onChange: () => {}
+                                        }),
+                                        h('label', null, channel)
+                                    )
+                                )
+                            ),
+                            h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' } },
+                                h('div', null,
+                                    h('h4', { style: { marginBottom: '12px' } }, 'Revenue by Channel'),
+                                    h('div', { className: 'chart-container' },
+                                        h('canvas', { ref: barChartRef })
+                                    )
+                                ),
+                                h('div', null,
+                                    h('h4', { style: { marginBottom: '12px' } }, 'Channel Distribution'),
+                                    h('div', { className: 'chart-container' },
+                                        h('canvas', { ref: pieChartRef })
+                                    )
+                                )
+                            )
+                        ),
+                        
+                        h('div', { className: 'chart-card' },
+                            h('div', { className: 'chart-header' },
+                                h('h3', { className: 'chart-title' }, '📈 Revenue Trend')
+                            ),
+                            h('div', { className: 'chart-container' },
+                                h('canvas', { ref: lineChartRef })
+                            )
+                        )
+                    );
+                };
+                
+                // Render
+                return h('div', { className: 'app-wrapper' },
+                    // Top Navigation
+                    h('nav', { className: 'top-nav' },
+                        h('div', { className: 'nav-left' },
+                            h('div', { className: 'logo' }, '☕ Chai Vision'),
+                            activeSection !== 'settings' && h('div', { className: 'period-selector' },
+                                h('button', {
+                                    className: `period-btn ${view === 'annual' ? 'active' : ''}`,
+                                    onClick: () => setView('annual')
+                                }, 'Annual'),
+                                h('button', {
+                                    className: `period-btn ${view === 'quarterly' ? 'active' : ''}`,
+                                    onClick: () => setView('quarterly')
+                                }, 'Quarterly'),
+                                
+                                view === 'annual' && h('select', {
+                                    value: selectedYear,
+                                    onChange: (e) => setSelectedYear(e.target.value),
+                                    style: { marginLeft: '8px', padding: '10px', borderRadius: '8px', border: '1px solid #E5E7EB', fontWeight: '600' }
+                                },
+                                    h('option', { value: '2024' }, '2024'),
+                                    h('option', { value: '2025' }, '2025'),
+                                    h('option', { value: '2026' }, '2026')
+                                ),
+                                
+                                view === 'quarterly' && [
+                                    h('select', {
+                                        key: 'quarter',
+                                        value: selectedPeriod,
+                                        onChange: (e) => setSelectedPeriod(e.target.value),
+                                        style: { marginLeft: '8px', padding: '10px', borderRadius: '8px', border: '1px solid #E5E7EB', fontWeight: '600' }
+                                    },
+                                        h('option', { value: 'Q1' }, 'Q1'),
+                                        h('option', { value: 'Q2' }, 'Q2'),
+                                        h('option', { value: 'Q3' }, 'Q3'),
+                                        h('option', { value: 'Q4' }, 'Q4')
+                                    ),
+                                    h('select', {
+                                        key: 'year',
+                                        value: selectedYear,
+                                        onChange: (e) => setSelectedYear(e.target.value),
+                                        style: { marginLeft: '8px', padding: '10px', borderRadius: '8px', border: '1px solid #E5E7EB', fontWeight: '600' }
+                                    },
+                                        h('option', { value: '2024' }, '2024'),
+                                        h('option', { value: '2025' }, '2025'),
+                                        h('option', { value: '2026' }, '2026')
+                                    )
+                                ]
+                            ),
+                            
+                            activeSection !== 'settings' && h('div', { className: 'brand-selector' },
+                                h('span', { className: 'brand-label' }, 'Brand:'),
+                                h('select', {
+                                    value: selectedBrand,
+                                    onChange: (e) => setSelectedBrand(e.target.value),
+                                    style: { 
+                                        padding: '10px 16px', 
+                                        borderRadius: '8px', 
+                                        border: '2px solid #E5E7EB', 
+                                        fontWeight: '600',
+                                        background: selectedBrand === 'All Brands' ? 
+                                            'linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1))' : 
+                                            'white'
+                                    }
+                                },
+                                    h('option', { value: 'All Brands', style: { fontWeight: '700' } }, '🏢 All Brands (Company Total)'),
+                                    ...dynamicBrands.map(brand =>
+                                        h('option', { key: brand, value: brand }, brand)
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    
+                    // App Container
+                    h('div', { className: 'app-container' },
+                        // Sidebar
+                        h('aside', { className: 'sidebar' },
+                            h('div', {
+                                className: `sidebar-item ${activeSection === 'dashboard' ? 'active' : ''}`,
+                                onClick: () => setActiveSection('dashboard')
+                            }, h('span', null, '📊'), h('span', null, 'Dashboard')),
+                            h('div', {
+                                className: `sidebar-item ${activeSection === 'settings' ? 'active' : ''}`,
+                                onClick: () => setActiveSection('settings')
+                            }, h('span', null, '⚙️'), h('span', null, 'KPI Settings'))
+                        ),
+                        
+                        // Main Content
+                        h('main', { className: 'main-content' },
+                            renderMainContent()
+                        )
+                    )
+                );
+            }
+            
+            // Render the app
+            ReactDOM.render(React.createElement(Dashboard), document.getElementById('root'));
+        });
+    </script>
+</body>
+</html>

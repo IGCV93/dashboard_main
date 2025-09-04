@@ -54,3 +54,4 @@ Desktop.ini
 *.bak
 *.backup
 .history/
+.vercel
