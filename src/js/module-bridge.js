@@ -116,7 +116,7 @@ window.ChaiVision.services = {
 // COMPONENTS BRIDGE
 // ============================================
 window.ChaiVision.components = {
-    Dashboard: window.Dashboard || function Dashboard(props) {
+    Dashboard: window.ChaiVision.components?.Dashboard || window.Dashboard || function Dashboard(props) {
         const { createElement: h } = React;
         return h('div', null, 'Dashboard Component');
     },
@@ -144,7 +144,7 @@ window.ChaiVision.components = {
         const { createElement: h } = React;
         return h('div', null, 'Channel Performance Component');
     },
-    Charts: window.Charts || function Charts(props) {
+    Charts: window.ChaiVision.components?.Charts || window.Charts || function Charts(props) {
         const { createElement: h } = React;
         return h('div', null, 'Charts Component');
     }
