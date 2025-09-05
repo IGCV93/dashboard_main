@@ -304,8 +304,17 @@
             const ctx = barChartRef.current.getContext('2d');
             const displayChannels = ALL_CHANNELS.filter(ch => selectedChannels.includes(ch));
             
-            const actualData = displayChannels.map(ch => (kpis.channelRevenues?.[ch] || 0));
-            const target85Data = displayChannels.map(ch => (kpis.channelTargets85?.[ch] || 0));
+            const actualData = displayChannels.map(ch => Number(kpis.channelRevenues?.[ch] || 0));
+            const target85Data = displayChannels.map(ch => Number(kpis.channelTargets85?.[ch] || 0));
+            try {
+                console.log('Charts: Bar data', {
+                    displayChannels,
+                    actualData,
+                    target85Data,
+                    channelRevenues: kpis.channelRevenues,
+                    channelTargets85: kpis.channelTargets85
+                });
+            } catch (e) {}
             
             barChartInstance.current = new Chart(ctx, {
                 type: 'bar',
