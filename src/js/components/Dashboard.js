@@ -32,9 +32,9 @@
         // Get dependencies from window
         const { formatCurrency, formatPercent } = window.formatters || {};
         const { getDaysInPeriod, getDaysElapsed } = window.dateUtils || {};
-        const KPICards = window.KPICards || (() => null);
-        const ChannelPerformance = window.ChannelPerformance || (() => null);
-        const Charts = window.Charts || (() => null);
+        const KPICards = window.KPICards || window.ChaiVision?.components?.KPICards || (() => null);
+        const ChannelPerformance = window.ChannelPerformance || window.ChaiVision?.components?.ChannelPerformance || (() => null);
+        const Charts = window.ChaiVision?.components?.Charts || window.Charts || (() => null);
         
         // State for charts
         const [selectedChannels, setSelectedChannels] = useState([]);
