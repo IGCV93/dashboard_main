@@ -1,4 +1,4 @@
- o/**
+ /**
  * Charts Component - Data visualization charts with performance optimizations
  */
 
