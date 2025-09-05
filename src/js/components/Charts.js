@@ -129,8 +129,8 @@
                     const monthStr = selectedMonth.toString().padStart(2, '0');
                     const dayData = filteredSalesData.filter(d => {
                         if (!d.date) return false;
-                        const [year, month, d] = d.date.split('-');
-                        return year === selectedYear && month === monthStr && d === dayStr;
+                        const [year, month, dayPart] = d.date.split('-');
+                        return year === selectedYear && month === monthStr && dayPart === dayStr;
                     });
                     const dayRevenue = dayData.reduce((sum, d) => sum + (d.revenue || 0), 0);
                     trendData.push(dayRevenue);
