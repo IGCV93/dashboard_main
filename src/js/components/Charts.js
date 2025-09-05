@@ -148,9 +148,15 @@
                 };
             }).sort((a, b) => b.revenue - a.revenue);
             
+            // Build 85% target series distributed across labels for the selected view
+            // Flat 85% target line equal to KPI target for the selected period
+            const target85Value = kpis?.totalTarget85 || 0;
+            const target85Series = trendLabels.map(() => target85Value);
+
             return {
                 trendLabels,
                 trendData,
+                target85Series,
                 channelData,
                 totalRevenue: trendData.reduce((sum, val) => sum + val, 0)
             };
@@ -212,20 +218,33 @@
                 type: 'line',
                 data: {
                     labels: data.trendLabels,
-                    datasets: [{
-                        label: 'Revenue Trend',
-                        data: data.trendData,
-                        borderColor: '#667eea',
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#667eea',
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6
-                    }]
+                    datasets: [
+                        {
+                            label: 'Revenue Trend',
+                            data: data.trendData,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#667eea',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: '85% Target',
+                            data: data.target85Series || [],
+                            borderColor: '#10B981',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0,
+                            pointRadius: 0,
+                            borderDash: [6, 4]
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
