@@ -181,7 +181,28 @@
         
         // Create charts with performance optimizations
         const createCharts = useCallback((data) => {
-            if (!data || !lineChartRef.current || !barChartRef.current || !pieChartRef.current) return;
+            const refsReady = !!(lineChartRef.current && barChartRef.current && pieChartRef.current);
+            if (!data || !refsReady) {
+                console.warn('Charts: Refs not ready or data missing. Retrying...', {
+                    hasData: !!data,
+                    lineReady: !!lineChartRef.current,
+                    barReady: !!barChartRef.current,
+                    pieReady: !!pieChartRef.current
+                });
+                // Retry shortly in case refs are not attached yet
+                setTimeout(() => {
+                    const refsReadyNow = !!(lineChartRef.current && barChartRef.current && pieChartRef.current);
+                    if (!refsReadyNow) {
+                        console.error('Charts: Refs still not ready. Skipping chart creation.');
+                        return;
+                    }
+                    destroyCharts();
+                    createLineChart(data);
+                    createBarChart(data);
+                    createPieChart(data);
+                }, 50);
+                return;
+            }
             
             // Destroy existing charts to prevent memory leaks
             destroyCharts();
@@ -190,7 +211,7 @@
             createLineChart(data);
             createBarChart(data);
             createPieChart(data);
-        }, []);
+        }, [destroyCharts, createLineChart, createBarChart, createPieChart]);
         
         // Destroy charts to prevent memory leaks
         const destroyCharts = useCallback(() => {
