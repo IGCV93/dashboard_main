@@ -482,6 +482,13 @@
 
 (function() {
     'use strict';
+    // If local ChannelPerformance exists, skip overriding
+    try {
+        if ((window.ChaiVision && window.ChaiVision.components && window.ChaiVision.components.ChannelPerformance) || window.ChannelPerformance) {
+            console.log('🛑 ReferenceOverrides: Skipping ChannelPerformance override (local detected)');
+            return;
+        }
+    } catch (e) {}
     
     function ChannelPerformance({ kpis }) {
         const { createElement: h } = React;
@@ -581,6 +588,13 @@
 
 (function() {
     'use strict';
+    // If local Dashboard exists, skip overriding
+    try {
+        if ((window.ChaiVision && window.ChaiVision.components && window.ChaiVision.components.Dashboard) || window.Dashboard) {
+            console.log('🛑 ReferenceOverrides: Skipping Dashboard override (local detected)');
+            return;
+        }
+    } catch (e) {}
     
     function Dashboard(props) {
         const { useState, useEffect, useMemo, useRef, createElement: h } = React;
