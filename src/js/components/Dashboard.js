@@ -105,8 +105,8 @@
                 );
             }
             
-            // Filter by selected brand (from dropdown)
-            if (selectedBrand !== 'All Brands') {
+            // Filter by selected brand (from dropdown). Treat "All Brands (Company Total)" as company total as well.
+            if (selectedBrand !== 'All Brands' && selectedBrand !== 'All Brands (Company Total)') {
                 filteredData = filteredData.filter(d => d.brand === selectedBrand);
             }
             
@@ -155,7 +155,8 @@
             });
             
             // Calculate targets based on selection and permissions
-            const brandsToCalculate = selectedBrand === 'All Brands' ? availableBrands : [selectedBrand];
+            const isCompanyTotal = selectedBrand === 'All Brands' || selectedBrand === 'All Brands (Company Total)';
+            const brandsToCalculate = isCompanyTotal ? availableBrands : [selectedBrand];
             
             brandsToCalculate.forEach(brand => {
                 const brandData = dynamicTargets?.[selectedYear]?.brands?.[brand];
