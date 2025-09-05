@@ -179,6 +179,22 @@
             }, 100);
         }, [processedChartData]);
         
+        // Destroy charts to prevent memory leaks
+        const destroyCharts = useCallback(() => {
+            if (lineChartInstance.current) {
+                lineChartInstance.current.destroy();
+                lineChartInstance.current = null;
+            }
+            if (barChartInstance.current) {
+                barChartInstance.current.destroy();
+                barChartInstance.current = null;
+            }
+            if (pieChartInstance.current) {
+                pieChartInstance.current.destroy();
+                pieChartInstance.current = null;
+            }
+        }, []);
+        
         // Create charts with performance optimizations
         const createCharts = useCallback((data) => {
             const refsReady = !!(lineChartRef.current && barChartRef.current && pieChartRef.current);
@@ -211,22 +227,6 @@
             createLineChart(data);
             createBarChart(data);
             createPieChart(data);
-        }, [destroyCharts, createLineChart, createBarChart, createPieChart]);
-        
-        // Destroy charts to prevent memory leaks
-        const destroyCharts = useCallback(() => {
-            if (lineChartInstance.current) {
-                lineChartInstance.current.destroy();
-                lineChartInstance.current = null;
-            }
-            if (barChartInstance.current) {
-                barChartInstance.current.destroy();
-                barChartInstance.current = null;
-            }
-            if (pieChartInstance.current) {
-                pieChartInstance.current.destroy();
-                pieChartInstance.current = null;
-            }
         }, []);
         
         // Create line chart
