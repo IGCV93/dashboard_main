@@ -129,7 +129,10 @@
         
         // Create charts with performance optimizations
         const createCharts = useCallback((data) => {
-            if (!data || !lineChartRef.current || !barChartRef.current || !pieChartRef.current) return;
+            // Safeguard: if refs are not provided (when using local Dashboard/Charts), do nothing
+            if (!data) return;
+            if (!lineChartRef || !barChartRef || !pieChartRef) return;
+            if (!lineChartRef.current || !barChartRef.current || !pieChartRef.current) return;
             
             // Destroy existing charts to prevent memory leaks
             destroyCharts();
@@ -158,7 +161,7 @@
         
         // Create line chart - with proper time-based aggregation
         const createLineChart = useCallback((data) => {
-            if (!lineChartRef.current || !kpis?.filteredData) return;
+            if (!lineChartRef || !lineChartRef.current || !kpis?.filteredData) return;
             
             const ctx = lineChartRef.current.getContext('2d');
             
@@ -258,7 +261,7 @@
         
         // Create bar chart - with channel-specific colors
         const createBarChart = useCallback((data) => {
-            if (!barChartRef.current || !data.channelData) return;
+            if (!barChartRef || !barChartRef.current || !data.channelData) return;
             
             const ctx = barChartRef.current.getContext('2d');
             
@@ -316,7 +319,7 @@
         
         // Create pie chart - matching reference implementation exactly
         const createPieChart = useCallback((data) => {
-            if (!pieChartRef.current || !data.channelData) return;
+            if (!pieChartRef || !pieChartRef.current || !data.channelData) return;
             
             const ctx = pieChartRef.current.getContext('2d');
             
