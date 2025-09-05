@@ -10,6 +10,13 @@
 
 (function() {
     'use strict';
+    // If a Charts component is already defined by the local codebase, do not override it
+    try {
+        if ((window.ChaiVision && window.ChaiVision.components && window.ChaiVision.components.Charts) || window.Charts) {
+            console.log('🛑 ReferenceOverrides: Skipping Charts override (local Charts detected)');
+            return;
+        }
+    } catch (e) {}
     
     function Charts(props) {
         const { useState, useEffect, useMemo, useRef, useCallback, createElement: h } = React;
