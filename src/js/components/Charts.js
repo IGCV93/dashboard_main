@@ -307,10 +307,16 @@
             if (!barChartRef.current) return;
             
             const ctx = barChartRef.current.getContext('2d');
-            const displayChannels = ALL_CHANNELS.filter(ch => selectedChannels.includes(ch));
+            // Determine the base set of channels allowed, then apply selection if any; otherwise show all
+            const baseChannels = (Array.isArray(kpis.availableChannels) && kpis.availableChannels.length > 0)
+                ? kpis.availableChannels
+                : ALL_CHANNELS;
+            const effectiveChannels = (Array.isArray(selectedChannels) && selectedChannels.length > 0)
+                ? baseChannels.filter(ch => selectedChannels.includes(ch))
+                : baseChannels;
             
-            const actualData = displayChannels.map(ch => Number(kpis.channelRevenues?.[ch] || 0));
-            const target85Data = displayChannels.map(ch => Number(kpis.channelTargets85?.[ch] || 0));
+            const actualData = effectiveChannels.map(ch => Number(kpis.channelRevenues?.[ch] || 0));
+            const target85Data = effectiveChannels.map(ch => Number(kpis.channelTargets85?.[ch] || 0));
             try {
                 console.log('Charts: Bar data', {
                     displayChannels,
@@ -324,7 +330,7 @@
             barChartInstance.current = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: displayChannels,
+                    labels: effectiveChannels,
                     datasets: [
                         {
                             label: 'Actual Revenue',
