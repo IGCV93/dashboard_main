@@ -1,4 +1,4 @@
-/**
+ o/**
  * Charts Component - Data visualization charts with performance optimizations
  */
 
@@ -77,7 +77,11 @@
             if (!kpis || !kpis.filteredData) return null;
             
             const filteredSalesData = kpis.filteredData;
-            const displayChannels = ALL_CHANNELS.filter(ch => selectedChannels.includes(ch));
+            // Use explicitly available channels from kpis when provided (permission-filtered), otherwise fallback
+            const availableFromKpis = Array.isArray(kpis.availableChannels) && kpis.availableChannels.length > 0
+                ? kpis.availableChannels
+                : ALL_CHANNELS;
+            const displayChannels = availableFromKpis.filter(ch => selectedChannels.includes(ch));
             
             // Prepare trend data based on view
             let trendLabels = [];
@@ -148,10 +152,11 @@
                 };
             }).sort((a, b) => b.revenue - a.revenue);
             
-            // Build 85% target series distributed across labels for the selected view
-            // Flat 85% target line equal to KPI target for the selected period
-            const target85Value = kpis?.totalTarget85 || 0;
-            const target85Series = trendLabels.map(() => target85Value);
+            // Build 85% target series per label for the selected view (daily/monthly target)
+            const totalTarget85 = kpis?.totalTarget85 || 0;
+            const pointsCount = trendLabels.length || 1;
+            const perPointTarget = totalTarget85 / pointsCount;
+            const target85Series = trendLabels.map(() => perPointTarget);
 
             return {
                 trendLabels,
