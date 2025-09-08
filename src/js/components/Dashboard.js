@@ -245,6 +245,16 @@
                     (channelRevenues[channel] / channelTargets85[channel]) * 100 : 0;
             });
             
+            const debugSummary = {
+                totalRows: canonicalData.length,
+                filteredRows: filteredData.length,
+                selectedBrand,
+                year: selectedYear,
+                month: selectedMonth,
+                totalRevenue
+            };
+            try { console.debug('KPIs debug:', debugSummary); } catch (e) {}
+
             return {
                 totalRevenue,
                 channelRevenues,
