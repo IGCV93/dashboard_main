@@ -93,11 +93,20 @@
                         }
                         
                         console.log('✅ Supabase data loaded:', data?.length || 0, 'records');
+
+                        // Normalize types/fields for frontend calculations
+                        const normalized = (data || []).map(row => ({
+                            ...row,
+                            // Ensure revenue is a number (Supabase may return numeric as string)
+                            revenue: typeof row.revenue === 'string' ? parseFloat(row.revenue) : row.revenue,
+                            // Ensure date is YYYY-MM-DD string
+                            date: typeof row.date === 'string' ? row.date.split('T')[0] : row.date
+                        }));
                         
                         // Do not auto-generate sample data when Supabase is enabled
                         // Always return the real dataset (may be empty)
                         
-                        return data;
+                        return normalized;
                     } catch (error) {
                         console.error('❌ Supabase error, falling back to local:', error);
                         return this.loadLocalData();
