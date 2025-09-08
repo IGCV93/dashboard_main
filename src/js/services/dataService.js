@@ -144,18 +144,69 @@
             return this.debounce('save_sales_data', async () => {
                 if (this.supabase && this.config.FEATURES.ENABLE_SUPABASE) {
                     try {
+                        // Preferred path: upsert on source_id if supported by DB constraint
                         const { error } = await this.supabase
                             .from('sales_data')
                             .upsert(data, { onConflict: 'source_id' });
-                        
                         if (error) throw error;
-                        
-                        // Invalidate cache
+
                         this.cache.delete('sales_data');
                         return true;
                     } catch (error) {
+                        // Fallback when ON CONFLICT is not available (e.g., no unique constraint)
+                        if (error?.code === '42P10') {
+                            try {
+                                const sourceIds = Array.from(new Set((data || []).map(r => r.source_id).filter(Boolean)));
+                                if (sourceIds.length === 0) throw error;
+
+                                // Find which rows already exist
+                                const { data: existing, error: selectError } = await this.supabase
+                                    .from('sales_data')
+                                    .select('source_id')
+                                    .in('source_id', sourceIds);
+                                if (selectError) throw selectError;
+
+                                const existingSet = new Set((existing || []).map(r => r.source_id));
+                                const toInsert = [];
+                                const toUpdate = [];
+
+                                for (const row of data) {
+                                    if (existingSet.has(row.source_id)) {
+                                        toUpdate.push(row);
+                                    } else {
+                                        toInsert.push(row);
+                                    }
+                                }
+
+                                // Insert new rows in bulk
+                                if (toInsert.length > 0) {
+                                    const { error: insertError } = await this.supabase
+                                        .from('sales_data')
+                                        .insert(toInsert);
+                                    if (insertError) throw insertError;
+                                }
+
+                                // Update existing rows one-by-one (safe, preserves differing values per row)
+                                for (const row of toUpdate) {
+                                    const rowCopy = { ...row };
+                                    // Ensure we do not modify created_at; optionally set updated_at client-side
+                                    rowCopy.updated_at = new Date().toISOString();
+                                    const { error: updateError } = await this.supabase
+                                        .from('sales_data')
+                                        .update(rowCopy)
+                                        .eq('source_id', row.source_id);
+                                    if (updateError) throw updateError;
+                                }
+
+                                this.cache.delete('sales_data');
+                                return true;
+                            } catch (fallbackError) {
+                                console.error('Supabase fallback merge error:', fallbackError);
+                                throw fallbackError;
+                            }
+                        }
+
                         console.error('Supabase error:', error);
-                        // Re-throw to surface the failure to callers/UI
                         throw error;
                     }
                 } else {
