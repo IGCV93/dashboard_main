@@ -77,12 +77,27 @@
         const fileInputRef = useRef(null);
         const supabaseEnabled = config?.FEATURES?.ENABLE_SUPABASE || false;
         
+        // UUID helper (uses crypto.randomUUID if available, otherwise fallback)
+        const generateUUID = () => {
+            try {
+                if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+                    return window.crypto.randomUUID();
+                }
+            } catch (e) {}
+            // Fallback RFC4122 v4 generator
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        };
+
         // Audit log helper
         const logUpload = async (recordCount, acceptedCount, rejectedCount, fileName) => {
             const supabase = getSupabaseClient();
             if (!supabase) return;
             
-            const uploadBatchId = `UPLOAD_${Date.now()}_${currentUser?.id?.substring(0, 8)}`;
+            const uploadBatchId = generateUUID();
             
             try {
                 await supabase
@@ -268,12 +283,12 @@
             
             try {
                 // Log the upload
-                const batchId = await logUpload(
+                const batchId = (await logUpload(
                     uploadedData.length,
                     accepted.length,
                     rejected.length,
                     uploadedFile.name
-                );
+                )) || generateUUID();
                 
                 // Format data for storage
                 const formattedData = accepted.map(row => ({

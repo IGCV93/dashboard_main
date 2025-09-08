@@ -155,7 +155,8 @@
                         return true;
                     } catch (error) {
                         console.error('Supabase error:', error);
-                        return this.saveLocalData(data);
+                        // Re-throw to surface the failure to callers/UI
+                        throw error;
                     }
                 } else {
                     return this.saveLocalData(data);
