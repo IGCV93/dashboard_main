@@ -24,6 +24,7 @@
             config,
             dataService,
             dynamicBrands,
+            dynamicChannels,
             dynamicTargets,
             userRole,        // Added for permission checking
             userPermissions  // Added for filtering
@@ -71,10 +72,10 @@
         
         // Filter channels based on user permissions
         const availableChannels = useMemo(() => {
-            const allChannels = INITIAL_DATA.channels || [
+            const allChannels = (dynamicChannels && dynamicChannels.length > 0) ? dynamicChannels : (INITIAL_DATA.channels || [
                 'Amazon', 'TikTok', 'DTC-Shopify', 'Retail',
                 'CA International', 'UK International', 'Wholesale', 'Omnichannel'
-            ];
+            ]);
             
             if (!userPermissions) return allChannels;
             

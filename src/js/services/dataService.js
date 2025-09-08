@@ -94,12 +94,8 @@
                         
                         console.log('✅ Supabase data loaded:', data?.length || 0, 'records');
                         
-                        // If no data in Supabase, generate sample data
-                        if (!data || data.length === 0) {
-                            console.log('📊 No data in Supabase, generating sample data...');
-                            const sampleData = this.generateSampleData();
-                            return sampleData;
-                        }
+                        // Do not auto-generate sample data when Supabase is enabled
+                        // Always return the real dataset (may be empty)
                         
                         return data;
                     } catch (error) {

@@ -242,6 +242,14 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
         const Upload = window.ChaiVision.components.Upload;
         
         // Render navigation
+        // Derive dynamic brand/channel lists from loaded data
+        const brandsFromData = Array.from(new Set((salesData || [])
+            .map(d => d.brand_name || d.brand)
+            .filter(Boolean))).sort();
+        const channelsFromData = Array.from(new Set((salesData || [])
+            .map(d => d.channel_name || d.channel)
+            .filter(Boolean))).sort();
+
         const navigation = h(Navigation, {
             view,
             setView,
@@ -253,7 +261,7 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
             setSelectedYear,
             selectedBrand,
             setSelectedBrand,
-            brands: config.INITIAL_DATA.brands || ['LifePro', 'PetCove'],
+            brands: brandsFromData.length > 0 ? brandsFromData : (config.INITIAL_DATA.brands || ['LifePro', 'PetCove']),
             activeSection,
             setActiveSection: setActiveSectionWithRouting
         });
@@ -303,7 +311,9 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
                         selectedBrand,
                         salesData,
                         config,
-                        dataService
+                        dataService,
+                        dynamicBrands: brandsFromData,
+                        dynamicChannels: channelsFromData
                     });
                     
                 case 'settings':
