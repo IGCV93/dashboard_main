@@ -30,6 +30,16 @@
             userPermissions  // Added for filtering
         } = props;
         
+        // Normalization helper (match upload normalization)
+        const normalizeKey = (value) => {
+            const str = String(value || '')
+                .trim()
+                .toLowerCase()
+                .replace(/&/g, 'and')
+                .replace(/[^a-z0-9]+/g, '');
+            return str;
+        };
+
         // Get dependencies from window
         const { formatCurrency, formatPercent } = window.formatters || {};
         const { getDaysInPeriod, getDaysElapsed } = window.dateUtils || {};
@@ -90,25 +100,35 @@
         
         // Calculate KPIs with permission filtering
         const kpis = useMemo(() => {
-            let filteredData = salesData || [];
+            // Build canonical fields for robust filtering
+            const canonicalData = (salesData || []).map(d => ({
+                ...d,
+                _brand: (d.brand_name || d.brand || '').trim(),
+                _brandKey: normalizeKey(d.brand_name || d.brand),
+                _channel: (d.channel_name || d.channel || '').trim(),
+                _channelKey: normalizeKey(d.channel_name || d.channel)
+            }));
+
+            let filteredData = canonicalData;
             
             // PERMISSION FILTER: Filter by user's brand permissions
             if (userRole !== 'Admin' && userPermissions?.brands && !userPermissions.brands.includes('All Brands')) {
-                filteredData = filteredData.filter(d => 
-                    userPermissions.brands.includes(d.brand)
-                );
+                filteredData = filteredData.filter(d => {
+                    return userPermissions.brands.some(b => normalizeKey(b) === d._brandKey);
+                });
             }
             
             // PERMISSION FILTER: Filter by user's channel permissions
             if (userRole !== 'Admin' && userPermissions?.channels && !userPermissions.channels.includes('All Channels')) {
-                filteredData = filteredData.filter(d => 
-                    userPermissions.channels.includes(d.channel)
-                );
+                filteredData = filteredData.filter(d => {
+                    return userPermissions.channels.some(c => normalizeKey(c) === d._channelKey);
+                });
             }
             
             // Filter by selected brand (from dropdown). Treat "All Brands (Company Total)" as company total as well.
             if (selectedBrand !== 'All Brands' && selectedBrand !== 'All Brands (Company Total)') {
-                filteredData = filteredData.filter(d => d.brand === selectedBrand);
+                const selKey = normalizeKey(selectedBrand);
+                filteredData = filteredData.filter(d => d._brandKey === selKey);
             }
             
             // Filter by period
@@ -139,8 +159,9 @@
             // Calculate revenue by channel (only for available channels)
             const channelRevenues = {};
             availableChannels.forEach(channel => {
+                const chKey = normalizeKey(channel);
                 channelRevenues[channel] = filteredData
-                    .filter(d => d.channel === channel)
+                    .filter(d => d._channelKey === chKey)
                     .reduce((sum, d) => sum + (d.revenue || 0), 0);
             });
             
