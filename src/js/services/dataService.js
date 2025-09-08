@@ -146,7 +146,7 @@
                     try {
                         const { error } = await this.supabase
                             .from('sales_data')
-                            .insert(data);
+                            .upsert(data, { onConflict: 'source_id' });
                         
                         if (error) throw error;
                         

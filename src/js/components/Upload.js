@@ -92,6 +92,15 @@
             });
         };
 
+        // Deterministic source_id helper for deduplication (date|channel|brand)
+        const normalize = (value) => String(value || '').trim().toLowerCase().replace(/\s+/g, '_');
+        const buildSourceId = (row) => {
+            const dateVal = row.Date || row.date;
+            const channelVal = row.Channel || row.channel;
+            const brandVal = row.Brand || row.brand;
+            return `${normalize(dateVal)}|${normalize(channelVal)}|${normalize(brandVal)}`;
+        };
+
         // Audit log helper
         const logUpload = async (recordCount, acceptedCount, rejectedCount, fileName) => {
             const supabase = getSupabaseClient();
@@ -292,14 +301,13 @@
                 
                 // Format data for storage
                 const formattedData = accepted.map(row => ({
+                    source_id: buildSourceId(row),
                     date: row.Date || row.date,
                     channel: row.Channel || row.channel,
                     brand: row.Brand || row.brand,
                     revenue: parseFloat(row.Revenue || row.revenue),
                     uploaded_by: currentUser?.id,
-                    upload_batch_id: batchId,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
+                    upload_batch_id: batchId
                 }));
                 
                 if (dataService) {
