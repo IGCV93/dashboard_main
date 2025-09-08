@@ -93,12 +93,39 @@
         };
 
         // Deterministic source_id helper for deduplication (date|channel|brand)
-        const normalize = (value) => String(value || '').trim().toLowerCase().replace(/\s+/g, '_');
-        const buildSourceId = (row) => {
-            const dateVal = row.Date || row.date;
-            const channelVal = row.Channel || row.channel;
-            const brandVal = row.Brand || row.brand;
-            return `${normalize(dateVal)}|${normalize(channelVal)}|${normalize(brandVal)}`;
+        const normalizeKey = (value) => {
+            const str = String(value || '')
+                .trim()
+                .toLowerCase()
+                .replace(/&/g, 'and')
+                .replace(/[^a-z0-9]+/g, '');
+            return str;
+        };
+        const buildSourceIdFromCanon = (dateVal, channelName, brandName) => {
+            return `${normalizeKey(dateVal)}|${normalizeKey(channelName)}|${normalizeKey(brandName)}`;
+        };
+
+        // Fetch canonical brand/channel maps from Supabase
+        const getCanonicalMaps = async () => {
+            const supabase = getSupabaseClient();
+            const brandMap = new Map();
+            const channelMap = new Map();
+            if (!supabase) return { brandMap, channelMap };
+            try {
+                const [{ data: brands }, { data: channels }] = await Promise.all([
+                    supabase.from('brands').select('id, name, is_active'),
+                    supabase.from('channels').select('id, name, is_active')
+                ]);
+                (brands || []).forEach(b => {
+                    if (b?.name) brandMap.set(normalizeKey(b.name), { id: b.id, name: b.name });
+                });
+                (channels || []).forEach(c => {
+                    if (c?.name) channelMap.set(normalizeKey(c.name), { id: c.id, name: c.name });
+                });
+            } catch (e) {
+                console.warn('Failed to load canonical brand/channel maps:', e);
+            }
+            return { brandMap, channelMap };
         };
 
         // Audit log helper
@@ -299,16 +326,43 @@
                     uploadedFile.name
                 )) || generateUUID();
                 
+                // Load canonical maps
+                const { brandMap, channelMap } = await getCanonicalMaps();
+
                 // Format data for storage
-                const formattedData = accepted.map(row => ({
-                    source_id: buildSourceId(row),
-                    date: row.Date || row.date,
-                    channel: row.Channel || row.channel,
-                    brand: row.Brand || row.brand,
-                    revenue: parseFloat(row.Revenue || row.revenue),
-                    uploaded_by: currentUser?.id,
-                    upload_batch_id: batchId
-                }));
+                const formattedData = accepted.map(row => {
+                    const dateVal = row.Date || row.date;
+                    const rawBrand = row.Brand || row.brand;
+                    const rawChannel = row.Channel || row.channel;
+                    const brandKey = normalizeKey(rawBrand);
+                    const channelKey = normalizeKey(rawChannel);
+                    const brandEntry = brandMap.get(brandKey);
+                    const channelEntry = channelMap.get(channelKey);
+
+                    const brandName = brandEntry?.name || (rawBrand || '').trim();
+                    const channelName = channelEntry?.name || (rawChannel || '').trim();
+
+                    return {
+                        // canonical linkage
+                        brand_id: brandEntry?.id || null,
+                        channel_id: channelEntry?.id || null,
+                        brand_name: brandName,
+                        channel_name: channelName,
+                        // legacy fields for backward compatibility
+                        brand: brandName,
+                        channel: channelName,
+                        // core metrics
+                        date: dateVal,
+                        revenue: parseFloat(row.Revenue || row.revenue),
+                        // provenance
+                        source: 'manual',
+                        source_id: buildSourceIdFromCanon(dateVal, channelName, brandName),
+                        uploaded_by: currentUser?.id,
+                        upload_batch_id: batchId,
+                        is_valid_sale: true,
+                        updated_at: new Date().toISOString()
+                    };
+                });
                 
                 if (dataService) {
                     await dataService.saveSalesData(formattedData);
