@@ -314,12 +314,26 @@
             const effectiveChannels = (Array.isArray(selectedChannels) && selectedChannels.length > 0)
                 ? baseChannels.filter(ch => selectedChannels.includes(ch))
                 : baseChannels;
-            
-            const actualData = effectiveChannels.map(ch => Number(kpis.channelRevenues?.[ch] || 0));
+
+            // Robust channel matching using normalized keys against filteredData
+            const normalizeKey = (value) => String(value || '')
+                .trim()
+                .toLowerCase()
+                .replace(/&/g, 'and')
+                .replace(/[^a-z0-9]+/g, '');
+
+            const filteredRows = Array.isArray(kpis.filteredData) ? kpis.filteredData : [];
+            const actualData = effectiveChannels.map(ch => {
+                const key = normalizeKey(ch);
+                const sum = filteredRows
+                    .filter(r => normalizeKey(r.channel_name || r.channel) === key)
+                    .reduce((acc, r) => acc + Number(r.revenue || 0), 0);
+                return sum;
+            });
             const target85Data = effectiveChannels.map(ch => Number(kpis.channelTargets85?.[ch] || 0));
             try {
                 console.log('Charts: Bar data', {
-                    displayChannels,
+                    effectiveChannels,
                     actualData,
                     target85Data,
                     channelRevenues: kpis.channelRevenues,
