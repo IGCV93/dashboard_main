@@ -58,8 +58,8 @@
                             h('div', { className: 'metric-item' },
                                 h('div', { className: 'metric-label' }, 'Revenue'),
                                 h('div', { className: 'metric-value' }, 
-                                    formatCurrency ? formatCurrency(kpis.channelRevenues?.[channel] || 0) : 
-                                    '$' + (kpis.channelRevenues?.[channel] || 0)
+                                    formatCurrency ? formatCurrency(kpis.channelRevenues?.[channel] || 0, 'USD', false) : 
+                                    '$' + Number(kpis.channelRevenues?.[channel] || 0).toFixed(2)
                                 )
                             ),
                             h('div', { className: 'metric-item' },

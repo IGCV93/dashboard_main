@@ -17,11 +17,13 @@
             return `$${(value / 1000).toFixed(0)}K`;
         }
         
+        // When not compact, show cents for exact totals
+        const useCents = !compact;
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: currency,
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
+            minimumFractionDigits: useCents ? 2 : 0,
+            maximumFractionDigits: useCents ? 2 : 0
         }).format(value);
     }
 

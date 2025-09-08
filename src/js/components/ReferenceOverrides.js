@@ -887,7 +887,7 @@
                         ),
                         h('div', { className: 'target-item' },
                             h('div', { className: 'target-label' }, '📊 Current Achievement'),
-                            h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.totalRevenue) : '$' + kpis.totalRevenue),
+                            h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.totalRevenue, 'USD', false) : '$' + Number(kpis.totalRevenue || 0).toFixed(2)),
                             h('div', { className: 'target-subtitle' }, `${kpis.achievement100.toFixed(1)}% of full target`)
                         ),
                         h('div', { className: 'target-item' },
