@@ -9,7 +9,8 @@ window.ChaiVision = window.ChaiVision || {};
 // ============================================
 // CONFIGURATION BRIDGE
 // ============================================
-window.ChaiVision.CONFIG = {
+// Only set defaults if a real CONFIG isn't already defined by src/js/config.js
+window.ChaiVision.CONFIG = window.ChaiVision.CONFIG || {
     // Application Info
     APP: {
         NAME: 'Chai Vision',
