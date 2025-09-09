@@ -312,6 +312,16 @@
         const createBarChart = useCallback((data) => {
             if (!barChartRef.current) return;
             
+            // DEBUG: Check if we have valid KPIs data
+            if (!kpis || !kpis.filteredData || kpis.filteredData.length === 0) {
+                console.log('🔍 Charts: Skipping bar chart creation - no valid KPIs data', {
+                    hasKpis: !!kpis,
+                    hasFilteredData: !!(kpis && kpis.filteredData),
+                    filteredDataLength: kpis && kpis.filteredData ? kpis.filteredData.length : 0
+                });
+                return;
+            }
+            
             const ctx = barChartRef.current.getContext('2d');
             // Determine the base set of channels allowed, then apply selection if any; otherwise show all
             const baseChannels = (Array.isArray(kpis.availableChannels) && kpis.availableChannels.length > 0)
@@ -491,6 +501,14 @@
         
         // Update charts when data changes
         useEffect(() => {
+            console.log('🔍 Charts: useEffect triggered', {
+                isChartsVisible,
+                hasProcessedChartData: !!processedChartData,
+                hasKpis: !!kpis,
+                filteredDataLength: kpis && kpis.filteredData ? kpis.filteredData.length : 0,
+                timestamp: new Date().toISOString()
+            });
+            
             if (isChartsVisible && processedChartData) {
                 updateCharts();
             }
