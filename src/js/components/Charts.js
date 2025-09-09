@@ -225,7 +225,7 @@
                     }
                     destroyCharts();
                     createLineChart(data);
-                    createBarChart(kpis); // Pass kpis instead of processed data
+                    createBarChart(data); // Pass processed data
                     createPieChart(data);
                 }, 50);
                 return;
@@ -309,81 +309,43 @@
         }, [getDisplayTitle, formatCurrency]);
         
         // Create bar chart
-        const createBarChart = useCallback((kpis) => {
+        const createBarChart = useCallback((data) => {
             if (!barChartRef.current) return;
             
-            // DEBUG: Check if we have valid KPIs data
-            if (!kpis || !kpis.filteredData || kpis.filteredData.length === 0) {
-                console.log('🔍 Charts: Skipping bar chart creation - no valid KPIs data', {
-                    hasKpis: !!kpis,
-                    hasFilteredData: !!(kpis && kpis.filteredData),
-                    filteredDataLength: kpis && kpis.filteredData ? kpis.filteredData.length : 0
+            // DEBUG: Check if we have valid data
+            if (!data || !data.channelData || data.channelData.length === 0) {
+                console.log('🔍 Charts: Skipping bar chart creation - no valid channel data', {
+                    hasData: !!data,
+                    hasChannelData: !!(data && data.channelData),
+                    channelDataLength: data && data.channelData ? data.channelData.length : 0
                 });
                 return;
             }
             
             const ctx = barChartRef.current.getContext('2d');
-            // Determine the base set of channels allowed, then apply selection if any; otherwise show all
-            const baseChannels = (Array.isArray(kpis.availableChannels) && kpis.availableChannels.length > 0)
-                ? kpis.availableChannels
-                : ALL_CHANNELS;
-            const effectiveChannels = (Array.isArray(selectedChannels) && selectedChannels.length > 0)
-                ? baseChannels.filter(ch => selectedChannels.includes(ch))
-                : baseChannels;
-
-            // Robust channel matching using normalized keys against filteredData
-            const normalizeKey = (value) => String(value || '')
-                .trim()
-                .toLowerCase()
-                .replace(/&/g, 'and')
-                .replace(/[^a-z0-9]+/g, '');
-
-            const filteredRows = Array.isArray(kpis.filteredData) ? kpis.filteredData : [];
             
-            // DEBUG: Log what Charts is receiving
-            console.log('🔍 Charts: KPIs received for bar chart:', {
-                hasFilteredData: !!kpis.filteredData,
-                filteredDataType: typeof kpis.filteredData,
-                filteredDataLength: kpis.filteredData ? kpis.filteredData.length : 'N/A',
-                channelRevenues: kpis.channelRevenues,
-                availableChannels: kpis.availableChannels
+            // DEBUG: Log what we're working with
+            console.log('🔍 Charts: Channel data for bar chart:', {
+                channelData: data.channelData,
+                channelDataLength: data.channelData.length
             });
             
-            // DEBUG: Log the raw filtered data
-            console.log('🔍 Charts: Raw filteredData sample:', filteredRows.slice(0, 3));
-            console.log('🔍 Charts: Total filteredData rows:', filteredRows.length);
+            // Extract channel names and revenues from channelData
+            const channelNames = data.channelData.map(ch => ch.channel);
+            const actualData = data.channelData.map(ch => ch.revenue);
             
-            const actualData = effectiveChannels.map(ch => {
-                // Use the pre-calculated _channelKey for matching (already normalized in Dashboard)
-                const chKey = normalizeKey(ch);
-                const matches = filteredRows.filter(r => r._channelKey === chKey);
-                const sum = matches.reduce((acc, r) => acc + Number(r.revenue || 0), 0);
-                
-                console.log(`🔍 Charts: Channel "${ch}" (key: "${chKey}") - Matches:`, matches.length, 'Sum:', sum);
-                if (matches.length > 0) {
-                    console.log(`🔍 Charts: Sample matches for "${ch}":`, matches.slice(0, 2));
-                }
-                return sum;
+            // Get target data from kpis (we need to access kpis for targets)
+            const target85Data = channelNames.map(ch => Number(kpis?.channelTargets85?.[ch] || 0));
+            
+            console.log('🔍 Charts: Bar chart data prepared:', {
+                channelNames,
+                actualData,
+                target85Data
             });
-            
-            // DEBUG: Log what we're looking for vs what we have
-            console.log('🔍 Charts: Channel keys in data:', filteredRows.map(r => r._channelKey).slice(0, 5));
-            console.log('🔍 Charts: Looking for keys:', effectiveChannels.map(ch => normalizeKey(ch)));
-            const target85Data = effectiveChannels.map(ch => Number(kpis.channelTargets85?.[ch] || 0));
-            try {
-                console.log('Charts: Bar data', {
-                    effectiveChannels,
-                    actualData,
-                    target85Data,
-                    channelRevenues: kpis.channelRevenues,
-                    channelTargets85: kpis.channelTargets85
-                });
-            } catch (e) {}
-            
             barChartInstance.current = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: effectiveChannels,
+                    labels: channelNames,
                     datasets: [
                         {
                             label: 'Actual Revenue',
