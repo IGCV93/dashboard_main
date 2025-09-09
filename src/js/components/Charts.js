@@ -330,6 +330,15 @@
 
             const filteredRows = Array.isArray(kpis.filteredData) ? kpis.filteredData : [];
             
+            // DEBUG: Log what Charts is receiving from Dashboard
+            console.log('🔍 Charts: KPIs object received:', {
+                hasFilteredData: !!kpis.filteredData,
+                filteredDataType: typeof kpis.filteredData,
+                filteredDataLength: kpis.filteredData ? kpis.filteredData.length : 'N/A',
+                channelRevenues: kpis.channelRevenues,
+                availableChannels: kpis.availableChannels
+            });
+            
             // DEBUG: Log the raw filtered data
             console.log('🔍 Charts: Raw filteredData sample:', filteredRows.slice(0, 3));
             console.log('🔍 Charts: Total filteredData rows:', filteredRows.length);
