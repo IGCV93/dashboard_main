@@ -429,7 +429,7 @@
                     }
                 }
             });
-        }, [getDisplayTitle, formatCurrency]);
+        }, [getDisplayTitle, formatCurrency, kpis]);
         
         // Create pie chart
         const createPieChart = useCallback((data) => {
