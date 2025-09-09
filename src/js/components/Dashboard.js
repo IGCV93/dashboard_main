@@ -156,6 +156,17 @@
                 });
             }
             
+            // DEBUG: Log filtering results
+            console.log('🔍 Dashboard: Filtering debug', {
+                view,
+                selectedYear,
+                selectedMonth,
+                selectedBrand,
+                canonicalDataLength: canonicalData.length,
+                filteredDataLength: filteredData.length,
+                sampleFilteredData: filteredData.slice(0, 2)
+            });
+            
             // Calculate revenue by channel (only for available channels)
             const channelRevenues = {};
             availableChannels.forEach(channel => {

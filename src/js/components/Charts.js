@@ -329,17 +329,24 @@
                 .replace(/[^a-z0-9]+/g, '');
 
             const filteredRows = Array.isArray(kpis.filteredData) ? kpis.filteredData : [];
+            
+            // DEBUG: Log the raw filtered data
+            console.log('🔍 Charts: Raw filteredData sample:', filteredRows.slice(0, 3));
+            console.log('🔍 Charts: Total filteredData rows:', filteredRows.length);
+            
             const actualData = effectiveChannels.map(ch => {
                 // First try direct canonical match
-                let sum = filteredRows
-                    .filter(r => (r.channel_name || r.channel) === ch)
-                    .reduce((acc, r) => acc + Number(r.revenue || 0), 0);
+                const directMatches = filteredRows.filter(r => (r.channel_name || r.channel) === ch);
+                let sum = directMatches.reduce((acc, r) => acc + Number(r.revenue || 0), 0);
+                
+                console.log(`🔍 Charts: Channel "${ch}" - Direct matches:`, directMatches.length, 'Sum:', sum);
+                
                 // Fallback: normalized comparison
                 if (sum === 0) {
                     const key = normalizeKey(ch);
-                    sum = filteredRows
-                        .filter(r => normalizeKey(r.channel_name || r.channel) === key)
-                        .reduce((acc, r) => acc + Number(r.revenue || 0), 0);
+                    const normalizedMatches = filteredRows.filter(r => normalizeKey(r.channel_name || r.channel) === key);
+                    sum = normalizedMatches.reduce((acc, r) => acc + Number(r.revenue || 0), 0);
+                    console.log(`🔍 Charts: Channel "${ch}" - Normalized matches:`, normalizedMatches.length, 'Sum:', sum);
                 }
                 return sum;
             });
