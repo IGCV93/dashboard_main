@@ -341,8 +341,15 @@
                 const sum = matches.reduce((acc, r) => acc + Number(r.revenue || 0), 0);
                 
                 console.log(`🔍 Charts: Channel "${ch}" (key: "${chKey}") - Matches:`, matches.length, 'Sum:', sum);
+                if (matches.length > 0) {
+                    console.log(`🔍 Charts: Sample matches for "${ch}":`, matches.slice(0, 2));
+                }
                 return sum;
             });
+            
+            // DEBUG: Log what we're looking for vs what we have
+            console.log('🔍 Charts: Channel keys in data:', filteredRows.map(r => r._channelKey).slice(0, 5));
+            console.log('🔍 Charts: Looking for keys:', effectiveChannels.map(ch => normalizeKey(ch)));
             const target85Data = effectiveChannels.map(ch => Number(kpis.channelTargets85?.[ch] || 0));
             try {
                 console.log('Charts: Bar data', {
