@@ -141,9 +141,15 @@
                 }
             }
             
-            // Prepare channel breakdown data
+            // Prepare channel breakdown data using normalized matching
+            const normalizeKey = (value) => String(value || '')
+                .trim()
+                .toLowerCase()
+                .replace(/&/g, 'and')
+                .replace(/[^a-z0-9]+/g, '');
             const channelData = displayChannels.map(channel => {
-                const channelSales = filteredSalesData.filter(d => d.channel === channel);
+                const key = normalizeKey(channel);
+                const channelSales = filteredSalesData.filter(d => normalizeKey(d.channel_name || d.channel) === key);
                 const totalRevenue = channelSales.reduce((sum, d) => sum + (d.revenue || 0), 0);
                 return {
                     channel,
@@ -351,14 +357,18 @@
                             data: actualData,
                             backgroundColor: 'rgba(251, 191, 36, 0.6)', /* amber */
                             borderColor: 'rgb(245, 158, 11)',
-                            borderWidth: 2
+                            borderWidth: 2,
+                            categoryPercentage: 0.6,
+                            barPercentage: 0.45
                         },
                         {
                             label: '85% Target',
                             data: target85Data,
                             backgroundColor: 'rgba(229, 231, 235, 0.9)', /* gray-200 */
                             borderColor: 'rgb(209, 213, 219)',
-                            borderWidth: 2
+                            borderWidth: 2,
+                            categoryPercentage: 0.6,
+                            barPercentage: 0.45
                         }
                     ]
                 },
