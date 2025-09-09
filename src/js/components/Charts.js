@@ -74,9 +74,20 @@
         
         // Optimized data processing with memoization
         const processedChartData = useMemo(() => {
-            if (!kpis || !kpis.filteredData) return null;
+            console.log('🔍 Charts: processedChartData useMemo triggered', {
+                hasKpis: !!kpis,
+                hasFilteredData: !!(kpis && kpis.filteredData),
+                filteredDataLength: kpis && kpis.filteredData ? kpis.filteredData.length : 0,
+                kpisKeys: kpis ? Object.keys(kpis) : []
+            });
+            
+            if (!kpis || !kpis.filteredData) {
+                console.log('🔍 Charts: processedChartData returning null - no kpis or filteredData');
+                return null;
+            }
             
             const filteredSalesData = kpis.filteredData;
+            console.log('🔍 Charts: filteredSalesData sample:', filteredSalesData.slice(0, 2));
             // Use explicitly available channels from kpis when provided (permission-filtered), otherwise fallback
             const availableFromKpis = Array.isArray(kpis.availableChannels) && kpis.availableChannels.length > 0
                 ? kpis.availableChannels
@@ -151,6 +162,7 @@
                 const key = normalizeKey(channel);
                 const channelSales = filteredSalesData.filter(d => normalizeKey(d.channel_name || d.channel) === key);
                 const totalRevenue = channelSales.reduce((sum, d) => sum + (d.revenue || 0), 0);
+                console.log(`🔍 Charts: Channel "${channel}" (key: "${key}") - Sales: ${channelSales.length}, Revenue: ${totalRevenue}`);
                 return {
                     channel,
                     revenue: totalRevenue,
@@ -158,30 +170,45 @@
                 };
             }).sort((a, b) => b.revenue - a.revenue);
             
+            console.log('🔍 Charts: channelData created:', channelData);
+            
             // Build 85% target series per label for the selected view (daily/monthly target)
             const totalTarget85 = kpis?.totalTarget85 || 0;
             const pointsCount = trendLabels.length || 1;
             const perPointTarget = totalTarget85 / pointsCount;
             const target85Series = trendLabels.map(() => perPointTarget);
 
-            return {
+            const result = {
                 trendLabels,
                 trendData,
                 target85Series,
                 channelData,
                 totalRevenue: trendData.reduce((sum, val) => sum + val, 0)
             };
+            
+            console.log('🔍 Charts: processedChartData final result:', result);
+            return result;
         }, [kpis, selectedChannels, view, selectedPeriod, selectedMonth, selectedYear, ALL_CHANNELS, CHANNEL_COLORS]);
         
         // Debounced chart update
         const updateCharts = useCallback(() => {
+            console.log('🔍 Charts: updateCharts called', {
+                hasProcessedChartData: !!processedChartData,
+                processedChartDataType: typeof processedChartData,
+                processedChartDataKeys: processedChartData ? Object.keys(processedChartData) : []
+            });
+            
             if (chartUpdateTimeout.current) {
                 clearTimeout(chartUpdateTimeout.current);
             }
             
             chartUpdateTimeout.current = setTimeout(() => {
-                if (!processedChartData) return;
+                if (!processedChartData) {
+                    console.log('🔍 Charts: updateCharts - no processedChartData, returning');
+                    return;
+                }
                 
+                console.log('🔍 Charts: updateCharts - calling createBarChart with:', processedChartData);
                 // Update chart data state
                 setChartData(processedChartData);
                 
