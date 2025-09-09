@@ -335,19 +335,12 @@
             console.log('🔍 Charts: Total filteredData rows:', filteredRows.length);
             
             const actualData = effectiveChannels.map(ch => {
-                // First try direct canonical match
-                const directMatches = filteredRows.filter(r => (r.channel_name || r.channel) === ch);
-                let sum = directMatches.reduce((acc, r) => acc + Number(r.revenue || 0), 0);
+                // Use the pre-calculated _channelKey for matching (already normalized in Dashboard)
+                const chKey = normalizeKey(ch);
+                const matches = filteredRows.filter(r => r._channelKey === chKey);
+                const sum = matches.reduce((acc, r) => acc + Number(r.revenue || 0), 0);
                 
-                console.log(`🔍 Charts: Channel "${ch}" - Direct matches:`, directMatches.length, 'Sum:', sum);
-                
-                // Fallback: normalized comparison
-                if (sum === 0) {
-                    const key = normalizeKey(ch);
-                    const normalizedMatches = filteredRows.filter(r => normalizeKey(r.channel_name || r.channel) === key);
-                    sum = normalizedMatches.reduce((acc, r) => acc + Number(r.revenue || 0), 0);
-                    console.log(`🔍 Charts: Channel "${ch}" - Normalized matches:`, normalizedMatches.length, 'Sum:', sum);
-                }
+                console.log(`🔍 Charts: Channel "${ch}" (key: "${chKey}") - Matches:`, matches.length, 'Sum:', sum);
                 return sum;
             });
             const target85Data = effectiveChannels.map(ch => Number(kpis.channelTargets85?.[ch] || 0));
