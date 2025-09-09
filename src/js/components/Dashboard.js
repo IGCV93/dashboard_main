@@ -176,6 +176,13 @@
                 'Brand key': selectedBrand !== 'All Brands' && selectedBrand !== 'All Brands (Company Total)' ? normalizeKey(selectedBrand) : 'N/A'
             });
             
+            // DEBUG: Log sample data dates and brands to see what we're working with
+            console.log('🔍 Dashboard: Sample data analysis', {
+                'Sample dates': canonicalData.slice(0, 5).map(d => d.date),
+                'Sample brands': canonicalData.slice(0, 5).map(d => ({ brand: d.brand, brand_name: d.brand_name, _brandKey: d._brandKey })),
+                'Sample channels': canonicalData.slice(0, 5).map(d => ({ channel: d.channel, channel_name: d.channel_name, _channelKey: d._channelKey }))
+            });
+            
             // Calculate revenue by channel (only for available channels)
             const channelRevenues = {};
             availableChannels.forEach(channel => {
