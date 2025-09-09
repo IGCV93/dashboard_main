@@ -178,11 +178,18 @@
             const perPointTarget = totalTarget85 / pointsCount;
             const target85Series = trendLabels.map(() => perPointTarget);
 
+            // Add channel targets to the result for bar chart
+            const channelTargets = {};
+            displayChannels.forEach(channel => {
+                channelTargets[channel] = kpis?.channelTargets85?.[channel] || 0;
+            });
+
             const result = {
                 trendLabels,
                 trendData,
                 target85Series,
                 channelData,
+                channelTargets,
                 totalRevenue: trendData.reduce((sum, val) => sum + val, 0)
             };
             
@@ -340,6 +347,17 @@
             if (!barChartRef.current) return;
             
             // DEBUG: Check if we have valid data
+            console.log('🔍 Charts: createBarChart called with data:', {
+                hasData: !!data,
+                dataType: typeof data,
+                dataKeys: data ? Object.keys(data) : [],
+                hasChannelData: !!(data && data.channelData),
+                channelDataType: data && data.channelData ? typeof data.channelData : 'undefined',
+                channelDataIsArray: data && data.channelData ? Array.isArray(data.channelData) : false,
+                channelDataLength: data && data.channelData ? data.channelData.length : 0,
+                channelDataSample: data && data.channelData ? data.channelData.slice(0, 2) : []
+            });
+            
             if (!data || !data.channelData || data.channelData.length === 0) {
                 console.log('🔍 Charts: Skipping bar chart creation - no valid channel data', {
                     hasData: !!data,
@@ -361,8 +379,8 @@
             const channelNames = data.channelData.map(ch => ch.channel);
             const actualData = data.channelData.map(ch => ch.revenue);
             
-            // Get target data from kpis (we need to access kpis for targets)
-            const target85Data = channelNames.map(ch => Number(kpis?.channelTargets85?.[ch] || 0));
+            // Get target data from the data parameter
+            const target85Data = channelNames.map(ch => Number(data.channelTargets?.[ch] || 0));
             
             console.log('🔍 Charts: Bar chart data prepared:', {
                 channelNames,
@@ -418,7 +436,7 @@
                     }
                 }
             });
-        }, [getDisplayTitle, formatCurrency, kpis]);
+        }, [getDisplayTitle, formatCurrency]);
         
         // Create pie chart
         const createPieChart = useCallback((data) => {
