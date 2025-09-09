@@ -281,6 +281,14 @@
                 totalRevenue
             };
             try { console.debug('KPIs debug:', debugSummary); } catch (e) {}
+            
+            // DEBUG: Log what we're passing to Charts
+            console.log('🔍 Dashboard: KPIs being passed to Charts', {
+                filteredDataLength: filteredData.length,
+                filteredDataSample: filteredData.slice(0, 2),
+                channelRevenues,
+                availableChannels
+            });
 
             return {
                 totalRevenue,
