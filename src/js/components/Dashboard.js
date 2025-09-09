@@ -164,7 +164,16 @@
                 selectedBrand,
                 canonicalDataLength: canonicalData.length,
                 filteredDataLength: filteredData.length,
-                sampleFilteredData: filteredData.slice(0, 2)
+                sampleFilteredData: filteredData.slice(0, 2),
+                sampleCanonicalData: canonicalData.slice(0, 2)
+            });
+            
+            // DEBUG: Log what we're filtering for
+            console.log('🔍 Dashboard: Filter criteria', {
+                'Looking for year': selectedYear,
+                'Looking for month': selectedMonth ? selectedMonth.toString().padStart(2, '0') : 'N/A',
+                'Looking for brand': selectedBrand,
+                'Brand key': selectedBrand !== 'All Brands' && selectedBrand !== 'All Brands (Company Total)' ? normalizeKey(selectedBrand) : 'N/A'
             });
             
             // Calculate revenue by channel (only for available channels)
