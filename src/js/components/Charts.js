@@ -216,6 +216,7 @@
                 }
                 
                 console.log('🔍 Charts: updateCharts - calling createBarChart with:', processedChartData);
+                console.log('🔍 Charts: updateCharts - processedChartData.channelData:', processedChartData.channelData);
                 // Update chart data state
                 setChartData(processedChartData);
                 
@@ -258,6 +259,8 @@
                         return;
                     }
                     destroyCharts();
+                    console.log('🔍 Charts: createCharts - calling createBarChart with data:', data);
+                    console.log('🔍 Charts: createCharts - data.channelData:', data.channelData);
                     createLineChart(data);
                     createBarChart(data); // Pass processed data
                     createPieChart(data);
@@ -270,7 +273,7 @@
             
             // Create new charts
             createLineChart(data);
-            createBarChart(kpis); // Pass kpis instead of processed data
+            createBarChart(data); // Pass processed data
             createPieChart(data);
         }, []);
         
@@ -355,7 +358,8 @@
                 channelDataType: data && data.channelData ? typeof data.channelData : 'undefined',
                 channelDataIsArray: data && data.channelData ? Array.isArray(data.channelData) : false,
                 channelDataLength: data && data.channelData ? data.channelData.length : 0,
-                channelDataSample: data && data.channelData ? data.channelData.slice(0, 2) : []
+                channelDataSample: data && data.channelData ? data.channelData.slice(0, 2) : [],
+                fullDataObject: data
             });
             
             if (!data || !data.channelData || data.channelData.length === 0) {
