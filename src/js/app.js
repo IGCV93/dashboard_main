@@ -592,6 +592,9 @@
                                 if (window.showSuccessMessage) {
                                     window.showSuccessMessage(`Welcome back, ${user.full_name || user.email}!`);
                                 }
+
+                                // Ensure data loads after refresh when already authenticated
+                                try { await loadInitialData(); } catch (e) { console.error('Initial data load failed:', e); }
                             } else if (APP_STATE.rememberMe) {
                                 // Check for saved session in localStorage
                                 const savedSession = localStorage.getItem('chai_vision_session');
@@ -771,9 +774,9 @@
                 }
             }
             
-            // Regenerate sample data when brands/permissions change
+            // Regenerate sample data only in demo mode (Supabase disabled)
             useEffect(() => {
-                if (isAuthenticated && availableBrands.length > 0) {
+                if (!config.FEATURES.ENABLE_SUPABASE && isAuthenticated && availableBrands.length > 0) {
                     regenerateSampleData();
                 }
             }, [availableBrands, availableChannels]);
