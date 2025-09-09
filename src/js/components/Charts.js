@@ -330,10 +330,17 @@
 
             const filteredRows = Array.isArray(kpis.filteredData) ? kpis.filteredData : [];
             const actualData = effectiveChannels.map(ch => {
-                const key = normalizeKey(ch);
-                const sum = filteredRows
-                    .filter(r => normalizeKey(r.channel_name || r.channel) === key)
+                // First try direct canonical match
+                let sum = filteredRows
+                    .filter(r => (r.channel_name || r.channel) === ch)
                     .reduce((acc, r) => acc + Number(r.revenue || 0), 0);
+                // Fallback: normalized comparison
+                if (sum === 0) {
+                    const key = normalizeKey(ch);
+                    sum = filteredRows
+                        .filter(r => normalizeKey(r.channel_name || r.channel) === key)
+                        .reduce((acc, r) => acc + Number(r.revenue || 0), 0);
+                }
                 return sum;
             });
             const target85Data = effectiveChannels.map(ch => Number(kpis.channelTargets85?.[ch] || 0));
