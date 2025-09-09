@@ -225,7 +225,7 @@
                     }
                     destroyCharts();
                     createLineChart(data);
-                    createBarChart(data);
+                    createBarChart(kpis); // Pass kpis instead of processed data
                     createPieChart(data);
                 }, 50);
                 return;
@@ -236,7 +236,7 @@
             
             // Create new charts
             createLineChart(data);
-            createBarChart(data);
+            createBarChart(kpis); // Pass kpis instead of processed data
             createPieChart(data);
         }, []);
         
@@ -309,23 +309,23 @@
         }, [getDisplayTitle, formatCurrency]);
         
         // Create bar chart
-        const createBarChart = useCallback((data) => {
+        const createBarChart = useCallback((kpis) => {
             if (!barChartRef.current) return;
             
-            // DEBUG: Check if we have valid data
-            if (!data || !data.filteredData || data.filteredData.length === 0) {
-                console.log('🔍 Charts: Skipping bar chart creation - no valid data', {
-                    hasData: !!data,
-                    hasFilteredData: !!(data && data.filteredData),
-                    filteredDataLength: data && data.filteredData ? data.filteredData.length : 0
+            // DEBUG: Check if we have valid KPIs data
+            if (!kpis || !kpis.filteredData || kpis.filteredData.length === 0) {
+                console.log('🔍 Charts: Skipping bar chart creation - no valid KPIs data', {
+                    hasKpis: !!kpis,
+                    hasFilteredData: !!(kpis && kpis.filteredData),
+                    filteredDataLength: kpis && kpis.filteredData ? kpis.filteredData.length : 0
                 });
                 return;
             }
             
             const ctx = barChartRef.current.getContext('2d');
             // Determine the base set of channels allowed, then apply selection if any; otherwise show all
-            const baseChannels = (Array.isArray(data.availableChannels) && data.availableChannels.length > 0)
-                ? data.availableChannels
+            const baseChannels = (Array.isArray(kpis.availableChannels) && kpis.availableChannels.length > 0)
+                ? kpis.availableChannels
                 : ALL_CHANNELS;
             const effectiveChannels = (Array.isArray(selectedChannels) && selectedChannels.length > 0)
                 ? baseChannels.filter(ch => selectedChannels.includes(ch))
@@ -338,15 +338,15 @@
                 .replace(/&/g, 'and')
                 .replace(/[^a-z0-9]+/g, '');
 
-            const filteredRows = Array.isArray(data.filteredData) ? data.filteredData : [];
+            const filteredRows = Array.isArray(kpis.filteredData) ? kpis.filteredData : [];
             
             // DEBUG: Log what Charts is receiving
-            console.log('🔍 Charts: Data received for bar chart:', {
-                hasFilteredData: !!data.filteredData,
-                filteredDataType: typeof data.filteredData,
-                filteredDataLength: data.filteredData ? data.filteredData.length : 'N/A',
-                channelRevenues: data.channelRevenues,
-                availableChannels: data.availableChannels
+            console.log('🔍 Charts: KPIs received for bar chart:', {
+                hasFilteredData: !!kpis.filteredData,
+                filteredDataType: typeof kpis.filteredData,
+                filteredDataLength: kpis.filteredData ? kpis.filteredData.length : 'N/A',
+                channelRevenues: kpis.channelRevenues,
+                availableChannels: kpis.availableChannels
             });
             
             // DEBUG: Log the raw filtered data
@@ -369,7 +369,7 @@
             // DEBUG: Log what we're looking for vs what we have
             console.log('🔍 Charts: Channel keys in data:', filteredRows.map(r => r._channelKey).slice(0, 5));
             console.log('🔍 Charts: Looking for keys:', effectiveChannels.map(ch => normalizeKey(ch)));
-            const target85Data = effectiveChannels.map(ch => Number(data.channelTargets85?.[ch] || 0));
+            const target85Data = effectiveChannels.map(ch => Number(kpis.channelTargets85?.[ch] || 0));
             try {
                 console.log('Charts: Bar data', {
                     effectiveChannels,
@@ -429,7 +429,7 @@
                     }
                 }
             });
-        }, [getDisplayTitle, formatCurrency]);
+        }, [getDisplayTitle, formatCurrency, kpis]);
         
         // Create pie chart
         const createPieChart = useCallback((data) => {
