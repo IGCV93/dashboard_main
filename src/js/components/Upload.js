@@ -330,7 +330,7 @@
                 const { brandMap, channelMap } = await getCanonicalMaps();
 
                 // Format data for storage
-                const formattedData = accepted.map(row => {
+                const formattedData = accepted.map((row, index) => {
                     const dateVal = row.Date || row.date;
                     const rawBrand = row.Brand || row.brand;
                     const rawChannel = row.Channel || row.channel;
@@ -342,6 +342,35 @@
                     const brandName = brandEntry?.name || (rawBrand || '').trim();
                     const channelName = channelEntry?.name || (rawChannel || '').trim();
 
+                    // Debug logging for first few rows
+                    if (index < 3) {
+                        console.log(`🔍 Row ${index + 1} debug:`, {
+                            originalRow: row,
+                            dateVal: dateVal,
+                            dateValType: typeof dateVal,
+                            dateValIsNull: dateVal === null,
+                            dateValIsUndefined: dateVal === undefined,
+                            dateValIsEmpty: dateVal === '',
+                            rawBrand: rawBrand,
+                            rawChannel: rawChannel
+                        });
+                    }
+
+                    // Convert date to string if it's a Date object or number
+                    let finalDate = dateVal;
+                    if (dateVal instanceof Date) {
+                        finalDate = dateVal.toISOString().split('T')[0]; // Convert to YYYY-MM-DD
+                    } else if (typeof dateVal === 'number' && dateVal > 25569) { // Excel date number (days since 1900-01-01)
+                        // Convert Excel date number to YYYY-MM-DD
+                        const excelDate = new Date((dateVal - 25569) * 86400 * 1000);
+                        finalDate = excelDate.toISOString().split('T')[0];
+                    } else if (typeof dateVal === 'string') {
+                        finalDate = dateVal.trim();
+                    } else if (!dateVal) {
+                        console.error(`❌ Row ${index + 1}: dateVal is null/undefined/empty:`, dateVal);
+                        finalDate = null; // This will cause the error we're seeing
+                    }
+
                     return {
                         // canonical linkage
                         brand_id: brandEntry?.id || null,
@@ -352,11 +381,11 @@
                         brand: brandName,
                         channel: channelName,
                         // core metrics
-                        date: dateVal,
+                        date: finalDate,
                         revenue: parseFloat(row.Revenue || row.revenue),
                         // provenance
                         source: 'manual',
-                        source_id: buildSourceIdFromCanon(dateVal, channelName, brandName),
+                        source_id: buildSourceIdFromCanon(finalDate, channelName, brandName),
                         uploaded_by: currentUser?.id,
                         upload_batch_id: batchId,
                         is_valid_sale: true,
