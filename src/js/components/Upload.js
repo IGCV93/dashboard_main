@@ -262,7 +262,19 @@
                     const workbook = XLSX.read(content, { type: 'binary' });
                     const sheetName = workbook.SheetNames[0];
                     const sheet = workbook.Sheets[sheetName];
-                    const data = XLSX.utils.sheet_to_json(sheet);
+                    const rawData = XLSX.utils.sheet_to_json(sheet);
+                    
+                    // Filter out empty rows (rows where all values are null/undefined/empty)
+                    const data = rawData.filter(row => {
+                        const hasDate = row.Date || row.date;
+                        const hasChannel = row.Channel || row.channel;
+                        const hasBrand = row.Brand || row.brand;
+                        const hasRevenue = row.Revenue || row.revenue;
+                        
+                        return hasDate && hasChannel && hasBrand && hasRevenue;
+                    });
+                    
+                    console.log(`🔍 Excel parsing: ${rawData.length} total rows, ${data.length} valid rows after filtering`);
                     
                     // Debug: Log the first row to see column headers
                     if (data.length > 0) {
