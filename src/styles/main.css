@@ -129,30 +129,68 @@ body {
 /* App Layout with performance optimizations */
 .app-wrapper {
     background: var(--bg-secondary);
-    min-height: 100vh;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     /* Optimize for GPU acceleration */
     will-change: scroll-position;
+    overflow: hidden; /* Prevent body scroll */
 }
 
 .app-container {
     display: flex;
-    min-height: calc(100vh - var(--nav-height));
+    height: calc(100vh - var(--nav-height));
+    position: relative;
+    overflow: hidden; /* Prevent container from scrolling */
     /* Optimize layout */
     contain: layout style;
 }
 
 .main-content {
     flex: 1;
-    padding: var(--spacing-base);
+    padding: 32px;
     background: var(--bg-primary);
     border-radius: var(--border-radius-lg);
     margin: var(--spacing-base);
     box-shadow: var(--shadow-md);
+    max-width: var(--content-max-width);
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    
+    /* New scrolling properties */
+    height: calc(100vh - var(--nav-height) - 32px); /* Account for margin */
+    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    scroll-behavior: smooth;
+    
+    /* Custom scrollbar styling */
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: #E5E7EB #F9FAFB; /* Firefox */
     /* Optimize for performance */
     will-change: transform;
     transform: translateZ(0);
+    contain: layout style paint; /* Improves scroll performance */
+    overflow-anchor: auto; /* Prevents jump on dynamic content */
+}
+
+/* Webkit scrollbar styling for main content */
+.main-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.main-content::-webkit-scrollbar-track {
+    background: #F9FAFB;
+    border-radius: 4px;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+    background: #E5E7EB;
+    border-radius: 4px;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover {
+    background: #D1D5DB;
 }
 
 /* Loading states with optimized animations */

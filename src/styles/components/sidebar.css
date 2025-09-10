@@ -9,8 +9,38 @@
     padding: 24px 16px;
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
     transition: transform 0.3s ease;
-    position: relative;
-    z-index: 50;
+    
+    /* New sticky properties */
+    position: sticky;
+    position: -webkit-sticky; /* Safari support */
+    top: var(--nav-height, 72px); /* Accounts for top nav height */
+    height: calc(100vh - var(--nav-height, 72px)); /* Full height minus nav */
+    overflow-y: auto; /* Scroll if sidebar content exceeds height */
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    z-index: 50; /* Below top nav (100) but above content */
+    
+    /* Performance optimizations */
+    will-change: transform;
+    transform: translateZ(0); /* Force GPU layer */
+    contain: layout style paint; /* Improve scroll performance */
+}
+
+/* Sidebar scrollbar styling */
+.sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 2px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.2);
 }
 
 .sidebar-item {
@@ -110,6 +140,7 @@
         bottom: 0;
         transform: translateX(-100%);
         z-index: 999;
+        height: calc(100vh - var(--nav-height, 72px)); /* Override sticky height on mobile */
     }
     
     .sidebar.open {
