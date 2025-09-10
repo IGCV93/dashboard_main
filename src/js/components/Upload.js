@@ -264,6 +264,12 @@
                     const sheet = workbook.Sheets[sheetName];
                     const data = XLSX.utils.sheet_to_json(sheet);
                     
+                    // Debug: Log the first row to see column headers
+                    if (data.length > 0) {
+                        console.log('🔍 Excel column headers found:', Object.keys(data[0]));
+                        console.log('🔍 First row data:', data[0]);
+                    }
+                    
                     setUploadProgress(60);
                     setUploadedData(data);
                     setUploadStatus('parsed');
