@@ -264,14 +264,27 @@
                     const sheet = workbook.Sheets[sheetName];
                     const rawData = XLSX.utils.sheet_to_json(sheet);
                     
-                    // Filter out empty rows (rows where all values are null/undefined/empty)
+                    // Filter out empty rows (rows where any required field is missing)
                     const data = rawData.filter(row => {
                         const hasDate = row.Date || row.date;
                         const hasChannel = row.Channel || row.channel;
                         const hasBrand = row.Brand || row.brand;
                         const hasRevenue = row.Revenue || row.revenue;
                         
-                        return hasDate && hasChannel && hasBrand && hasRevenue;
+                        // All four fields must be present and not empty
+                        const isValid = hasDate && hasChannel && hasBrand && hasRevenue;
+                        
+                        if (!isValid) {
+                            console.log(`🔍 Filtering out invalid row:`, {
+                                hasDate: !!hasDate,
+                                hasChannel: !!hasChannel,
+                                hasBrand: !!hasBrand,
+                                hasRevenue: !!hasRevenue,
+                                row: row
+                            });
+                        }
+                        
+                        return isValid;
                     });
                     
                     console.log(`🔍 Excel parsing: ${rawData.length} total rows, ${data.length} valid rows after filtering`);
