@@ -50,7 +50,7 @@
 .channel-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    border-color: var(--primary-blue);
+    border-color: #2563EB;
 }
 
 /* Channel-Specific Top Border Colors */
@@ -96,13 +96,13 @@
     align-items: center;
     margin-bottom: 20px;
     padding-bottom: 16px;
-    border-bottom: 2px solid var(--bg-gray);
+    border-bottom: 2px solid #F9FAFB;
 }
 
 .channel-name {
     font-size: 18px;
     font-weight: 700;
-    color: var(--dark-gray);
+    color: #1A1D23;
 }
 
 .channel-badge {
@@ -122,7 +122,7 @@
 
 .metric-item {
     padding: 10px;
-    background: var(--bg-gray);
+    background: #F9FAFB;
     border-radius: 8px;
     transition: all 0.3s;
 }
@@ -143,7 +143,7 @@
 .metric-value {
     font-size: 18px;
     font-weight: 700;
-    color: var(--dark-gray);
+    color: #1A1D23;
 }
 
 .metric-change {
@@ -167,7 +167,7 @@
 .progress-bar {
     width: 100%;
     height: 20px;
-    background: #f1f3f4;
+    background: #F9FAFB;
     border-radius: 10px;
     overflow: hidden;
     position: relative;
@@ -176,12 +176,11 @@
 .progress-fill {
     height: 100%;
     border-radius: 10px;
-    position: relative;
-    transition: width 0.3s ease;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    padding-right: 8px;
+    padding-right: 12px;
 }
 
 .progress-text {
@@ -323,13 +322,17 @@
 }
 
 /* Responsive Channel Cards */
-@media (max-width: 1400px) {
+/* 1400px+ viewport: 4 columns (4 cards per row) - default grid handles this */
+/* 1060px - 1399px: 3 columns (3 cards per row) - default grid handles this */
+/* 720px - 1059px: 2 columns (2 cards per row) */
+@media (max-width: 1059px) {
     .channel-grid {
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
     }
 }
 
-@media (max-width: 768px) {
+/* Below 720px: 1 column (stack vertically) */
+@media (max-width: 719px) {
     .channel-grid {
         grid-template-columns: 1fr;
     }
