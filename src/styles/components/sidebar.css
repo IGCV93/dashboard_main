@@ -10,14 +10,15 @@
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
     transition: transform 0.3s ease;
     
-    /* New sticky properties */
+    /* Sticky positioning */
     position: sticky;
     position: -webkit-sticky; /* Safari support */
-    top: var(--nav-height, 72px); /* Accounts for top nav height */
-    height: calc(100vh - var(--nav-height, 72px)); /* Full height minus nav */
-    overflow-y: auto; /* Scroll if sidebar content exceeds height */
+    top: var(--nav-height, 72px); /* Start below nav */
+    align-self: flex-start; /* Critical for sticky in flexbox */
+    height: calc(100vh - var(--nav-height, 72px)); /* Full viewport minus nav */
+    overflow-y: auto; /* Internal scroll if sidebar content overflows */
     overflow-x: hidden; /* Prevent horizontal scroll */
-    z-index: 50; /* Below top nav (100) but above content */
+    z-index: 50; /* Below nav but above content */
     
     /* Performance optimizations */
     will-change: transform;

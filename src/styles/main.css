@@ -112,6 +112,12 @@
     }
 }
 
+/* Enable smooth scrolling and scroll padding for sticky nav */
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: var(--nav-height, 72px); /* Account for sticky nav */
+}
+
 body {
     margin: 0;
     padding: 0;
@@ -119,31 +125,28 @@ body {
     font-size: var(--font-size-base);
     line-height: 1.5;
     color: var(--text-primary);
-    background-color: var(--bg-primary);
+    background-color: var(--bg-secondary);
+    /* Enable natural page scroll */
+    overflow-y: auto;
+    overflow-x: hidden;
     /* Optimize for performance */
     text-rendering: optimizeSpeed;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* App Layout with performance optimizations */
+/* App Layout with sticky positioning */
 .app-wrapper {
     background: var(--bg-secondary);
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    /* Optimize for GPU acceleration */
-    will-change: scroll-position;
-    overflow: hidden; /* Prevent body scroll */
+    min-height: 100vh;
+    position: relative;
 }
 
 .app-container {
     display: flex;
-    height: calc(100vh - var(--nav-height));
+    min-height: calc(100vh - var(--nav-height));
     position: relative;
-    overflow: hidden; /* Prevent container from scrolling */
-    /* Optimize layout */
-    contain: layout style;
+    /* Enable natural page scroll - no overflow restrictions */
 }
 
 .main-content {
@@ -153,44 +156,45 @@ body {
     border-radius: var(--border-radius-lg);
     margin: var(--spacing-base);
     box-shadow: var(--shadow-md);
-    max-width: var(--content-max-width);
-    margin-left: auto;
-    margin-right: auto;
-    width: 100%;
+    /* Remove width constraints for full-width content */
+    /* NO max-width constraint */
+    /* NO margin: 0 auto */
+    /* NO fixed height */
+    /* NO overflow-y: auto */
     
-    /* New scrolling properties */
-    height: calc(100vh - var(--nav-height) - 32px); /* Account for margin */
-    overflow-y: auto; /* Enable vertical scrolling */
-    overflow-x: hidden; /* Prevent horizontal scroll */
-    scroll-behavior: smooth;
-    
-    /* Custom scrollbar styling */
-    scrollbar-width: thin; /* Firefox */
-    scrollbar-color: #E5E7EB #F9FAFB; /* Firefox */
-    /* Optimize for performance */
+    /* Content flows naturally and uses full width */
+    min-height: calc(100vh - var(--nav-height) - 32px);
+}
+
+/* Global scrollbar styling for natural page scroll */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* Performance optimizations for sticky elements */
+.top-nav,
+.sidebar {
     will-change: transform;
-    transform: translateZ(0);
-    contain: layout style paint; /* Improves scroll performance */
-    overflow-anchor: auto; /* Prevents jump on dynamic content */
+    transform: translateZ(0); /* Force GPU layer */
+    backface-visibility: hidden;
 }
 
-/* Webkit scrollbar styling for main content */
-.main-content::-webkit-scrollbar {
-    width: 8px;
-}
-
-.main-content::-webkit-scrollbar-track {
-    background: #F9FAFB;
-    border-radius: 4px;
-}
-
-.main-content::-webkit-scrollbar-thumb {
-    background: #E5E7EB;
-    border-radius: 4px;
-}
-
-.main-content::-webkit-scrollbar-thumb:hover {
-    background: #D1D5DB;
+/* Reduce repaints for main content */
+.main-content {
+    contain: layout style paint;
 }
 
 /* Loading states with optimized animations */
@@ -398,22 +402,31 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 
-/* Optimized responsive utilities */
+/* Mobile responsive behavior for sticky layout */
 @media (max-width: 768px) {
+    .main-content {
+        padding: 20px;
+        width: 100%; /* Full width on mobile */
+        margin: 0.5rem;
+    }
+    
     .grid-2,
     .grid-3,
     .grid-4 {
         grid-template-columns: 1fr;
     }
     
-    .main-content {
-        margin: 0.5rem;
-        padding: 0.75rem;
-    }
-    
     .btn {
         padding: 0.5rem 1rem;
         font-size: 0.8rem;
+    }
+    
+    /* Ensure sticky elements work on mobile */
+    .top-nav {
+        position: sticky;
+        position: -webkit-sticky;
+        top: 0;
+        z-index: 100;
     }
 }
 
