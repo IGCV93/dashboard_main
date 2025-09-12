@@ -18,15 +18,15 @@
             onLogout,
             setActiveSection,
             showProfileMenu, setShowProfileMenu,
-            ProfileMenu
+            ProfileMenu,
+            salesData = [] // Add sales data for year detection
         } = props;
         
-        // Get year options dynamically
-        const { getYearOptions } = window.dateUtils || {};
-        const yearOptions = getYearOptions ? getYearOptions() : [
+        // Get year options dynamically based on actual data
+        const { getYearOptions, getLatestYearFromData } = window.dateUtils || {};
+        const yearOptions = getYearOptions ? getYearOptions(salesData) : [
             { value: '2024', label: '2024' },
-            { value: '2025', label: '2025' },
-            { value: '2026', label: '2026' }
+            { value: '2025', label: '2025' }
         ];
         
         const ProfileMenuComponent = ProfileMenu || window.ProfileMenu || window.ChaiVision?.components?.ProfileMenu;

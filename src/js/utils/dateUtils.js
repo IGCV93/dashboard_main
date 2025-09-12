@@ -71,24 +71,65 @@
     }
 
     /**
-     * Generate year options for dropdowns
+     * Generate year options for dropdowns based on data availability
+     * @param {Array} salesData - Sales data to detect years from
      * @param {number} startYear - Starting year (default: 2020)
-     * @param {number} futureYears - Years ahead of current year (default: 2)
      * @returns {Array} Array of year objects with value and label
      */
-    function getYearOptions(startYear = 2020, futureYears = 2) {
+    function getYearOptions(salesData = [], startYear = 2020) {
         const currentYear = new Date().getFullYear();
-        const endYear = currentYear + futureYears;
-        const years = [];
+        const years = new Set();
         
-        for (let year = endYear; year >= startYear; year--) {
-            years.push({
-                value: year.toString(),
-                label: year.toString()
+        // Add years from sales data
+        if (salesData && salesData.length > 0) {
+            salesData.forEach(record => {
+                if (record.date) {
+                    const year = new Date(record.date).getFullYear();
+                    if (year >= startYear && year <= currentYear) {
+                        years.add(year);
+                    }
+                }
             });
         }
         
-        return years;
+        // If no data, fallback to current year and previous year
+        if (years.size === 0) {
+            years.add(currentYear);
+            if (currentYear > startYear) {
+                years.add(currentYear - 1);
+            }
+        }
+        
+        // Convert to array and sort descending
+        const yearArray = Array.from(years).sort((a, b) => b - a);
+        
+        return yearArray.map(year => ({
+            value: year.toString(),
+            label: year.toString()
+        }));
+    }
+
+    /**
+     * Get the latest year from sales data
+     * @param {Array} salesData - Sales data to analyze
+     * @returns {string} Latest year as string, or current year if no data
+     */
+    function getLatestYearFromData(salesData = []) {
+        if (!salesData || salesData.length === 0) {
+            return new Date().getFullYear().toString();
+        }
+        
+        let latestYear = 0;
+        salesData.forEach(record => {
+            if (record.date) {
+                const year = new Date(record.date).getFullYear();
+                if (year > latestYear) {
+                    latestYear = year;
+                }
+            }
+        });
+        
+        return latestYear > 0 ? latestYear.toString() : new Date().getFullYear().toString();
     }
     
     // Make available globally
@@ -99,7 +140,8 @@
         getDaysInPeriod,
         getDaysElapsed,
         getTwoBusinessDaysAgo,
-        getYearOptions
+        getYearOptions,
+        getLatestYearFromData
     };
     
     window.ChaiVision = window.ChaiVision || {};

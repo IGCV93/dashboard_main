@@ -234,6 +234,17 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
             }
         }
         
+        // Update selected year to latest year from data when sales data changes
+        useEffect(() => {
+            if (salesData && salesData.length > 0) {
+                const { getLatestYearFromData } = window.dateUtils || {};
+                if (getLatestYearFromData) {
+                    const latestYear = getLatestYearFromData(salesData);
+                    setSelectedYear(latestYear);
+                }
+            }
+        }, [salesData]);
+        
         // Get components
         const Navigation = window.ChaiVision.components.Navigation;
         const Sidebar = window.ChaiVision.components.Sidebar;
@@ -263,7 +274,8 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
             setSelectedBrand,
             brands: brandsFromData.length > 0 ? brandsFromData : (config.INITIAL_DATA.brands || ['LifePro', 'PetCove']),
             activeSection,
-            setActiveSection: setActiveSectionWithRouting
+            setActiveSection: setActiveSectionWithRouting,
+            salesData // Add sales data for year detection
         });
         
         // Render sidebar
@@ -321,7 +333,8 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
                         brands: config.INITIAL_DATA.brands,
                         targets: config.INITIAL_DATA.targets,
                         channels: config.INITIAL_DATA.channels,
-                        onUpdate: handleSettingsUpdate
+                        onUpdate: handleSettingsUpdate,
+                        salesData // Add sales data for year detection
                     });
                     
                 case 'upload':
