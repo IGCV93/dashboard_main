@@ -199,7 +199,7 @@
             TIMEZONE: 'America/New_York',
             DEFAULT_PERIOD: 'quarterly',
             DEFAULT_QUARTER: 'Q4', // Current quarter
-            DEFAULT_YEAR: '2025',
+            DEFAULT_YEAR: new Date().getFullYear().toString(),
             CACHE_DURATION: 24 * 60 * 60 * 1000 // 24 hours
         },
 

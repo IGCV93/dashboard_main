@@ -183,7 +183,7 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
         const [view, setView] = useState('quarterly');
         const [selectedPeriod, setSelectedPeriod] = useState(getCurrentQuarter());
         const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
-        const [selectedYear, setSelectedYear] = useState('2025');
+        const [selectedYear, setSelectedYear] = useState(getCurrentYear());
         const [selectedBrand, setSelectedBrand] = useState('All Brands');
         const [activeSection, setActiveSection] = useState('dashboard');
         const [salesData, setSalesData] = useState([]);

@@ -25,6 +25,15 @@
         
         // Get formatters and services from window
         const { formatCurrency } = window.formatters || {};
+        
+        // Get year options dynamically
+        const { getYearOptions } = window.dateUtils || {};
+        const yearOptions = getYearOptions ? getYearOptions() : [
+            { value: '2024', label: '2024' },
+            { value: '2025', label: '2025' },
+            { value: '2026', label: '2026' }
+        ];
+        
         const getSupabaseClient = () => {
             const config = window.CONFIG || window.ChaiVision?.CONFIG;
             if (config?.SUPABASE?.URL && window.supabase) {
@@ -73,7 +82,7 @@
             return emptyTargets;
         };
         
-        const [settingsYear, setSettingsYear] = useState('2025');
+        const [settingsYear, setSettingsYear] = useState(new Date().getFullYear().toString());
         const [editingBrand, setEditingBrand] = useState(null);
         const [editingValues, setEditingValues] = useState({});
         const [showAddBrand, setShowAddBrand] = useState(false);
@@ -468,9 +477,9 @@
                         className: 'input-field',
                         style: { width: '120px' }
                     },
-                        h('option', { value: '2024' }, '2024'),
-                        h('option', { value: '2025' }, '2025'),
-                        h('option', { value: '2026' }, '2026')
+                        ...yearOptions.map(year => 
+                            h('option', { key: year.value, value: year.value }, year.label)
+                        )
                     )
                 )
             ),

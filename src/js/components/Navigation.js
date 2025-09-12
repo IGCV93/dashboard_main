@@ -21,6 +21,14 @@
             ProfileMenu
         } = props;
         
+        // Get year options dynamically
+        const { getYearOptions } = window.dateUtils || {};
+        const yearOptions = getYearOptions ? getYearOptions() : [
+            { value: '2024', label: '2024' },
+            { value: '2025', label: '2025' },
+            { value: '2026', label: '2026' }
+        ];
+        
         const ProfileMenuComponent = ProfileMenu || window.ProfileMenu || window.ChaiVision?.components?.ProfileMenu;
         
         return h('nav', { className: 'top-nav' },
@@ -62,9 +70,9 @@
                         onChange: (e) => setSelectedYear && setSelectedYear(e.target.value),
                         style: { marginLeft: '8px', padding: '10px', borderRadius: '8px', border: '1px solid #E5E7EB', fontWeight: '600' }
                     },
-                        h('option', { value: '2024' }, '2024'),
-                        h('option', { value: '2025' }, '2025'),
-                        h('option', { value: '2026' }, '2026')
+                        ...yearOptions.map(year => 
+                            h('option', { key: year.value, value: year.value }, year.label)
+                        )
                     ),
                     
                     view === 'quarterly' && [
@@ -85,9 +93,9 @@
                             onChange: (e) => setSelectedYear && setSelectedYear(e.target.value),
                             style: { marginLeft: '8px', padding: '10px', borderRadius: '8px', border: '1px solid #E5E7EB', fontWeight: '600' }
                         },
-                            h('option', { value: '2024' }, '2024'),
-                            h('option', { value: '2025' }, '2025'),
-                            h('option', { value: '2026' }, '2026')
+                            ...yearOptions.map(year => 
+                                h('option', { key: year.value, value: year.value }, year.label)
+                            )
                         )
                     ],
                     
@@ -117,9 +125,9 @@
                             onChange: (e) => setSelectedYear && setSelectedYear(e.target.value),
                             style: { marginLeft: '8px', padding: '10px', borderRadius: '8px', border: '1px solid #E5E7EB', fontWeight: '600' }
                         },
-                            h('option', { value: '2024' }, '2024'),
-                            h('option', { value: '2025' }, '2025'),
-                            h('option', { value: '2026' }, '2026')
+                            ...yearOptions.map(year => 
+                                h('option', { key: year.value, value: year.value }, year.label)
+                            )
                         )
                     ]
                 ),

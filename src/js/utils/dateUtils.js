@@ -69,6 +69,27 @@
         today.setDate(today.getDate() - 2);
         return today;
     }
+
+    /**
+     * Generate year options for dropdowns
+     * @param {number} startYear - Starting year (default: 2020)
+     * @param {number} futureYears - Years ahead of current year (default: 2)
+     * @returns {Array} Array of year objects with value and label
+     */
+    function getYearOptions(startYear = 2020, futureYears = 2) {
+        const currentYear = new Date().getFullYear();
+        const endYear = currentYear + futureYears;
+        const years = [];
+        
+        for (let year = endYear; year >= startYear; year--) {
+            years.push({
+                value: year.toString(),
+                label: year.toString()
+            });
+        }
+        
+        return years;
+    }
     
     // Make available globally
     window.dateUtils = {
@@ -77,7 +98,8 @@
         getCurrentYear,
         getDaysInPeriod,
         getDaysElapsed,
-        getTwoBusinessDaysAgo
+        getTwoBusinessDaysAgo,
+        getYearOptions
     };
     
     window.ChaiVision = window.ChaiVision || {};
