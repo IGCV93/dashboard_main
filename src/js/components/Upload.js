@@ -269,7 +269,8 @@
                         const hasDate = row.Date || row.date;
                         const hasChannel = row.Channel || row.channel;
                         const hasBrand = row.Brand || row.brand;
-                        const hasRevenue = row.Revenue || row.revenue;
+                        const hasRevenue = row.Revenue !== undefined && row.Revenue !== null && row.Revenue !== '' || 
+                                          row.revenue !== undefined && row.revenue !== null && row.revenue !== '';
                         
                         // All four fields must be present and not empty
                         const isValid = hasDate && hasChannel && hasBrand && hasRevenue;
@@ -280,6 +281,7 @@
                                 hasChannel: !!hasChannel,
                                 hasBrand: !!hasBrand,
                                 hasRevenue: !!hasRevenue,
+                                revenueValue: row.Revenue || row.revenue,
                                 row: row
                             });
                         }
@@ -413,7 +415,7 @@
                         channel: channelName,
                         // core metrics
                         date: finalDate,
-                        revenue: parseFloat(row.Revenue || row.revenue),
+                        revenue: parseFloat(row.Revenue || row.revenue) || 0,
                         // provenance
                         source: 'manual',
                         source_id: buildSourceIdFromCanon(finalDate, channelName, brandName),
