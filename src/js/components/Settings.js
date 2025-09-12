@@ -98,6 +98,21 @@
             setDynamicBrands(availableBrands);
         }, [initialBrands, userPermissions]);
         
+        // Handle ESC key to close modal
+        useEffect(() => {
+            const handleKeyDown = (event) => {
+                if (event.key === 'Escape' && editingBrand) {
+                    setEditingBrand(null);
+                    setEditingValues({});
+                }
+            };
+            
+            if (editingBrand) {
+                document.addEventListener('keydown', handleKeyDown);
+                return () => document.removeEventListener('keydown', handleKeyDown);
+            }
+        }, [editingBrand]);
+        
         // Check if user can edit specific brand/channel combination
         const canEditTarget = (brand, channel) => {
             if (!canEdit) return false;
@@ -216,19 +231,30 @@
         
         // Handle editing existing brand
         const handleEditBrand = (brand) => {
+            console.log('🔍 Edit button clicked for brand:', brand);
+            console.log('🔍 canEdit:', canEdit);
+            console.log('🔍 userRole:', userRole);
+            console.log('🔍 userPermissions:', userPermissions);
+            
             // Check if user can edit this brand
             if (!canEdit) {
+                console.log('❌ User cannot edit - no permission');
                 setError('You do not have permission to edit KPI targets');
                 return;
             }
             
             if (userRole === 'Manager' && !userPermissions?.brands?.includes(brand) && 
                 !userPermissions?.brands?.includes('All Brands')) {
+                console.log('❌ Manager cannot edit this brand');
                 setError(`You do not have permission to edit ${brand}`);
                 return;
             }
             
             const brandData = dynamicTargets[settingsYear]?.brands?.[brand];
+            console.log('🔍 brandData found:', !!brandData);
+            console.log('🔍 dynamicTargets:', dynamicTargets);
+            console.log('🔍 settingsYear:', settingsYear);
+            
             if (brandData) {
                 // Filter channels to only those the user can edit
                 const filteredData = { ...brandData };
@@ -246,9 +272,14 @@
                     });
                 }
                 
+                console.log('✅ Setting editingBrand to:', brand);
+                console.log('✅ Setting editingValues to:', filteredData);
                 setEditingBrand(brand);
                 setEditingValues(filteredData);
                 setError('');
+            } else {
+                console.log('❌ No brand data found for:', brand);
+                setError(`No data found for ${brand} in ${settingsYear}`);
             }
         };
         
@@ -890,7 +921,8 @@
             ),
             
             // Edit Brand Modal (if editing)
-            editingBrand && h('div', {
+            editingBrand && console.log('🔍 Rendering edit modal for:', editingBrand) && h('div', {
+                className: 'modal-overlay',
                 style: {
                     position: 'fixed',
                     top: 0,
@@ -901,10 +933,17 @@
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    zIndex: 1000
+                    zIndex: 9999
+                },
+                onClick: (e) => {
+                    if (e.target === e.currentTarget) {
+                        setEditingBrand(null);
+                        setEditingValues({});
+                    }
                 }
             },
                 h('div', {
+                    className: 'modal-content',
                     style: {
                         background: 'white',
                         borderRadius: '16px',
@@ -915,8 +954,25 @@
                         overflow: 'auto'
                     }
                 },
-                    h('h3', { style: { marginBottom: '24px' } }, 
-                        `Edit ${editingBrand} Targets (${settingsYear})`
+                    h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' } },
+                        h('h3', { style: { margin: 0 } }, 
+                            `Edit ${editingBrand} Targets (${settingsYear})`
+                        ),
+                        h('button', {
+                            style: {
+                                background: 'none',
+                                border: 'none',
+                                fontSize: '24px',
+                                cursor: 'pointer',
+                                color: '#6B7280',
+                                padding: '4px',
+                                borderRadius: '4px'
+                            },
+                            onClick: () => {
+                                setEditingBrand(null);
+                                setEditingValues({});
+                            }
+                        }, '×')
                     ),
                     
                     userRole === 'Manager' && h('div', { 
