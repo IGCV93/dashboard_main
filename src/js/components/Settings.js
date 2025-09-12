@@ -231,30 +231,19 @@
         
         // Handle editing existing brand
         const handleEditBrand = (brand) => {
-            console.log('🔍 Edit button clicked for brand:', brand);
-            console.log('🔍 canEdit:', canEdit);
-            console.log('🔍 userRole:', userRole);
-            console.log('🔍 userPermissions:', userPermissions);
-            
             // Check if user can edit this brand
             if (!canEdit) {
-                console.log('❌ User cannot edit - no permission');
                 setError('You do not have permission to edit KPI targets');
                 return;
             }
             
             if (userRole === 'Manager' && !userPermissions?.brands?.includes(brand) && 
                 !userPermissions?.brands?.includes('All Brands')) {
-                console.log('❌ Manager cannot edit this brand');
                 setError(`You do not have permission to edit ${brand}`);
                 return;
             }
             
             const brandData = dynamicTargets[settingsYear]?.brands?.[brand];
-            console.log('🔍 brandData found:', !!brandData);
-            console.log('🔍 dynamicTargets:', dynamicTargets);
-            console.log('🔍 settingsYear:', settingsYear);
-            
             if (brandData) {
                 // Filter channels to only those the user can edit
                 const filteredData = { ...brandData };
@@ -272,13 +261,10 @@
                     });
                 }
                 
-                console.log('✅ Setting editingBrand to:', brand);
-                console.log('✅ Setting editingValues to:', filteredData);
                 setEditingBrand(brand);
                 setEditingValues(filteredData);
                 setError('');
             } else {
-                console.log('❌ No brand data found for:', brand);
                 setError(`No data found for ${brand} in ${settingsYear}`);
             }
         };
@@ -921,7 +907,7 @@
             ),
             
             // Edit Brand Modal (if editing)
-            editingBrand && console.log('🔍 Rendering edit modal for:', editingBrand) && h('div', {
+            editingBrand && h('div', {
                 className: 'modal-overlay',
                 style: {
                     position: 'fixed',
