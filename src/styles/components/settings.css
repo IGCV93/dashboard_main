@@ -347,26 +347,40 @@
 /* Modal Styles for Settings */
 .modal-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
+    /* Cover from edge of sidebar to right edge */
+    left: 280px;  /* Start after sidebar */
+    top: 72px;    /* Start after top nav */
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
+    z-index: 998;
+    /* Ensure it fills the main content area completely */
+}
+
+.modal-container {
+    position: fixed;
+    /* Center within the main content area */
+    left: calc(280px + (100vw - 280px) / 2);  /* Center in main area */
+    top: 50%;
+    transform: translate(-50%, -50%);
+    max-height: calc(100vh - 120px);  /* Leave space for margins */
+    overflow-y: auto;  /* Enable scrolling */
+    z-index: 999;
+    
+    /* Ensure modal doesn't exceed viewport */
+    max-width: min(1200px, calc(100vw - 320px));
+    width: 90%;
 }
 
 .modal-content {
     background: white;
     border-radius: 16px;
     padding: 32px;
-    max-width: 1200px;
-    width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    /* Ensure content can scroll if needed */
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    padding-right: 10px;  /* Space for scrollbar */
 }
 
 .modal-content h3 {
@@ -374,4 +388,18 @@
     font-size: 24px;
     color: #1F2937;
     font-weight: 600;
+}
+
+/* Mobile responsive modal */
+@media (max-width: 768px) {
+    .modal-overlay {
+        left: 0;  /* Full width on mobile */
+        top: 72px;
+    }
+    
+    .modal-container {
+        left: 50%;
+        max-width: calc(100vw - 40px);
+        width: calc(100vw - 40px);
+    }
 }

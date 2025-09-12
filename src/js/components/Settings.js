@@ -907,39 +907,22 @@
             ),
             
             // Edit Brand Modal (if editing)
-            editingBrand && h('div', {
-                className: 'modal-overlay',
-                style: {
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'rgba(0, 0, 0, 0.5)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 9999
-                },
-                onClick: (e) => {
-                    if (e.target === e.currentTarget) {
+            editingBrand && [
+                // Backdrop - covers main content area only
+                h('div', {
+                    className: 'modal-overlay',
+                    onClick: () => {
                         setEditingBrand(null);
                         setEditingValues({});
                     }
-                }
-            },
+                }),
+                // Modal container - centered in main content area
                 h('div', {
-                    className: 'modal-content',
-                    style: {
-                        background: 'white',
-                        borderRadius: '16px',
-                        padding: '32px',
-                        maxWidth: '1200px',
-                        width: '90%',
-                        maxHeight: '90vh',
-                        overflow: 'auto'
-                    }
+                    className: 'modal-container'
                 },
+                    h('div', {
+                        className: 'modal-content'
+                    },
                     h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' } },
                         h('h3', { style: { margin: 0 } }, 
                             `Edit ${editingBrand} Targets (${settingsYear})`
@@ -1037,7 +1020,8 @@
                         }, 'Cancel')
                     )
                 )
-            )
+                )
+            ]
         );
     }
     
