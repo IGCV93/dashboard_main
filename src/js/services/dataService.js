@@ -81,7 +81,7 @@
             return this.getCachedData('sales_data', async () => {
                 if (this.supabase && this.config.FEATURES.ENABLE_SUPABASE) {
                     try {
-                        console.log('🔍 Trying Supabase...');
+                        console.log('🔍 Trying Supabase (MAIN DataService)...');
                         const { data, error } = await this.supabase
                             .from('sales_data')
                             .select('*')
@@ -108,8 +108,10 @@
                         
                         return normalized;
                     } catch (error) {
-                        console.error('❌ Supabase error, falling back to local:', error);
-                        return this.loadLocalData();
+                        console.error('❌ Supabase error:', error);
+                        // Do not fall back to sample data when Supabase is enabled
+                        // Return empty array instead
+                        return [];
                     }
                 } else {
                     console.log('🔍 Supabase disabled, using local data...');

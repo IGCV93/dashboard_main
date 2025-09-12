@@ -80,6 +80,7 @@ window.ChaiVision.services = {
         }
         
         async loadSalesData() {
+            console.log('🔍 Loading from FALLBACK DataService...');
             // Load from localStorage for demo
             const stored = localStorage.getItem('chai_vision_sales_data');
             if (stored) {
@@ -87,6 +88,7 @@ window.ChaiVision.services = {
             }
             
             // Generate sample data
+            console.log('⚠️ Generating sample data (FALLBACK DataService)');
             return window.ChaiVision.INITIAL_DATA.generateSampleData(
                 '2025-01-01',
                 new Date().toISOString().split('T')[0]
@@ -175,8 +177,9 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
         }
     }
     
-    // Initialize data service
-    const dataService = new window.ChaiVision.services.DataService(supabaseClient, config);
+    // Initialize data service - use main DataService if available, otherwise fallback
+    const DataServiceClass = window.DataService || window.ChaiVision?.services?.DataService;
+    const dataService = new DataServiceClass(supabaseClient, config);
     
     // Main App Component
     function App() {
