@@ -907,42 +907,33 @@
             ),
             
             // Edit Brand Modal (if editing)
-            editingBrand && [
-                // Backdrop - covers main content area only
+            editingBrand && h('div', {
+                className: 'modal-backdrop',
+                onClick: () => {
+                    setEditingBrand(null);
+                    setEditingValues({});
+                }
+            },
                 h('div', {
-                    className: 'modal-overlay',
-                    onClick: () => {
-                        setEditingBrand(null);
-                        setEditingValues({});
-                    }
-                }),
-                // Modal container - centered in main content area
-                h('div', {
-                    className: 'modal-container'
+                    className: 'modal-wrapper'
                 },
                     h('div', {
                         className: 'modal-content'
                     },
-                    h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' } },
-                        h('h3', { style: { margin: 0 } }, 
-                            `Edit ${editingBrand} Targets (${settingsYear})`
+                        h('div', { className: 'modal-header' },
+                            h('h3', { style: { margin: 0 } }, 
+                                `Edit ${editingBrand} Targets (${settingsYear})`
+                            ),
+                            h('button', {
+                                className: 'close-btn',
+                                onClick: () => {
+                                    setEditingBrand(null);
+                                    setEditingValues({});
+                                }
+                            }, '×')
                         ),
-                        h('button', {
-                            style: {
-                                background: 'none',
-                                border: 'none',
-                                fontSize: '24px',
-                                cursor: 'pointer',
-                                color: '#6B7280',
-                                padding: '4px',
-                                borderRadius: '4px'
-                            },
-                            onClick: () => {
-                                setEditingBrand(null);
-                                setEditingValues({});
-                            }
-                        }, '×')
-                    ),
+                        
+                        h('div', { className: 'modal-body' },
                     
                     userRole === 'Manager' && h('div', { 
                         className: 'alert-banner warning',
@@ -955,23 +946,26 @@
                         )
                     ),
                     
-                    h('div', { className: 'add-brand-form' },
-                        ...availableChannels.map(channel =>
-                            h('div', { key: channel, className: 'form-group' },
-                                h('label', null, `${channel} (Annual)`),
-                                h('input', {
-                                    type: 'number',
-                                    className: 'input-field',
-                                    value: editingValues.annual?.[channel] || 0,
-                                    onChange: (e) => setEditingValues({
-                                        ...editingValues,
-                                        annual: { ...editingValues.annual, [channel]: parseFloat(e.target.value) || 0 }
-                                    }),
-                                    disabled: !canEditTarget(editingBrand, channel)
-                                })
-                            )
-                        )
-                    ),
+                                h('div', { className: 'form-section' },
+                                    h('h4', { style: { margin: '0 0 16px 0' } }, 'Annual Targets'),
+                                    h('div', { className: 'form-row' },
+                                        ...availableChannels.map(channel =>
+                                            h('div', { key: channel, className: 'form-group' },
+                                                h('label', null, `${channel} (Annual)`),
+                                                h('input', {
+                                                    type: 'number',
+                                                    className: 'input-field',
+                                                    value: editingValues.annual?.[channel] || 0,
+                                                    onChange: (e) => setEditingValues({
+                                                        ...editingValues,
+                                                        annual: { ...editingValues.annual, [channel]: parseFloat(e.target.value) || 0 }
+                                                    }),
+                                                    disabled: !canEditTarget(editingBrand, channel)
+                                                })
+                                            )
+                                        )
+                                    )
+                                ),
                     h('div', { style: { marginTop: '24px' } },
                         h('h4', { style: { margin: '0 0 16px 0' } }, 'Quarterly Breakdown'),
                         ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter =>
@@ -1006,22 +1000,24 @@
                             )
                         )
                     ),
-                    h('div', { style: { display: 'flex', gap: '12px', marginTop: '24px' } },
-                        h('button', {
-                            className: 'btn btn-success',
-                            onClick: handleSaveEdit
-                        }, 'Save Changes'),
-                        h('button', {
-                            className: 'btn btn-secondary',
-                            onClick: () => {
-                                setEditingBrand(null);
-                                setEditingValues({});
-                            }
-                        }, 'Cancel')
+                        ),
+                        
+                        h('div', { className: 'modal-footer' },
+                            h('button', {
+                                className: 'btn btn-success',
+                                onClick: handleSaveEdit
+                            }, 'Save Changes'),
+                            h('button', {
+                                className: 'btn btn-secondary',
+                                onClick: () => {
+                                    setEditingBrand(null);
+                                    setEditingValues({});
+                                }
+                            }, 'Cancel')
+                        )
                     )
                 )
-                )
-            ]
+            )
         );
     }
     
