@@ -946,27 +946,45 @@
                         ),
                         
                         h('div', { className: 'modal-body' },
-                    
-                    userRole === 'Manager' && h('div', { 
-                        className: 'alert-banner warning',
-                        style: { marginBottom: '20px' }
-                    },
-                        h('div', { className: 'alert-content' },
-                            h('span', { className: 'alert-message' }, 
-                                'You can only modify channels you have permission for'
-                            )
-                        )
-                    ),
-                    
-                                h('div', { className: 'form-section' },
-                                    h('h4', { style: { margin: '0 0 16px 0' } }, 'Annual Targets'),
-                                    h('div', { className: 'form-row' },
-                                        ...availableChannels.map(channel =>
-                                            h('div', { key: channel, className: 'form-group' },
-                                                h('label', null, `${channel} (Annual)`),
+                            userRole === 'Manager' && h('div', { 
+                                className: 'alert-banner warning',
+                                style: { marginBottom: '20px' }
+                            },
+                                h('div', { className: 'alert-content' },
+                                    h('span', { className: 'alert-message' }, 
+                                        'You can only modify channels you have permission for'
+                                    )
+                                )
+                            ),
+                            
+                            // Annual Targets Section - Wide Layout
+                            h('div', { className: 'form-section' },
+                                h('h4', { className: 'section-title' }, 'Annual Targets'),
+                                h('div', { className: 'annual-targets-grid' },
+                                    // First Row - 4 channels
+                                    h('div', { className: 'channel-row' },
+                                        ...availableChannels.slice(0, 4).map(channel =>
+                                            h('div', { key: channel, className: 'channel-group' },
+                                                h('label', null, `${channel.toUpperCase()} (ANNUAL)`),
                                                 h('input', {
                                                     type: 'number',
-                                                    className: 'input-field',
+                                                    value: editingValues.annual?.[channel] || 0,
+                                                    onChange: (e) => setEditingValues({
+                                                        ...editingValues,
+                                                        annual: { ...editingValues.annual, [channel]: parseFloat(e.target.value) || 0 }
+                                                    }),
+                                                    disabled: !canEditTarget(editingBrand, channel)
+                                                })
+                                            )
+                                        )
+                                    ),
+                                    // Second Row - remaining channels
+                                    availableChannels.length > 4 && h('div', { className: 'channel-row' },
+                                        ...availableChannels.slice(4).map(channel =>
+                                            h('div', { key: channel, className: 'channel-group' },
+                                                h('label', null, `${channel.toUpperCase()} (ANNUAL)`),
+                                                h('input', {
+                                                    type: 'number',
                                                     value: editingValues.annual?.[channel] || 0,
                                                     onChange: (e) => setEditingValues({
                                                         ...editingValues,
@@ -977,41 +995,35 @@
                                             )
                                         )
                                     )
-                                ),
-                    h('div', { style: { marginTop: '24px' } },
-                        h('h4', { style: { margin: '0 0 16px 0' } }, 'Quarterly Breakdown'),
-                        ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter =>
-                            h('div', { key: quarter, style: { marginBottom: '24px' } },
-                                h('h5', { style: { marginBottom: '12px', fontWeight: '600' } }, quarter),
-                                h('div', { className: 'channel-inputs' },
-                                    availableChannels.map(channel =>
-                                        h('div', { key: `${quarter}-${channel}`, style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
-                                            h('input', {
-                                                type: 'number',
-                                                className: 'input-field',
-                                                value: editingValues[quarter]?.[channel] || 0,
-                                                onChange: (e) => setEditingValues({
-                                                    ...editingValues,
-                                                    [quarter]: { ...editingValues[quarter], [channel]: parseFloat(e.target.value) || 0 }
-                                                }),
-                                                disabled: !canEditTarget(editingBrand, channel)
-                                            }),
-                                            h('label', { 
-                                                style: { 
-                                                    fontSize: '10px',
-                                                    fontWeight: '600',
-                                                    color: canEditTarget(editingBrand, channel) ? '#6B7280' : '#D1D5DB',
-                                                    textTransform: 'uppercase',
-                                                    letterSpacing: '0.3px',
-                                                    textAlign: 'center'
-                                                }
-                                            }, channel)
+                                )
+                            ),
+                            // Quarterly Breakdown Section - Side by Side Layout
+                            h('div', { className: 'form-section' },
+                                h('h4', { className: 'section-title' }, 'Quarterly Breakdown'),
+                                h('div', { className: 'quarterly-grid' },
+                                    ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter =>
+                                        h('div', { key: quarter, className: 'quarter-column' },
+                                            h('div', { className: 'quarter-header' }, quarter),
+                                            h('div', { className: 'quarter-inputs' },
+                                                availableChannels.map(channel =>
+                                                    h('div', { key: `${quarter}-${channel}`, className: 'quarter-input-group' },
+                                                        h('input', {
+                                                            type: 'number',
+                                                            placeholder: channel,
+                                                            value: editingValues[quarter]?.[channel] || 0,
+                                                            onChange: (e) => setEditingValues({
+                                                                ...editingValues,
+                                                                [quarter]: { ...editingValues[quarter], [channel]: parseFloat(e.target.value) || 0 }
+                                                            }),
+                                                            disabled: !canEditTarget(editingBrand, channel)
+                                                        })
+                                                    )
+                                                )
+                                            )
                                         )
                                     )
                                 )
                             )
-                        )
-                    ),
                         ),
                         
                         h('div', { className: 'modal-footer' },

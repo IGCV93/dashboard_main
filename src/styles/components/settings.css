@@ -389,14 +389,24 @@
     background: white;
     border-radius: 16px;
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
-    width: 100%;
-    max-width: 1000px;  /* Wider for form content */
-    max-height: calc(100vh - 160px);
+    
+    /* WIDER MODAL */
+    width: calc(100vw - 360px);  /* Full width minus sidebar and padding */
+    max-width: 1400px;  /* Increased from 1000px */
+    min-width: 1200px;  /* Ensure minimum width */
+    
+    /* SHORTER HEIGHT */
+    max-height: 85vh;  /* Don't need full height */
+    height: auto;
+    
     display: flex;
     flex-direction: column;
     pointer-events: all;
     position: relative;
     animation: slideUp 0.3s ease;
+    
+    /* Center in available space */
+    margin: 0 auto;
 }
 
 /* Modal Header */
@@ -437,48 +447,59 @@
     color: #1A1D23;
 }
 
-/* Modal Body - Scrollable content area */
+/* Modal Body - No scroll needed */
 .modal-body {
     flex: 1;
-    overflow-y: auto;
+    overflow-y: visible;  /* No scroll needed */
     padding: 32px;
 }
 
-/* Form Layout Inside Modal */
+/* Form Layout Inside Modal - Wide Layout */
 .add-brand-form {
     display: flex;
     flex-direction: column;
     gap: 32px;
 }
 
-/* Annual Targets Section */
+/* Form Section */
 .form-section {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-}
-
-.form-section-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 8px;
-}
-
-/* Input Grid for Channels */
-.channel-inputs-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
     gap: 20px;
 }
 
-.input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+.section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1A1D23;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #E5E7EB;
 }
 
-.input-group label {
+/* Annual targets grid - 2 rows x 4 columns */
+.annual-targets-grid {
+    display: grid;
+    grid-template-rows: repeat(2, auto);
+    gap: 20px;
+    padding: 24px 0;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.channel-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+/* Each channel group */
+.channel-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.channel-group label {
     font-size: 12px;
     font-weight: 600;
     color: #6B7280;
@@ -486,38 +507,76 @@
     letter-spacing: 0.5px;
 }
 
-.input-group input {
+.channel-group input {
     padding: 10px 14px;
     border: 2px solid #E5E7EB;
     border-radius: 8px;
     font-size: 14px;
+    width: 100%;
     transition: all 0.2s;
 }
 
-.input-group input:focus {
+.channel-group input:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-/* Quarterly Breakdown Grid */
+/* Quarterly section - all quarters side by side */
 .quarterly-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    background: #F9FAFB;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.quarter-column {
+    background: white;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #E5E7EB;
+    display: flex;
+    flex-direction: column;
     gap: 16px;
 }
 
-.quarter-section {
-    margin-bottom: 24px;
-    padding: 16px;
-    background: #F9FAFB;
-    border-radius: 8px;
+.quarter-header {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1A1D23;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #E5E7EB;
+    text-align: center;
 }
 
-.quarter-section h5 {
-    margin: 0 0 12px 0;
-    font-weight: 600;
-    color: #1F2937;
+/* Channel inputs within each quarter */
+.quarter-inputs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);  /* 2 columns per quarter */
+    gap: 12px;
+}
+
+.quarter-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.quarter-input-group input {
+    padding: 8px 10px;
+    border: 1px solid #E5E7EB;
+    border-radius: 6px;
+    font-size: 12px;
+    width: 100%;
+    transition: all 0.2s;
+}
+
+.quarter-input-group input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
 }
 
 /* Modal Footer */
@@ -579,8 +638,13 @@ body.modal-open {
 
 /* Responsive adjustments */
 @media (max-width: 1400px) {
-    .channel-inputs-grid {
-        grid-template-columns: 1fr;
+    .modal-content {
+        width: 95vw;
+        min-width: auto;
+    }
+    
+    .channel-row {
+        grid-template-columns: repeat(2, 1fr);
     }
     
     .quarterly-grid {
