@@ -997,26 +997,41 @@
                                     )
                                 )
                             ),
-                            // Quarterly Breakdown Section - Side by Side Layout
-                            h('div', { className: 'form-section' },
-                                h('h4', { className: 'section-title' }, 'Quarterly Breakdown'),
+                            // Quarterly Targets Section
+                            h('div', { className: 'targets-section' },
+                                h('div', { className: 'section-header' },
+                                    h('h4', null, 'Quarterly Targets'),
+                                    h('button', {
+                                        className: 'btn btn-secondary btn-sm',
+                                        onClick: () => {
+                                            const autoCalculated = autoCalculateQuarterly(editingValues.annual || {}, editingBrand);
+                                            setEditingValues({
+                                                ...editingValues,
+                                                ...autoCalculated
+                                            });
+                                        }
+                                    }, 'Auto-calculate from Annual')
+                                ),
                                 h('div', { className: 'quarterly-grid' },
                                     ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter =>
-                                        h('div', { key: quarter, className: 'quarter-column' },
-                                            h('div', { className: 'quarter-header' }, quarter),
-                                            h('div', { className: 'quarter-inputs' },
+                                        h('div', { key: quarter, className: 'quarter-section' },
+                                            h('h5', null, quarter),
+                                            h('div', { className: 'channel-inputs' },
                                                 availableChannels.map(channel =>
-                                                    h('div', { key: `${quarter}-${channel}`, className: 'quarter-input-group' },
-                                                        h('input', {
-                                                            type: 'number',
-                                                            placeholder: channel,
-                                                            value: editingValues[quarter]?.[channel] || 0,
-                                                            onChange: (e) => setEditingValues({
-                                                                ...editingValues,
-                                                                [quarter]: { ...editingValues[quarter], [channel]: parseFloat(e.target.value) || 0 }
-                                                            }),
-                                                            disabled: !canEditTarget(editingBrand, channel)
-                                                        })
+                                                    h('div', { key: channel, className: 'channel-input compact' },
+                                                        h('label', null, channel),
+                                                        h('div', { className: 'input-group' },
+                                                            h('span', { className: 'input-prefix' }, '$'),
+                                                            h('input', {
+                                                                type: 'number',
+                                                                value: editingValues[quarter]?.[channel] || 0,
+                                                                onChange: (e) => setEditingValues({
+                                                                    ...editingValues,
+                                                                    [quarter]: { ...editingValues[quarter], [channel]: parseFloat(e.target.value) || 0 }
+                                                                }),
+                                                                disabled: !canEditTarget(editingBrand, channel)
+                                                            })
+                                                        )
                                                     )
                                                 )
                                             )

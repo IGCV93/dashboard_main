@@ -347,7 +347,7 @@
 /* Modal Styles for Settings - More specific to avoid conflicts */
 .settings-wrapper .modal-overlay,
 .settings-container ~ .modal-overlay {
-    /* Full viewport overlay - break out of container */
+    /* Full viewport overlay */
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
@@ -356,9 +356,6 @@
     width: 100vw !important;
     height: 100vh !important;
     z-index: 10000 !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     background: transparent; /* Background is on backdrop, not overlay */
 }
 
@@ -377,14 +374,17 @@
     backdrop-filter: blur(2px); /* Subtle blur effect */
 }
 
-/* Modal wrapper - Centers the modal */
+/* Modal wrapper - Centers the modal accounting for sidebar */
 .settings-wrapper .modal-wrapper,
 .settings-container ~ .modal-overlay .modal-wrapper {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    position: fixed;
+    /* Define the available area accounting for sidebar and nav */
+    left: 280px;    /* Start after sidebar */
+    right: 0;       /* Extend to right edge */
+    top: 72px;      /* Start after nav */
+    bottom: 0;      /* Extend to bottom */
+
+    /* Center within this available area */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -400,8 +400,8 @@
     border-radius: 16px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 
-    /* TRUE CENTERING - Simple and effective */
-    width: min(1400px, 85vw);
+    /* Width calculation for available space */
+    width: min(1400px, calc(100vw - 360px)); /* Account for sidebar + padding */
     max-width: 1400px;
 
     /* HEIGHT */
@@ -414,7 +414,7 @@
     position: relative;
     animation: slideUp 0.3s ease;
 
-    /* Auto margins for true centering */
+    /* Auto margins for centering */
     margin: auto;
     overflow: hidden;
 }
@@ -704,6 +704,12 @@ body.modal-open {
 
 .channel-input.compact label {
     font-size: 11px;
+    display: block;
+    margin-bottom: 4px;
+    color: #6B7280;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
 .input-group {
@@ -760,9 +766,34 @@ body.modal-open {
 }
 
 .channel-inputs {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Compact input styling for quarterly fields */
+.channel-input.compact {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.channel-input.compact label {
+    flex: 0 0 100px;
+    font-size: 10px;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.channel-input.compact .input-group {
+    flex: 1;
+}
+
+.channel-input.compact .input-group input {
+    padding: 6px 8px 6px 24px;
+    font-size: 12px;
 }
 
 /* Alert banner in modal */
@@ -789,10 +820,14 @@ body.modal-open {
 
 /* Responsive adjustments */
 @media (max-width: 1400px) {
+    .settings-wrapper .modal-wrapper,
+    .settings-container ~ .modal-overlay .modal-wrapper {
+        left: 200px; /* Reduced sidebar space on smaller screens */
+    }
+
     .modal-content {
-        width: calc(95vw - 140px); /* Keep sidebar offset */
+        width: calc(100vw - 260px); /* Adjust for smaller sidebar */
         min-width: auto;
-        margin-left: 70px;
     }
 
     .channel-row {
@@ -805,21 +840,28 @@ body.modal-open {
 }
 
 @media (max-width: 1024px) {
+    .settings-wrapper .modal-wrapper,
+    .settings-container ~ .modal-overlay .modal-wrapper {
+        left: 0; /* No sidebar on tablet */
+        top: 60px; /* Smaller nav on tablet */
+    }
+
     .modal-content {
-        width: 85vw;
-        margin-left: 0; /* Remove offset on smaller screens */
+        width: 90vw;
     }
 }
 
 @media (max-width: 768px) {
-    .modal-wrapper {
+    .settings-wrapper .modal-wrapper,
+    .settings-container ~ .modal-overlay .modal-wrapper {
+        left: 0;
+        top: 0;
         padding: 20px;
     }
 
     .modal-content {
         max-width: calc(100vw - 40px);
         width: calc(100vw - 40px);
-        margin-left: 0; /* No sidebar offset on mobile */
     }
     
     .modal-header {
