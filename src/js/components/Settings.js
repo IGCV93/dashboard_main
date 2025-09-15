@@ -98,7 +98,7 @@
             setDynamicBrands(availableBrands);
         }, [initialBrands, userPermissions]);
         
-        // Handle ESC key to close modal
+        // Handle ESC key to close modal and body scroll locking
         useEffect(() => {
             const handleKeyDown = (event) => {
                 if (event.key === 'Escape' && editingBrand) {
@@ -108,8 +108,14 @@
             };
             
             if (editingBrand) {
+                // Lock body scroll when modal is open
+                document.body.classList.add('modal-open');
                 document.addEventListener('keydown', handleKeyDown);
-                return () => document.removeEventListener('keydown', handleKeyDown);
+                
+                return () => {
+                    document.body.classList.remove('modal-open');
+                    document.removeEventListener('keydown', handleKeyDown);
+                };
             }
         }, [editingBrand]);
         
@@ -482,7 +488,9 @@
             );
         }
         
-        return h('div', { className: 'settings-container' },
+        return h('div', { className: 'settings-wrapper' },
+            // Main Settings Content
+            h('div', { className: 'settings-container' },
             // Settings Header
             h('div', { className: 'settings-header' },
                 h('h2', { className: 'settings-title' }, '⚙️ KPI Settings & Brand Management'),
@@ -904,18 +912,22 @@
                         )
                     )
                 )
+            )
             ),
             
-            // Edit Brand Modal (if editing)
+            // Edit Brand Modal (if editing) - Rendered at same level as settings-container
             editingBrand && h('div', {
-                className: 'modal-backdrop',
-                onClick: () => {
-                    setEditingBrand(null);
-                    setEditingValues({});
-                }
+                className: 'modal-overlay'
             },
                 h('div', {
-                    className: 'modal-wrapper'
+                    className: 'modal-backdrop',
+                    onClick: () => {
+                        setEditingBrand(null);
+                        setEditingValues({});
+                    }
+                }),
+                h('div', {
+                    className: 'modal-container'
                 },
                     h('div', {
                         className: 'modal-content'
