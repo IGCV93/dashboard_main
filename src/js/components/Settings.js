@@ -915,75 +915,53 @@
             )
             ),
             
-            // Edit Brand Modal (if editing) - Rendered at same level as settings-container
-            editingBrand && h('div', {
-                className: 'modal-overlay'
-            },
+            // KPI Edit Modal - Clean Implementation with Portal
+            editingBrand && ReactDOM.createPortal(
                 h('div', {
-                    className: 'modal-backdrop',
-                    onClick: () => {
-                        setEditingBrand(null);
-                        setEditingValues({});
+                    className: 'kpi-modal-overlay',
+                    onClick: (e) => {
+                        // Close if clicking on overlay (not modal content)
+                        if (e.target.className === 'kpi-modal-overlay') {
+                            setEditingBrand(null);
+                            setEditingValues({});
+                        }
                     }
-                }),
-                h('div', {
-                    className: 'modal-container'
                 },
-                    h('div', {
-                        className: 'modal-content'
-                    },
-                        h('div', { className: 'modal-header' },
-                            h('h3', { style: { margin: 0 } }, 
-                                `Edit ${editingBrand} Targets (${settingsYear})`
-                            ),
+                    h('div', { className: 'kpi-modal' },
+                        // Modal Header
+                        h('div', { className: 'kpi-modal-header' },
+                            h('h2', null, `Edit ${editingBrand} Targets (${settingsYear})`),
                             h('button', {
-                                className: 'close-btn',
+                                className: 'kpi-modal-close',
                                 onClick: () => {
                                     setEditingBrand(null);
                                     setEditingValues({});
-                                }
+                                },
+                                'aria-label': 'Close modal'
                             }, '×')
                         ),
-                        
-                        h('div', { className: 'modal-body' },
-                            userRole === 'Manager' && h('div', { 
-                                className: 'alert-banner warning',
-                                style: { marginBottom: '20px' }
-                            },
-                                h('div', { className: 'alert-content' },
-                                    h('span', { className: 'alert-message' }, 
-                                        'You can only modify channels you have permission for'
-                                    )
-                                )
+
+                        // Modal Body
+                        h('div', { className: 'kpi-modal-body' },
+                            // Permission Warning for Managers
+                            userRole === 'Manager' && h('div', { className: 'kpi-modal-alert' },
+                                h('span', null, '⚠️'),
+                                h('span', null, 'You can only edit targets for brands and channels you have permission to manage')
                             ),
-                            
-                            // Annual Targets Section - Wide Layout
-                            h('div', { className: 'form-section' },
-                                h('h4', { className: 'section-title' }, 'Annual Targets'),
-                                h('div', { className: 'annual-targets-grid' },
-                                    // First Row - 4 channels
-                                    h('div', { className: 'channel-row' },
-                                        ...availableChannels.slice(0, 4).map(channel =>
-                                            h('div', { key: channel, className: 'channel-group' },
-                                                h('label', null, `${channel.toUpperCase()} (ANNUAL)`),
+
+                            // Annual Targets Section
+                            h('div', { className: 'kpi-target-section' },
+                                h('div', { className: 'kpi-section-header' },
+                                    h('h3', null, 'Annual Targets')
+                                ),
+                                h('div', { className: 'kpi-annual-grid' },
+                                    availableChannels.map(channel =>
+                                        h('div', { key: channel, className: 'kpi-channel-input' },
+                                            h('label', { className: 'kpi-channel-label' }, channel),
+                                            h('div', { className: 'kpi-input-wrapper' },
+                                                h('span', { className: 'kpi-input-prefix' }, '$'),
                                                 h('input', {
-                                                    type: 'number',
-                                                    value: editingValues.annual?.[channel] || 0,
-                                                    onChange: (e) => setEditingValues({
-                                                        ...editingValues,
-                                                        annual: { ...editingValues.annual, [channel]: parseFloat(e.target.value) || 0 }
-                                                    }),
-                                                    disabled: !canEditTarget(editingBrand, channel)
-                                                })
-                                            )
-                                        )
-                                    ),
-                                    // Second Row - remaining channels
-                                    availableChannels.length > 4 && h('div', { className: 'channel-row' },
-                                        ...availableChannels.slice(4).map(channel =>
-                                            h('div', { key: channel, className: 'channel-group' },
-                                                h('label', null, `${channel.toUpperCase()} (ANNUAL)`),
-                                                h('input', {
+                                                    className: 'kpi-input',
                                                     type: 'number',
                                                     value: editingValues.annual?.[channel] || 0,
                                                     onChange: (e) => setEditingValues({
@@ -997,12 +975,13 @@
                                     )
                                 )
                             ),
+
                             // Quarterly Targets Section
-                            h('div', { className: 'targets-section' },
-                                h('div', { className: 'section-header' },
-                                    h('h4', null, 'Quarterly Targets'),
+                            h('div', { className: 'kpi-target-section' },
+                                h('div', { className: 'kpi-section-header' },
+                                    h('h3', null, 'Quarterly Targets'),
                                     h('button', {
-                                        className: 'btn btn-secondary btn-sm',
+                                        className: 'kpi-btn-auto',
                                         onClick: () => {
                                             const autoCalculated = autoCalculateQuarterly(editingValues.annual || {}, editingBrand);
                                             setEditingValues({
@@ -1010,28 +989,27 @@
                                                 ...autoCalculated
                                             });
                                         }
-                                    }, 'Auto-calculate from Annual')
+                                    }, '⚡ Auto-calculate from Annual')
                                 ),
-                                h('div', { className: 'quarterly-grid' },
+                                h('div', { className: 'kpi-quarterly-grid' },
                                     ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter =>
-                                        h('div', { key: quarter, className: 'quarter-section' },
-                                            h('h5', null, quarter),
-                                            h('div', { className: 'channel-inputs' },
-                                                availableChannels.map(channel =>
-                                                    h('div', { key: channel, className: 'channel-input compact' },
-                                                        h('label', null, channel),
-                                                        h('div', { className: 'input-group' },
-                                                            h('span', { className: 'input-prefix' }, '$'),
-                                                            h('input', {
-                                                                type: 'number',
-                                                                value: editingValues[quarter]?.[channel] || 0,
-                                                                onChange: (e) => setEditingValues({
-                                                                    ...editingValues,
-                                                                    [quarter]: { ...editingValues[quarter], [channel]: parseFloat(e.target.value) || 0 }
-                                                                }),
-                                                                disabled: !canEditTarget(editingBrand, channel)
-                                                            })
-                                                        )
+                                        h('div', { key: quarter, className: 'kpi-quarter-section' },
+                                            h('h4', { className: 'kpi-quarter-title' }, quarter),
+                                            availableChannels.map(channel =>
+                                                h('div', { key: `${quarter}-${channel}`, className: 'kpi-channel-input' },
+                                                    h('label', { className: 'kpi-channel-label' }, channel),
+                                                    h('div', { className: 'kpi-input-wrapper' },
+                                                        h('span', { className: 'kpi-input-prefix' }, '$'),
+                                                        h('input', {
+                                                            className: 'kpi-input',
+                                                            type: 'number',
+                                                            value: editingValues[quarter]?.[channel] || 0,
+                                                            onChange: (e) => setEditingValues({
+                                                                ...editingValues,
+                                                                [quarter]: { ...editingValues[quarter], [channel]: parseFloat(e.target.value) || 0 }
+                                                            }),
+                                                            disabled: !canEditTarget(editingBrand, channel)
+                                                        })
                                                     )
                                                 )
                                             )
@@ -1040,22 +1018,24 @@
                                 )
                             )
                         ),
-                        
-                        h('div', { className: 'modal-footer' },
+
+                        // Modal Footer
+                        h('div', { className: 'kpi-modal-footer' },
                             h('button', {
-                                className: 'btn btn-success',
-                                onClick: handleSaveEdit
-                            }, 'Save Changes'),
-                            h('button', {
-                                className: 'btn btn-secondary',
+                                className: 'kpi-btn-secondary',
                                 onClick: () => {
                                     setEditingBrand(null);
                                     setEditingValues({});
                                 }
-                            }, 'Cancel')
+                            }, 'Cancel'),
+                            h('button', {
+                                className: 'kpi-btn-primary',
+                                onClick: handleSaveEdit
+                            }, '💾 Save Changes')
                         )
                     )
-                )
+                ),
+                document.body // Portal to body
             )
         );
     }
