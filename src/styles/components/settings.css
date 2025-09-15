@@ -346,41 +346,44 @@
 
 /* Modal Styles for Settings */
 .modal-overlay {
-    /* This ensures modal system is positioned correctly */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 9999;
-    /* Ensure it's above everything */
-    pointer-events: none;
-}
-
-/* Backdrop - Covers main content area only */
-.modal-backdrop {
-    position: absolute;
-    top: 72px;      /* Start after nav bar */
-    left: 280px;    /* Start after sidebar */
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    pointer-events: all;
-    animation: fadeIn 0.3s ease;
-}
-
-/* Modal Container - Centers the modal */
-.modal-container {
-    position: absolute;
-    top: 72px;      /* Start after nav bar */
-    left: 280px;    /* Start after sidebar */
-    right: 0;
-    bottom: 0;
+    /* Full viewport overlay - break out of container */
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 10000 !important;
+    /* Remove pointer-events none */
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* Backdrop - Covers entire viewport */
+.modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s ease;
+}
+
+/* Modal wrapper - Centers the modal */
+.modal-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
     padding: 40px;
-    pointer-events: none;
+    pointer-events: none; /* Allow clicks to pass through to backdrop */
     overflow-y: auto;
 }
 
@@ -389,24 +392,23 @@
     background: white;
     border-radius: 16px;
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
-    
+
     /* WIDER MODAL */
-    width: calc(100vw - 360px);  /* Full width minus sidebar and padding */
+    width: 90vw;
     max-width: 1400px;  /* Increased from 1000px */
-    min-width: 1200px;  /* Ensure minimum width */
-    
-    /* SHORTER HEIGHT */
-    max-height: 85vh;  /* Don't need full height */
+    min-width: min(1200px, 90vw);  /* Responsive minimum */
+
+    /* HEIGHT */
+    max-height: 85vh;
     height: auto;
-    
+
     display: flex;
     flex-direction: column;
-    pointer-events: all;
+    pointer-events: all; /* Make content interactive */
     position: relative;
     animation: slideUp 0.3s ease;
-    
-    /* Center in available space */
-    margin: 0 auto;
+    margin: auto;
+    overflow: hidden;
 }
 
 /* Modal Header */
@@ -447,11 +449,12 @@
     color: #1A1D23;
 }
 
-/* Modal Body - No scroll needed */
+/* Modal Body */
 .modal-body {
     flex: 1;
-    overflow-y: visible;  /* No scroll needed */
+    overflow-y: auto;  /* Allow scroll if content is too tall */
     padding: 32px;
+    max-height: calc(85vh - 160px); /* Account for header and footer */
 }
 
 /* Form Layout Inside Modal - Wide Layout */
@@ -636,6 +639,146 @@ body.modal-open {
     overflow: hidden;
 }
 
+/* Additional fixes for modal positioning */
+.settings-wrapper {
+    position: relative;
+    z-index: 1;
+}
+
+/* Ensure modal is not trapped by overflow hidden */
+.main-content {
+    position: relative;
+}
+
+/* Target section styles in modal */
+.targets-section {
+    margin-bottom: 32px;
+}
+
+.targets-section h4 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1A1D23;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #E5E7EB;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #E5E7EB;
+}
+
+.section-header h4 {
+    margin: 0;
+    border: none;
+    padding: 0;
+}
+
+/* Channel input styles in modal */
+.channel-input {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.channel-input label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6B7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.channel-input.compact label {
+    font-size: 11px;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.input-prefix {
+    position: absolute;
+    left: 12px;
+    color: #6B7280;
+    font-size: 14px;
+    pointer-events: none;
+}
+
+.input-group input {
+    padding: 10px 14px 10px 28px;
+    border: 2px solid #E5E7EB;
+    border-radius: 8px;
+    font-size: 14px;
+    width: 100%;
+    transition: all 0.2s;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.input-group input:disabled {
+    background: #F3F4F6;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Quarter section styles */
+.quarter-section {
+    background: white;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #E5E7EB;
+}
+
+.quarter-section h5 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1A1D23;
+    margin: 0 0 16px 0;
+    text-align: center;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #E5E7EB;
+}
+
+.channel-inputs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+/* Alert banner in modal */
+.alert-banner.warning {
+    background: #FEF3C7;
+    border: 1px solid #F59E0B;
+    color: #92400E;
+    padding: 12px 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.alert-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.alert-icon {
+    font-size: 20px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1400px) {
     .modal-content {
@@ -653,13 +796,7 @@ body.modal-open {
 }
 
 @media (max-width: 768px) {
-    .modal-backdrop {
-        left: 0;  /* Full width on mobile */
-        top: 72px;
-    }
-    
-    .modal-container {
-        left: 0;
+    .modal-wrapper {
         padding: 20px;
     }
     
