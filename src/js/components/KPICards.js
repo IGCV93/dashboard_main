@@ -67,7 +67,7 @@
                 h('div', { className: 'kpi-icon success' }, '🚀'),
                 h('div', { className: 'kpi-label' }, 'Daily Run Rate'),
                 h('div', { className: 'kpi-value' }, formatCurrency ? formatCurrency(kpis.runRate) : '$' + kpis.runRate),
-                h('div', { className: 'kpi-subtitle' }, '7-day average'),
+                h('div', { className: 'kpi-subtitle' }, '14-day weighted average'),
                 h('div', { className: 'kpi-change change-neutral' }, 
                     `📊 Required: ${formatCurrency ? formatCurrency(kpis.gapToKPI / Math.max(1, kpis.daysRemaining)) : '$' + (kpis.gapToKPI / Math.max(1, kpis.daysRemaining))}/day`
                 )

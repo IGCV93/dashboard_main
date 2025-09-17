@@ -42,7 +42,7 @@
 
         // Get dependencies from window
         const { formatCurrency, formatPercent } = window.formatters || {};
-        const { getDaysInPeriod, getDaysElapsed } = window.dateUtils || {};
+        const { getDaysInPeriod, getDaysElapsed, getDaysInQuarter, getDaysInMonth } = window.dateUtils || {};
         const KPICards = window.KPICards || window.ChaiVision?.components?.KPICards || (() => null);
         const ChannelPerformance = window.ChannelPerformance || window.ChaiVision?.components?.ChannelPerformance || (() => null);
         const Charts = window.ChaiVision?.components?.Charts || window.Charts || (() => null);
@@ -100,14 +100,52 @@
         
         // Calculate KPIs with permission filtering
         const kpis = useMemo(() => {
-            // Build canonical fields for robust filtering
-            const canonicalData = (salesData || []).map(d => ({
-                ...d,
-                _brand: (d.brand_name || d.brand || '').trim(),
-                _brandKey: normalizeKey(d.brand_name || d.brand),
-                _channel: (d.channel_name || d.channel || '').trim(),
-                _channelKey: normalizeKey(d.channel_name || d.channel)
-            }));
+            // Data validation function - conservative to avoid excluding legitimate data
+            const validateSalesRecord = (record) => {
+                // Skip records that are clearly invalid
+                if (!record) return false;
+
+                // Date validation - allow any valid date format
+                if (record.date) {
+                    const date = new Date(record.date);
+                    if (isNaN(date.getTime())) return false;
+
+                    // Only exclude clearly impossible future dates (more than 1 year ahead)
+                    const oneYearFromNow = new Date();
+                    oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+                    if (date > oneYearFromNow) return false;
+
+                    // Only exclude very old dates (more than 10 years ago) as likely data errors
+                    const tenYearsAgo = new Date();
+                    tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
+                    if (date < tenYearsAgo) return false;
+                }
+
+                // Revenue validation - only exclude clearly invalid values
+                if (record.revenue !== undefined && record.revenue !== null) {
+                    const revenue = parseFloat(record.revenue);
+                    if (isNaN(revenue)) return false;
+                    // Only exclude extremely negative values (likely data errors)
+                    // Allow small negative values as they could be refunds/returns
+                    if (revenue < -1000000) return false;
+                    // Only exclude unrealistically large values (likely data errors)
+                    if (revenue > 100000000) return false;
+                }
+
+                return true;
+            };
+
+            // Build canonical fields for robust filtering with validation
+            const canonicalData = (salesData || [])
+                .filter(validateSalesRecord)
+                .map(d => ({
+                    ...d,
+                    _brand: (d.brand_name || d.brand || '').trim(),
+                    _brandKey: normalizeKey(d.brand_name || d.brand),
+                    _channel: (d.channel_name || d.channel || '').trim(),
+                    _channelKey: normalizeKey(d.channel_name || d.channel),
+                    revenue: parseFloat(d.revenue) || 0 // Ensure revenue is a number
+                }));
 
             let filteredData = canonicalData;
             
@@ -220,8 +258,17 @@
                         periodData = brandData[quarter];
                         if (periodData) {
                             const monthlyData = {};
+                            const year = parseInt(selectedYear);
+                            const month = parseInt(selectedMonth);
+
+                            // Calculate days-based distribution instead of simple division by 3
+                            const daysInThisMonth = getDaysInMonth ? getDaysInMonth(year, month) : 30;
+                            const daysInThisQuarter = getDaysInQuarter ? getDaysInQuarter(year, quarter) : 90;
+                            const dayRatio = daysInThisMonth / daysInThisQuarter;
+
                             availableChannels.forEach(ch => {
-                                monthlyData[ch] = (periodData[ch] || 0) / 3;
+                                // Distribute quarterly target based on actual days in month vs quarter
+                                monthlyData[ch] = (periodData[ch] || 0) * dayRatio;
                             });
                             periodData = monthlyData;
                         }
@@ -247,17 +294,74 @@
             const daysElapsed = getDaysElapsed ? getDaysElapsed(view, selectedPeriod, selectedYear, selectedMonth) : 15;
             const daysRemaining = Math.max(0, daysInPeriod - daysElapsed);
             
-            // Calculate run rate (7-day average)
-            const sevenDaysAgo = new Date();
-            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-            const last7DaysData = filteredData.filter(d => new Date(d.date) >= sevenDaysAgo);
-            const runRate = last7DaysData.length > 0 ? 
-                last7DaysData.reduce((sum, d) => sum + d.revenue, 0) / Math.min(7, last7DaysData.length) : 0;
+            // Calculate improved run rate (14-day weighted average)
+            const calculateRunRate = (data) => {
+                if (!data || data.length === 0) return 0;
+
+                const fourteenDaysAgo = new Date();
+                fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+                // Get last 14 days of data
+                const recentData = data.filter(d => new Date(d.date) >= fourteenDaysAgo);
+
+                if (recentData.length === 0) return 0;
+
+                // Group by date and sum daily revenues
+                const dailyRevenues = {};
+                recentData.forEach(d => {
+                    const dateKey = d.date;
+                    dailyRevenues[dateKey] = (dailyRevenues[dateKey] || 0) + d.revenue;
+                });
+
+                const days = Object.keys(dailyRevenues).sort();
+                if (days.length === 0) return 0;
+
+                // Calculate weighted average (recent days weighted more heavily)
+                let weightedSum = 0;
+                let totalWeights = 0;
+
+                days.forEach((day, index) => {
+                    // Weight increases linearly for more recent days
+                    const weight = index + 1; // Day 1 gets weight 1, day 14 gets weight 14
+                    weightedSum += dailyRevenues[day] * weight;
+                    totalWeights += weight;
+                });
+
+                return totalWeights > 0 ? weightedSum / totalWeights : 0;
+            };
+
+            const runRate = calculateRunRate(filteredData);
             
-            // Projections
-            const projection = totalRevenue + (runRate * daysRemaining);
+            // Enhanced Projections with multiple scenarios
+            const projections = {
+                conservative: totalRevenue + (runRate * 0.8 * daysRemaining),
+                realistic: totalRevenue + (runRate * daysRemaining),
+                optimistic: totalRevenue + (runRate * 1.2 * daysRemaining)
+            };
+
+            // Use realistic as main projection for backward compatibility
+            const projection = projections.realistic;
             const projectionPercent85 = totalTarget85 > 0 ? projection / totalTarget85 : 0;
             const projectionPercent100 = totalTarget100 > 0 ? projection / totalTarget100 : 0;
+
+            // Calculate percentages for all scenarios
+            const projectionScenarios = {
+                conservative: {
+                    value: projections.conservative,
+                    percent85: totalTarget85 > 0 ? projections.conservative / totalTarget85 : 0,
+                    percent100: totalTarget100 > 0 ? projections.conservative / totalTarget100 : 0
+                },
+                realistic: {
+                    value: projections.realistic,
+                    percent85: projectionPercent85,
+                    percent100: projectionPercent100
+                },
+                optimistic: {
+                    value: projections.optimistic,
+                    percent85: totalTarget85 > 0 ? projections.optimistic / totalTarget85 : 0,
+                    percent100: totalTarget100 > 0 ? projections.optimistic / totalTarget100 : 0
+                }
+            };
             
             // KPI Achievement
             const kpiAchievement = totalTarget85 > 0 ? (totalRevenue / totalTarget85) * 100 : 0;
@@ -301,6 +405,7 @@
                 projection,
                 projectionPercent85,
                 projectionPercent100,
+                projectionScenarios, // Add projection scenarios
                 daysRemaining,
                 daysElapsed,
                 daysInPeriod,
@@ -379,10 +484,32 @@
                         h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.totalRevenue, 'USD', false) : '$' + Number(kpis.totalRevenue || 0).toFixed(2)),
                         h('div', { className: 'target-subtitle' }, `${kpis.achievement100.toFixed(1)}% of full target`)
                     ),
-                    h('div', { className: 'target-item' },
-                        h('div', { className: 'target-label' }, '📈 End Projection'),
-                        h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.projection) : '$' + kpis.projection),
-                        h('div', { className: 'target-subtitle' }, `${kpis.projectionPercent100.toFixed(1)}% of full target`)
+                    h('div', { className: 'target-item projection-scenarios' },
+                        h('div', { className: 'target-label' }, '📈 End Projections'),
+                        h('div', { className: 'projection-grid' },
+                            h('div', { className: 'projection-scenario conservative' },
+                                h('div', { className: 'scenario-label' }, 'Conservative'),
+                                h('div', { className: 'scenario-value' },
+                                    formatCurrency ? formatCurrency(kpis.projectionScenarios.conservative.value) : '$' + kpis.projectionScenarios.conservative.value
+                                ),
+                                h('div', { className: 'scenario-percent' }, `${(kpis.projectionScenarios.conservative.percent100 * 100).toFixed(1)}%`)
+                            ),
+                            h('div', { className: 'projection-scenario realistic active' },
+                                h('div', { className: 'scenario-label' }, 'Realistic'),
+                                h('div', { className: 'scenario-value' },
+                                    formatCurrency ? formatCurrency(kpis.projectionScenarios.realistic.value) : '$' + kpis.projectionScenarios.realistic.value
+                                ),
+                                h('div', { className: 'scenario-percent' }, `${(kpis.projectionScenarios.realistic.percent100 * 100).toFixed(1)}%`)
+                            ),
+                            h('div', { className: 'projection-scenario optimistic' },
+                                h('div', { className: 'scenario-label' }, 'Optimistic'),
+                                h('div', { className: 'scenario-value' },
+                                    formatCurrency ? formatCurrency(kpis.projectionScenarios.optimistic.value) : '$' + kpis.projectionScenarios.optimistic.value
+                                ),
+                                h('div', { className: 'scenario-percent' }, `${(kpis.projectionScenarios.optimistic.percent100 * 100).toFixed(1)}%`)
+                            )
+                        ),
+                        h('div', { className: 'target-subtitle' }, 'Based on 14-day weighted run rate')
                     )
                 )
             ),
