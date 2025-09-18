@@ -306,10 +306,10 @@
     }
 }
 
-/* Enhanced Projection Scenarios - Matching Dashboard Design */
+/* Enhanced Projection Scenarios - Clean White Design */
 .projection-scenarios-row {
     display: flex;
-    gap: 8px;
+    gap: 12px;
     margin-top: 16px;
     padding-top: 16px;
     border-top: 1px solid #F3F4F6;
@@ -318,18 +318,19 @@
 .scenario-item {
     flex: 1;
     text-align: center;
-    padding: 12px 8px;
-    background: #FAFBFC;
-    border: 1px solid #E5E7EB;
+    padding: 16px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
     border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: all 0.2s ease;
     position: relative;
 }
 
 .scenario-item.active {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
+    background: #FFFFFF;
     border-color: #667eea;
-    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
 }
 
 .scenario-item.conservative {
@@ -345,31 +346,31 @@
 }
 
 .scenario-item:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
 .scenario-label {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: #6B7280;
-    margin-bottom: 6px;
+    color: #718096;
+    margin-bottom: 8px;
     display: block;
 }
 
 .scenario-value {
-    font-size: 14px;
+    font-size: 24px;
     font-weight: 700;
-    color: #1F2937;
-    margin-bottom: 2px;
+    color: #2D3748;
+    margin-bottom: 4px;
     line-height: 1.2;
 }
 
 .scenario-percent {
-    font-size: 11px;
-    color: #6B7280;
+    font-size: 16px;
+    color: #4A5568;
     font-weight: 500;
 }
 
@@ -385,23 +386,23 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .projection-scenarios-row {
-        gap: 6px;
+        gap: 8px;
     }
 
     .scenario-item {
-        padding: 10px 6px;
+        padding: 14px 12px;
     }
 
     .scenario-value {
-        font-size: 12px;
+        font-size: 20px;
     }
 
     .scenario-label {
-        font-size: 9px;
+        font-size: 11px;
     }
 
     .scenario-percent {
-        font-size: 10px;
+        font-size: 14px;
     }
 
     .projection-note {
@@ -413,15 +414,19 @@
 @media (max-width: 480px) {
     .projection-scenarios-row {
         flex-direction: column;
-        gap: 8px;
+        gap: 12px;
     }
 
     .scenario-item {
-        padding: 12px;
+        padding: 16px;
     }
 
     .scenario-value {
-        font-size: 14px;
+        font-size: 22px;
+    }
+
+    .scenario-percent {
+        font-size: 15px;
     }
 
     .projection-note {
