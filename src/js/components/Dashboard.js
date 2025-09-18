@@ -472,22 +472,42 @@
                     h('div', { className: 'target-item' },
                         h('div', { className: 'target-label' }, '🎯 Full Projection (100%)'),
                         h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.totalTarget100) : '$' + kpis.totalTarget100),
-                        h('div', { className: 'target-subtitle' }, 'Complete target goal')
+                        h('div', { className: 'target-secondary' },
+                            h('span', { className: 'target-trend positive' }, '📈 Annual Goal'),
+                            h('span', { className: 'target-context' }, 'Complete target achievement')
+                        ),
+                        h('div', { className: 'target-meta' }, `Set: ${new Date().getFullYear()}`)
                     ),
                     h('div', { className: 'target-item' },
                         h('div', { className: 'target-label' }, '✅ KPI Target (85%)'),
                         h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.totalTarget85) : '$' + kpis.totalTarget85),
-                        h('div', { className: 'target-subtitle' }, 'Minimum achievement')
+                        h('div', { className: 'target-secondary' },
+                            h('span', { className: 'target-trend neutral' }, '🎯 Minimum Goal'),
+                            h('span', { className: 'target-context' }, `${((kpis.totalTarget85 / kpis.totalTarget100) * 100).toFixed(0)}% of full target`)
+                        ),
+                        h('div', { className: 'target-meta' }, 'Performance threshold')
                     ),
                     h('div', { className: 'target-item' },
                         h('div', { className: 'target-label' }, '📊 Current Achievement'),
                         h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.totalRevenue, 'USD', false) : '$' + Number(kpis.totalRevenue || 0).toFixed(2)),
-                        h('div', { className: 'target-subtitle' }, `${kpis.achievement100.toFixed(1)}% of full target`)
+                        h('div', { className: 'target-secondary' },
+                            h('span', { className: `target-trend ${kpis.achievement100 >= 85 ? 'positive' : kpis.achievement100 >= 70 ? 'neutral' : 'negative'}` },
+                                `${kpis.achievement100 >= 85 ? '↗️' : kpis.achievement100 >= 70 ? '➡️' : '↘️'} ${kpis.achievement100.toFixed(1)}% of target`
+                            ),
+                            h('span', { className: 'target-context' }, `${kpis.achievement85.toFixed(1)}% of KPI goal`)
+                        ),
+                        h('div', { className: 'target-meta' }, `Updated: ${new Date().toLocaleTimeString()}`)
                     ),
                     h('div', { className: 'target-item' },
                         h('div', { className: 'target-label' }, '📈 End Projection (Realistic)'),
                         h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios.realistic.value) : '$' + kpis.projectionScenarios.realistic.value),
-                        h('div', { className: 'target-subtitle' }, `${(kpis.projectionScenarios.realistic.percent100 * 100).toFixed(1)}% of full target`),
+                        h('div', { className: 'target-secondary' },
+                            h('span', { className: `target-trend ${kpis.projectionScenarios.realistic.percent100 >= 0.85 ? 'positive' : kpis.projectionScenarios.realistic.percent100 >= 0.70 ? 'neutral' : 'negative'}` },
+                                `${kpis.projectionScenarios.realistic.percent100 >= 0.85 ? '🟢' : kpis.projectionScenarios.realistic.percent100 >= 0.70 ? '🟡' : '🔴'} ${(kpis.projectionScenarios.realistic.percent100 * 100).toFixed(1)}% confidence`
+                            ),
+                            h('span', { className: 'target-context' }, '14-day weighted average')
+                        ),
+                        h('div', { className: 'target-meta' }, `Last calc: ${new Date().toLocaleTimeString()}`),
                         h('div', { className: 'projection-scenarios-row' },
                             h('div', { className: 'scenario-item conservative' },
                                 h('div', { className: 'scenario-label' }, '📉 Conservative'),

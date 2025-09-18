@@ -143,8 +143,13 @@
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 16px;
-    padding: 20px;
+    padding: 24px 20px;
     transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 140px;
+    justify-content: flex-start;
 }
 
 .target-item:hover {
@@ -158,6 +163,7 @@
     opacity: 0.9;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    margin-bottom: 2px;
     margin-bottom: 8px;
     font-weight: 600;
 }
@@ -165,12 +171,66 @@
 .target-value {
     font-size: 28px;
     font-weight: 800;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
+    line-height: 1.1;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .target-subtitle {
     font-size: 14px;
     opacity: 0.9;
+    color: white;
+    margin-top: auto;
+}
+
+/* Enhanced KPI Container Elements */
+.target-secondary {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 6px 0;
+}
+
+.target-trend {
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    opacity: 0.95;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.target-trend.positive {
+    color: #34D399;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.target-trend.neutral {
+    color: #FBBF24;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.target-trend.negative {
+    color: #F87171;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.target-context {
+    font-size: 12px;
+    color: white;
+    opacity: 0.8;
+    font-weight: 500;
+}
+
+.target-meta {
+    font-size: 11px;
+    color: white;
+    opacity: 0.7;
+    margin-top: auto;
+    padding-top: 4px;
+    font-style: italic;
 }
 
 /* Alert Banners */
@@ -446,6 +506,24 @@
     }
 
     .target-item {
-        padding: 16px;
+        padding: 20px 16px;
+        min-height: 120px;
+    }
+
+    .target-secondary {
+        gap: 3px;
+        margin: 4px 0;
+    }
+
+    .target-trend {
+        font-size: 13px;
+    }
+
+    .target-context {
+        font-size: 11px;
+    }
+
+    .target-meta {
+        font-size: 10px;
     }
 }
