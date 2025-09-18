@@ -491,19 +491,19 @@
                         h('div', { className: 'target-label' }, '📊 Current Achievement'),
                         h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.totalRevenue, 'USD', false) : '$' + Number(kpis.totalRevenue || 0).toFixed(2)),
                         h('div', { className: 'target-secondary' },
-                            h('span', { className: `target-trend ${kpis.achievement100 >= 85 ? 'positive' : kpis.achievement100 >= 70 ? 'neutral' : 'negative'}` },
-                                `${kpis.achievement100 >= 85 ? '↗️' : kpis.achievement100 >= 70 ? '➡️' : '↘️'} ${kpis.achievement100.toFixed(1)}% of target`
+                            h('span', { className: `target-trend ${(kpis.achievement100 || 0) >= 85 ? 'positive' : (kpis.achievement100 || 0) >= 70 ? 'neutral' : 'negative'}` },
+                                `${(kpis.achievement100 || 0) >= 85 ? '↗️' : (kpis.achievement100 || 0) >= 70 ? '➡️' : '↘️'} ${(kpis.achievement100 || 0).toFixed(1)}% of target`
                             ),
-                            h('span', { className: 'target-context' }, `${kpis.achievement85.toFixed(1)}% of KPI goal`)
+                            h('span', { className: 'target-context' }, `${(kpis.achievement85 || 0).toFixed(1)}% of KPI goal`)
                         ),
                         h('div', { className: 'target-meta' }, `Updated: ${new Date().toLocaleTimeString()}`)
                     ),
                     h('div', { className: 'target-item' },
                         h('div', { className: 'target-label' }, '📈 End Projection (Realistic)'),
-                        h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios.realistic.value) : '$' + kpis.projectionScenarios.realistic.value),
+                        h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.realistic?.value || 0) : '$' + (kpis.projectionScenarios?.realistic?.value || 0)),
                         h('div', { className: 'target-secondary' },
-                            h('span', { className: `target-trend ${kpis.projectionScenarios.realistic.percent100 >= 0.85 ? 'positive' : kpis.projectionScenarios.realistic.percent100 >= 0.70 ? 'neutral' : 'negative'}` },
-                                `${kpis.projectionScenarios.realistic.percent100 >= 0.85 ? '🟢' : kpis.projectionScenarios.realistic.percent100 >= 0.70 ? '🟡' : '🔴'} ${(kpis.projectionScenarios.realistic.percent100 * 100).toFixed(1)}% confidence`
+                            h('span', { className: `target-trend ${(kpis.projectionScenarios?.realistic?.percent100 || 0) >= 0.85 ? 'positive' : (kpis.projectionScenarios?.realistic?.percent100 || 0) >= 0.70 ? 'neutral' : 'negative'}` },
+                                `${(kpis.projectionScenarios?.realistic?.percent100 || 0) >= 0.85 ? '🟢' : (kpis.projectionScenarios?.realistic?.percent100 || 0) >= 0.70 ? '🟡' : '🔴'} ${((kpis.projectionScenarios?.realistic?.percent100 || 0) * 100).toFixed(1)}% confidence`
                             ),
                             h('span', { className: 'target-context' }, '14-day weighted average')
                         ),
@@ -511,18 +511,18 @@
                         h('div', { className: 'projection-scenarios-row' },
                             h('div', { className: 'scenario-item conservative' },
                                 h('div', { className: 'scenario-label' }, '📉 Conservative'),
-                                h('div', { className: 'scenario-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios.conservative.value) : '$' + kpis.projectionScenarios.conservative.value),
-                                h('div', { className: 'scenario-percent' }, `${(kpis.projectionScenarios.conservative.percent100 * 100).toFixed(1)}%`)
+                                h('div', { className: 'scenario-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.conservative?.value || 0) : '$' + (kpis.projectionScenarios?.conservative?.value || 0)),
+                                h('div', { className: 'scenario-percent' }, `${((kpis.projectionScenarios?.conservative?.percent100 || 0) * 100).toFixed(1)}%`)
                             ),
                             h('div', { className: 'scenario-item realistic active' },
                                 h('div', { className: 'scenario-label' }, '🎯 Realistic'),
-                                h('div', { className: 'scenario-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios.realistic.value) : '$' + kpis.projectionScenarios.realistic.value),
-                                h('div', { className: 'scenario-percent' }, `${(kpis.projectionScenarios.realistic.percent100 * 100).toFixed(1)}%`)
+                                h('div', { className: 'scenario-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.realistic?.value || 0) : '$' + (kpis.projectionScenarios?.realistic?.value || 0)),
+                                h('div', { className: 'scenario-percent' }, `${((kpis.projectionScenarios?.realistic?.percent100 || 0) * 100).toFixed(1)}%`)
                             ),
                             h('div', { className: 'scenario-item optimistic' },
                                 h('div', { className: 'scenario-label' }, '📈 Optimistic'),
-                                h('div', { className: 'scenario-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios.optimistic.value) : '$' + kpis.projectionScenarios.optimistic.value),
-                                h('div', { className: 'scenario-percent' }, `${(kpis.projectionScenarios.optimistic.percent100 * 100).toFixed(1)}%`)
+                                h('div', { className: 'scenario-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.optimistic?.value || 0) : '$' + (kpis.projectionScenarios?.optimistic?.value || 0)),
+                                h('div', { className: 'scenario-percent' }, `${((kpis.projectionScenarios?.optimistic?.percent100 || 0) * 100).toFixed(1)}%`)
                             )
                         ),
                         h('div', { className: 'projection-note' }, '14-day weighted average • Conservative (-20%) • Optimistic (+20%)')
