@@ -484,105 +484,36 @@
                         h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.totalRevenue, 'USD', false) : '$' + Number(kpis.totalRevenue || 0).toFixed(2)),
                         h('div', { className: 'target-subtitle' }, `${(kpis.achievement100 || 0).toFixed(1)}% of full target`)
                     ),
-                    h('div', { className: 'target-item' },
-                        h('div', { className: 'target-label' }, '📈 Daily Run Rate'),
-                        h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.runRate || 0) : '$' + Number(kpis.runRate || 0).toFixed(0)),
-                        h('div', { className: 'target-subtitle' }, '14-day weighted average')
-                    )
-                )
-            ),
-
-            // End Projections Section
-            h('div', { className: 'projections-overview' },
-                h('div', { className: 'projections-title' }, 'End Projections'),
-                h('div', { className: 'projections-grid' },
-                    // Conservative Projection
-                    h('div', { className: 'projection-item flip-container conservative-proj' },
+                    h('div', { className: 'target-item flip-container' },
                         h('div', { className: 'flip-inner' },
                             // Front of card
                             h('div', { className: 'flip-front' },
-                                h('div', { className: 'projection-label' }, '📉 Conservative'),
-                                h('div', { className: 'projection-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.conservative?.value || 0) : '$' + (kpis.projectionScenarios?.conservative?.value || 0)),
-                                h('div', { className: 'projection-subtitle' }, `${((kpis.projectionScenarios?.conservative?.percent100 || 0) * 100).toFixed(1)}% of target`),
-                                h('div', { className: 'hover-hint' }, 'Hover for details')
+                                h('div', { className: 'target-label' }, '📈 End Projection'),
+                                h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.realistic?.value || 0) : '$' + (kpis.projectionScenarios?.realistic?.value || 0)),
+                                h('div', { className: 'target-subtitle' }, `${((kpis.projectionScenarios?.realistic?.percent100 || 0) * 100).toFixed(1)}% of full target`),
+                                h('div', { className: 'hover-hint' }, 'Hover for scenarios')
                             ),
-                            // Back of card
+                            // Back of card - showing all 3 scenarios
                             h('div', { className: 'flip-back' },
-                                h('div', { className: 'projection-detail-title' }, 'Conservative Scenario'),
-                                h('div', { className: 'projection-details' },
-                                    h('div', { className: 'detail-item' },
-                                        h('span', { className: 'detail-label' }, '80% of current run rate'),
-                                        h('span', { className: 'detail-value' }, formatCurrency ? formatCurrency(kpis.runRate * 0.8) : '$' + (kpis.runRate * 0.8).toFixed(0))
+                                h('div', { className: 'scenarios-title' }, 'Projection Scenarios'),
+                                h('div', { className: 'scenarios-grid' },
+                                    h('div', { className: 'scenario-mini conservative' },
+                                        h('div', { className: 'scenario-label-mini' }, 'Conservative'),
+                                        h('div', { className: 'scenario-value-mini' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.conservative?.value || 0) : '$' + (kpis.projectionScenarios?.conservative?.value || 0).toLocaleString()),
+                                        h('div', { className: 'scenario-percent-mini' }, `${((kpis.projectionScenarios?.conservative?.percent100 || 0) * 100).toFixed(1)}%`)
                                     ),
-                                    h('div', { className: 'detail-item' },
-                                        h('span', { className: 'detail-label' }, 'Days remaining'),
-                                        h('span', { className: 'detail-value' }, kpis.daysRemaining)
+                                    h('div', { className: 'scenario-mini realistic' },
+                                        h('div', { className: 'scenario-label-mini' }, 'Realistic'),
+                                        h('div', { className: 'scenario-value-mini' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.realistic?.value || 0) : '$' + (kpis.projectionScenarios?.realistic?.value || 0).toLocaleString()),
+                                        h('div', { className: 'scenario-percent-mini' }, `${((kpis.projectionScenarios?.realistic?.percent100 || 0) * 100).toFixed(1)}%`)
                                     ),
-                                    h('div', { className: 'detail-item' },
-                                        h('span', { className: 'detail-label' }, 'Gap to 85% target'),
-                                        h('span', { className: 'detail-value' }, formatCurrency ? formatCurrency(Math.max(0, kpis.totalTarget85 - (kpis.projectionScenarios?.conservative?.value || 0))) : '$' + Math.max(0, kpis.totalTarget85 - (kpis.projectionScenarios?.conservative?.value || 0)).toFixed(0))
+                                    h('div', { className: 'scenario-mini optimistic' },
+                                        h('div', { className: 'scenario-label-mini' }, 'Optimistic'),
+                                        h('div', { className: 'scenario-value-mini' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.optimistic?.value || 0) : '$' + (kpis.projectionScenarios?.optimistic?.value || 0).toLocaleString()),
+                                        h('div', { className: 'scenario-percent-mini' }, `${((kpis.projectionScenarios?.optimistic?.percent100 || 0) * 100).toFixed(1)}%`)
                                     )
-                                )
-                            )
-                        )
-                    ),
-                    // Realistic Projection
-                    h('div', { className: 'projection-item flip-container realistic-proj' },
-                        h('div', { className: 'flip-inner' },
-                            // Front of card
-                            h('div', { className: 'flip-front' },
-                                h('div', { className: 'projection-label' }, '📈 Realistic'),
-                                h('div', { className: 'projection-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.realistic?.value || 0) : '$' + (kpis.projectionScenarios?.realistic?.value || 0)),
-                                h('div', { className: 'projection-subtitle' }, `${((kpis.projectionScenarios?.realistic?.percent100 || 0) * 100).toFixed(1)}% of target`),
-                                h('div', { className: 'hover-hint' }, 'Hover for details')
-                            ),
-                            // Back of card
-                            h('div', { className: 'flip-back' },
-                                h('div', { className: 'projection-detail-title' }, 'Realistic Scenario'),
-                                h('div', { className: 'projection-details' },
-                                    h('div', { className: 'detail-item' },
-                                        h('span', { className: 'detail-label' }, 'Current run rate'),
-                                        h('span', { className: 'detail-value' }, formatCurrency ? formatCurrency(kpis.runRate) : '$' + (kpis.runRate).toFixed(0))
-                                    ),
-                                    h('div', { className: 'detail-item' },
-                                        h('span', { className: 'detail-label' }, 'Days remaining'),
-                                        h('span', { className: 'detail-value' }, kpis.daysRemaining)
-                                    ),
-                                    h('div', { className: 'detail-item' },
-                                        h('span', { className: 'detail-label' }, 'Gap to 85% target'),
-                                        h('span', { className: 'detail-value' }, formatCurrency ? formatCurrency(Math.max(0, kpis.totalTarget85 - (kpis.projectionScenarios?.realistic?.value || 0))) : '$' + Math.max(0, kpis.totalTarget85 - (kpis.projectionScenarios?.realistic?.value || 0)).toFixed(0))
-                                    )
-                                )
-                            )
-                        )
-                    ),
-                    // Optimistic Projection
-                    h('div', { className: 'projection-item flip-container optimistic-proj' },
-                        h('div', { className: 'flip-inner' },
-                            // Front of card
-                            h('div', { className: 'flip-front' },
-                                h('div', { className: 'projection-label' }, '🚀 Optimistic'),
-                                h('div', { className: 'projection-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.optimistic?.value || 0) : '$' + (kpis.projectionScenarios?.optimistic?.value || 0)),
-                                h('div', { className: 'projection-subtitle' }, `${((kpis.projectionScenarios?.optimistic?.percent100 || 0) * 100).toFixed(1)}% of target`),
-                                h('div', { className: 'hover-hint' }, 'Hover for details')
-                            ),
-                            // Back of card
-                            h('div', { className: 'flip-back' },
-                                h('div', { className: 'projection-detail-title' }, 'Optimistic Scenario'),
-                                h('div', { className: 'projection-details' },
-                                    h('div', { className: 'detail-item' },
-                                        h('span', { className: 'detail-label' }, '120% of current run rate'),
-                                        h('span', { className: 'detail-value' }, formatCurrency ? formatCurrency(kpis.runRate * 1.2) : '$' + (kpis.runRate * 1.2).toFixed(0))
-                                    ),
-                                    h('div', { className: 'detail-item' },
-                                        h('span', { className: 'detail-label' }, 'Days remaining'),
-                                        h('span', { className: 'detail-value' }, kpis.daysRemaining)
-                                    ),
-                                    h('div', { className: 'detail-item' },
-                                        h('span', { className: 'detail-label' }, 'Surplus over 85% target'),
-                                        h('span', { className: 'detail-value' }, formatCurrency ? formatCurrency(Math.max(0, (kpis.projectionScenarios?.optimistic?.value || 0) - kpis.totalTarget85)) : '$' + Math.max(0, (kpis.projectionScenarios?.optimistic?.value || 0) - kpis.totalTarget85).toFixed(0))
-                                    )
-                                )
+                                ),
+                                h('div', { className: 'scenarios-note' }, '14-day weighted average')
                             )
                         )
                     )
