@@ -491,12 +491,12 @@
                                         h('div', { className: 'scenario-percent-mini' }, '25%')
                                     ),
                                     h('div', { className: 'scenario-mini optimistic' },
-                                        h('div', { className: 'scenario-label-mini' }, 'Monthly Avg'},
+                                        h('div', { className: 'scenario-label-mini' }, 'Monthly Avg'),
                                         h('div', { className: 'scenario-value-mini' }, formatCurrency ? formatCurrency(kpis.totalTarget100 / 12) : '$' + (kpis.totalTarget100 / 12).toLocaleString()),
                                         h('div', { className: 'scenario-percent-mini' }, '8.33%')
                                     ),
                                     h('div', { className: 'scenario-mini conservative' },
-                                        h('div', { className: 'scenario-label-mini' }, 'Days Left'},
+                                        h('div', { className: 'scenario-label-mini' }, 'Days Left'),
                                         h('div', { className: 'scenario-value-mini' }, new Date(new Date().getFullYear(), 11, 31).getDate() - new Date().getDate() + ' days'),
                                         h('div', { className: 'scenario-percent-mini' }, 'Q3')
                                     )
