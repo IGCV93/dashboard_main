@@ -145,18 +145,12 @@
     border-radius: 16px;
     padding: 20px;
     transition: all 0.3s;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-height: 120px;
-    justify-content: space-between;
-    position: relative;
 }
 
 .target-item:hover {
     background: rgba(255, 255, 255, 0.25);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .target-label {
@@ -172,63 +166,118 @@
 .target-value {
     font-size: 28px;
     font-weight: 800;
-    margin: 4px 0;
-    line-height: 1.1;
-    color: white;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    margin: 12px 0;
 }
 
 .target-subtitle {
-    font-size: 13px;
-    opacity: 0.85;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+/* End Projections Section */
+.projections-overview {
+    background: linear-gradient(135deg, #2D3748 0%, #4A5568 100%);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 32px;
     color: white;
-    font-weight: 500;
+    box-shadow: 0 10px 30px rgba(45, 55, 72, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.projections-overview::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 50%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
+    animation: float 8s ease-in-out infinite;
+}
+
+.projections-title {
+    font-size: 24px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 24px;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    z-index: 1;
+}
+
+.projections-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 24px;
+    position: relative;
+    z-index: 1;
+}
+
+.projection-item {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.3s;
+    min-height: 180px;
+}
+
+.projection-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.projection-label {
+    font-size: 14px;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.projection-value {
+    font-size: 32px;
+    font-weight: 800;
+    margin: 16px 0;
+}
+
+.projection-subtitle {
+    font-size: 14px;
+    opacity: 0.8;
     margin-bottom: 8px;
 }
 
-/* Progress Bar Styling */
-.progress-bar {
-    width: 100%;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 2px;
-    overflow: hidden;
-    margin-top: auto;
+/* Color variations for projections */
+.conservative-proj {
+    border-left: 4px solid #F59E0B;
 }
 
-.progress-fill {
-    height: 100%;
-    border-radius: 2px;
-    transition: width 0.8s ease;
-    background: rgba(255, 255, 255, 0.8);
+.realistic-proj {
+    border-left: 4px solid #10B981;
 }
 
-.progress-fill.success {
-    background: linear-gradient(90deg, #34D399, #10B981);
+.optimistic-proj {
+    border-left: 4px solid #3B82F6;
 }
 
-.progress-fill.warning {
-    background: linear-gradient(90deg, #FBBF24, #F59E0B);
-}
-
-.progress-fill.danger {
-    background: linear-gradient(90deg, #F87171, #EF4444);
-}
-
-.progress-fill.kpi-threshold {
-    background: linear-gradient(90deg, #A78BFA, #8B5CF6);
-}
-
+/* Hover Hint */
 .hover-hint {
     font-size: 10px;
     color: white;
     opacity: 0.6;
     text-align: center;
-    margin-top: 4px;
+    margin-top: 8px;
     font-style: italic;
 }
 
-/* Flip Card Animation */
+/* Flip Card Animation - Projections Only */
 .flip-container {
     perspective: 1000px;
 }
@@ -260,74 +309,47 @@
 
 .flip-back {
     transform: rotateY(180deg);
-    gap: 8px;
+    gap: 12px;
 }
 
-.scenarios-title {
-    font-size: 12px;
-    font-weight: 600;
+.projection-detail-title {
+    font-size: 14px;
+    font-weight: 700;
     color: white;
     opacity: 0.9;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
 }
 
-.scenarios-grid {
+.projection-details {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 12px;
     flex: 1;
 }
 
-.scenario-mini {
+.detail-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 4px 8px;
+    padding: 8px 12px;
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    border-left: 3px solid;
+    border-radius: 8px;
+    border-left: 2px solid rgba(255, 255, 255, 0.3);
 }
 
-.scenario-mini.conservative {
-    border-left-color: #F59E0B;
-}
-
-.scenario-mini.realistic {
-    border-left-color: #10B981;
-}
-
-.scenario-mini.optimistic {
-    border-left-color: #3B82F6;
-}
-
-.scenario-label-mini {
-    font-size: 10px;
+.detail-label {
+    font-size: 12px;
     font-weight: 600;
     color: white;
     opacity: 0.8;
 }
 
-.scenario-value-mini {
-    font-size: 12px;
+.detail-value {
+    font-size: 14px;
     font-weight: 700;
     color: white;
-}
-
-.scenario-percent-mini {
-    font-size: 10px;
-    color: white;
-    opacity: 0.7;
-}
-
-.scenarios-note {
-    font-size: 10px;
-    color: white;
-    opacity: 0.6;
-    text-align: center;
-    margin-top: auto;
-    font-style: italic;
 }
 
 /* Alert Banners */
@@ -442,22 +464,44 @@
     .target-grid {
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     }
+
+    .projections-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
 }
 
 @media (max-width: 768px) {
     .page-title h1 {
         font-size: 28px;
     }
-    
+
     .target-overview {
         padding: 24px;
         border-radius: 16px;
     }
-    
+
     .target-value {
         font-size: 24px;
     }
-    
+
+    .projections-overview {
+        padding: 24px;
+        border-radius: 16px;
+    }
+
+    .projections-title {
+        font-size: 20px;
+    }
+
+    .projection-value {
+        font-size: 28px;
+    }
+
+    .projections-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
     .dashboard-stats {
         grid-template-columns: 1fr;
     }
@@ -481,19 +525,32 @@
         min-height: 120px;
     }
 
+    .projections-grid {
+        gap: 12px;
+    }
+
+    .projection-item {
+        padding: 20px 16px;
+        min-height: 160px;
+    }
+
+    .projection-value {
+        font-size: 24px;
+    }
+
     .hover-hint {
         font-size: 9px;
     }
 
-    .scenarios-grid {
-        gap: 4px;
+    .detail-item {
+        padding: 6px 10px;
     }
 
-    .scenario-mini {
-        padding: 3px 6px;
-    }
-
-    .scenario-value-mini {
+    .detail-label {
         font-size: 11px;
+    }
+
+    .detail-value {
+        font-size: 12px;
     }
 }
