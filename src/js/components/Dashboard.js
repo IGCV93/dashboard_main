@@ -469,63 +469,123 @@
             // Target Overview Section
             h('div', { className: 'target-overview' },
                 h('div', { className: 'target-grid' },
-                    h('div', { className: 'target-item' },
-                        h('div', { className: 'target-label' }, '🎯 Full Projection (100%)'),
-                        h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.totalTarget100) : '$' + kpis.totalTarget100),
-                        h('div', { className: 'target-secondary' },
-                            h('span', { className: 'target-trend positive' }, '📈 Annual Goal'),
-                            h('span', { className: 'target-context' }, 'Complete target achievement')
-                        ),
-                        h('div', { className: 'target-meta' }, `Set: ${new Date().getFullYear()}`)
+                    h('div', { className: 'target-item flip-container' },
+                        h('div', { className: 'flip-inner' },
+                            // Front of card
+                            h('div', { className: 'flip-front' },
+                                h('div', { className: 'target-label' }, '🎯 Full Projection (100%)'),
+                                h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.totalTarget100) : '$' + kpis.totalTarget100),
+                                h('div', { className: 'target-subtitle' }, 'Annual Goal Target'),
+                                h('div', { className: 'progress-bar' },
+                                    h('div', { className: 'progress-fill', style: { width: '100%' } })
+                                ),
+                                h('div', { className: 'hover-hint' }, 'Hover for breakdown')
+                            ),
+                            // Back of card
+                            h('div', { className: 'flip-back' },
+                                h('div', { className: 'scenarios-title' }, 'Target Breakdown'),
+                                h('div', { className: 'scenarios-grid' },
+                                    h('div', { className: 'scenario-mini realistic' },
+                                        h('div', { className: 'scenario-label-mini' }, 'Q1 Target'),
+                                        h('div', { className: 'scenario-value-mini' }, formatCurrency ? formatCurrency(kpis.totalTarget100 / 4) : '$' + (kpis.totalTarget100 / 4).toLocaleString()),
+                                        h('div', { className: 'scenario-percent-mini' }, '25%')
+                                    ),
+                                    h('div', { className: 'scenario-mini optimistic' },
+                                        h('div', { className: 'scenario-label-mini' }, 'Monthly Avg'},
+                                        h('div', { className: 'scenario-value-mini' }, formatCurrency ? formatCurrency(kpis.totalTarget100 / 12) : '$' + (kpis.totalTarget100 / 12).toLocaleString()),
+                                        h('div', { className: 'scenario-percent-mini' }, '8.33%')
+                                    ),
+                                    h('div', { className: 'scenario-mini conservative' },
+                                        h('div', { className: 'scenario-label-mini' }, 'Days Left'},
+                                        h('div', { className: 'scenario-value-mini' }, new Date(new Date().getFullYear(), 11, 31).getDate() - new Date().getDate() + ' days'),
+                                        h('div', { className: 'scenario-percent-mini' }, 'Q3')
+                                    )
+                                ),
+                                h('div', { className: 'scenarios-note' }, `Set: ${new Date().getFullYear()}`)
+                            )
+                        )
                     ),
                     h('div', { className: 'target-item' },
                         h('div', { className: 'target-label' }, '✅ KPI Target (85%)'),
                         h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.totalTarget85) : '$' + kpis.totalTarget85),
-                        h('div', { className: 'target-secondary' },
-                            h('span', { className: 'target-trend neutral' }, '🎯 Minimum Goal'),
-                            h('span', { className: 'target-context' }, `${((kpis.totalTarget85 / kpis.totalTarget100) * 100).toFixed(0)}% of full target`)
-                        ),
-                        h('div', { className: 'target-meta' }, 'Performance threshold')
+                        h('div', { className: 'target-subtitle' }, 'Performance Threshold'),
+                        h('div', { className: 'progress-bar' },
+                            h('div', { className: 'progress-fill kpi-threshold', style: { width: '85%' } })
+                        )
                     ),
-                    h('div', { className: 'target-item' },
-                        h('div', { className: 'target-label' }, '📊 Current Achievement'),
-                        h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.totalRevenue, 'USD', false) : '$' + Number(kpis.totalRevenue || 0).toFixed(2)),
-                        h('div', { className: 'target-secondary' },
-                            h('span', { className: `target-trend ${(kpis.achievement100 || 0) >= 85 ? 'positive' : (kpis.achievement100 || 0) >= 70 ? 'neutral' : 'negative'}` },
-                                `${(kpis.achievement100 || 0) >= 85 ? '↗️' : (kpis.achievement100 || 0) >= 70 ? '➡️' : '↘️'} ${(kpis.achievement100 || 0).toFixed(1)}% of target`
+                    h('div', { className: 'target-item flip-container' },
+                        h('div', { className: 'flip-inner' },
+                            // Front of card
+                            h('div', { className: 'flip-front' },
+                                h('div', { className: 'target-label' }, '📊 Current Achievement'),
+                                h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.totalRevenue, 'USD', false) : '$' + Number(kpis.totalRevenue || 0).toFixed(2)),
+                                h('div', { className: 'target-subtitle' }, `${(kpis.achievement100 || 0).toFixed(1)}% of Full Target`),
+                                h('div', { className: 'progress-bar' },
+                                    h('div', {
+                                        className: `progress-fill ${(kpis.achievement100 || 0) >= 85 ? 'success' : (kpis.achievement100 || 0) >= 70 ? 'warning' : 'danger'}`,
+                                        style: { width: `${Math.min((kpis.achievement100 || 0), 100)}%` }
+                                    })
+                                ),
+                                h('div', { className: 'hover-hint' }, 'Hover for details')
                             ),
-                            h('span', { className: 'target-context' }, `${(kpis.achievement85 || 0).toFixed(1)}% of KPI goal`)
-                        ),
-                        h('div', { className: 'target-meta' }, `Updated: ${new Date().toLocaleTimeString()}`)
-                    ),
-                    h('div', { className: 'target-item' },
-                        h('div', { className: 'target-label' }, '📈 End Projection (Realistic)'),
-                        h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.realistic?.value || 0) : '$' + (kpis.projectionScenarios?.realistic?.value || 0)),
-                        h('div', { className: 'target-secondary' },
-                            h('span', { className: `target-trend ${(kpis.projectionScenarios?.realistic?.percent100 || 0) >= 0.85 ? 'positive' : (kpis.projectionScenarios?.realistic?.percent100 || 0) >= 0.70 ? 'neutral' : 'negative'}` },
-                                `${(kpis.projectionScenarios?.realistic?.percent100 || 0) >= 0.85 ? '🟢' : (kpis.projectionScenarios?.realistic?.percent100 || 0) >= 0.70 ? '🟡' : '🔴'} ${((kpis.projectionScenarios?.realistic?.percent100 || 0) * 100).toFixed(1)}% confidence`
-                            ),
-                            h('span', { className: 'target-context' }, '14-day weighted average')
-                        ),
-                        h('div', { className: 'target-meta' }, `Last calc: ${new Date().toLocaleTimeString()}`),
-                        h('div', { className: 'projection-scenarios-row' },
-                            h('div', { className: 'scenario-item conservative' },
-                                h('div', { className: 'scenario-label' }, '📉 Conservative'),
-                                h('div', { className: 'scenario-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.conservative?.value || 0) : '$' + (kpis.projectionScenarios?.conservative?.value || 0)),
-                                h('div', { className: 'scenario-percent' }, `${((kpis.projectionScenarios?.conservative?.percent100 || 0) * 100).toFixed(1)}%`)
-                            ),
-                            h('div', { className: 'scenario-item realistic active' },
-                                h('div', { className: 'scenario-label' }, '🎯 Realistic'),
-                                h('div', { className: 'scenario-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.realistic?.value || 0) : '$' + (kpis.projectionScenarios?.realistic?.value || 0)),
-                                h('div', { className: 'scenario-percent' }, `${((kpis.projectionScenarios?.realistic?.percent100 || 0) * 100).toFixed(1)}%`)
-                            ),
-                            h('div', { className: 'scenario-item optimistic' },
-                                h('div', { className: 'scenario-label' }, '📈 Optimistic'),
-                                h('div', { className: 'scenario-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.optimistic?.value || 0) : '$' + (kpis.projectionScenarios?.optimistic?.value || 0)),
-                                h('div', { className: 'scenario-percent' }, `${((kpis.projectionScenarios?.optimistic?.percent100 || 0) * 100).toFixed(1)}%`)
+                            // Back of card
+                            h('div', { className: 'flip-back' },
+                                h('div', { className: 'scenarios-title' }, 'Achievement Details'),
+                                h('div', { className: 'scenarios-grid' },
+                                    h('div', { className: 'scenario-mini success' },
+                                        h('div', { className: 'scenario-label-mini' }, 'vs Full Target'),
+                                        h('div', { className: 'scenario-value-mini' }, `${(kpis.achievement100 || 0).toFixed(1)}%`),
+                                        h('div', { className: 'scenario-percent-mini' }, (kpis.achievement100 || 0) >= 85 ? '✓' : '✗')
+                                    ),
+                                    h('div', { className: 'scenario-mini warning' },
+                                        h('div', { className: 'scenario-label-mini' }, 'vs KPI Target'),
+                                        h('div', { className: 'scenario-value-mini' }, `${(kpis.achievement85 || 0).toFixed(1)}%`),
+                                        h('div', { className: 'scenario-percent-mini' }, (kpis.achievement85 || 0) >= 100 ? '✓' : '✗')
+                                    ),
+                                    h('div', { className: 'scenario-mini realistic' },
+                                        h('div', { className: 'scenario-label-mini' }, 'Trend'),
+                                        h('div', { className: 'scenario-value-mini' }, (kpis.achievement100 || 0) >= 85 ? '↗️ Up' : (kpis.achievement100 || 0) >= 70 ? '➡️ Steady' : '↘️ Down'),
+                                        h('div', { className: 'scenario-percent-mini' }, 'Q3')
+                                    )
+                                ),
+                                h('div', { className: 'scenarios-note' }, `Updated: ${new Date().toLocaleTimeString()}`)
                             )
-                        ),
-                        h('div', { className: 'projection-note' }, '14-day weighted average • Conservative (-20%) • Optimistic (+20%)')
+                        )
+                    ),
+                    h('div', { className: 'target-item flip-container' },
+                        h('div', { className: 'flip-inner' },
+                            // Front of card
+                            h('div', { className: 'flip-front' },
+                                h('div', { className: 'target-label' }, '📈 End Projection'),
+                                h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.realistic?.value || 0) : '$' + (kpis.projectionScenarios?.realistic?.value || 0)),
+                                h('div', { className: 'target-subtitle' },
+                                    `${((kpis.projectionScenarios?.realistic?.percent100 || 0) * 100).toFixed(1)}% of Target ${(kpis.projectionScenarios?.realistic?.percent100 || 0) >= 0.85 ? '🟢' : (kpis.projectionScenarios?.realistic?.percent100 || 0) >= 0.70 ? '🟡' : '🔴'}`
+                                ),
+                                h('div', { className: 'hover-hint' }, 'Hover for scenarios')
+                            ),
+                            // Back of card
+                            h('div', { className: 'flip-back' },
+                                h('div', { className: 'scenarios-title' }, 'Projection Scenarios'),
+                                h('div', { className: 'scenarios-grid' },
+                                    h('div', { className: 'scenario-mini conservative' },
+                                        h('div', { className: 'scenario-label-mini' }, 'Conservative'),
+                                        h('div', { className: 'scenario-value-mini' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.conservative?.value || 0) : '$' + (kpis.projectionScenarios?.conservative?.value || 0).toLocaleString()),
+                                        h('div', { className: 'scenario-percent-mini' }, `${((kpis.projectionScenarios?.conservative?.percent100 || 0) * 100).toFixed(1)}%`)
+                                    ),
+                                    h('div', { className: 'scenario-mini realistic' },
+                                        h('div', { className: 'scenario-label-mini' }, 'Realistic'),
+                                        h('div', { className: 'scenario-value-mini' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.realistic?.value || 0) : '$' + (kpis.projectionScenarios?.realistic?.value || 0).toLocaleString()),
+                                        h('div', { className: 'scenario-percent-mini' }, `${((kpis.projectionScenarios?.realistic?.percent100 || 0) * 100).toFixed(1)}%`)
+                                    ),
+                                    h('div', { className: 'scenario-mini optimistic' },
+                                        h('div', { className: 'scenario-label-mini' }, 'Optimistic'),
+                                        h('div', { className: 'scenario-value-mini' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.optimistic?.value || 0) : '$' + (kpis.projectionScenarios?.optimistic?.value || 0).toLocaleString()),
+                                        h('div', { className: 'scenario-percent-mini' }, `${((kpis.projectionScenarios?.optimistic?.percent100 || 0) * 100).toFixed(1)}%`)
+                                    )
+                                ),
+                                h('div', { className: 'scenarios-note' }, '14-day weighted average')
+                            )
+                        )
                     )
                 )
             ),

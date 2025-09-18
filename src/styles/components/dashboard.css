@@ -143,19 +143,20 @@
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 16px;
-    padding: 24px 20px;
+    padding: 20px;
     transition: all 0.3s;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    min-height: 140px;
-    justify-content: flex-start;
+    gap: 8px;
+    min-height: 120px;
+    justify-content: space-between;
+    position: relative;
 }
 
 .target-item:hover {
     background: rgba(255, 255, 255, 0.25);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .target-label {
@@ -171,65 +172,161 @@
 .target-value {
     font-size: 28px;
     font-weight: 800;
-    margin-bottom: 8px;
+    margin: 4px 0;
     line-height: 1.1;
     color: white;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .target-subtitle {
-    font-size: 14px;
-    opacity: 0.9;
+    font-size: 13px;
+    opacity: 0.85;
     color: white;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+/* Progress Bar Styling */
+.progress-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    overflow: hidden;
     margin-top: auto;
 }
 
-/* Enhanced KPI Container Elements */
-.target-secondary {
+.progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.8s ease;
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.progress-fill.success {
+    background: linear-gradient(90deg, #34D399, #10B981);
+}
+
+.progress-fill.warning {
+    background: linear-gradient(90deg, #FBBF24, #F59E0B);
+}
+
+.progress-fill.danger {
+    background: linear-gradient(90deg, #F87171, #EF4444);
+}
+
+.progress-fill.kpi-threshold {
+    background: linear-gradient(90deg, #A78BFA, #8B5CF6);
+}
+
+.hover-hint {
+    font-size: 10px;
+    color: white;
+    opacity: 0.6;
+    text-align: center;
+    margin-top: 4px;
+    font-style: italic;
+}
+
+/* Flip Card Animation */
+.flip-container {
+    perspective: 1000px;
+}
+
+.flip-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+
+.flip-container:hover .flip-inner {
+    transform: rotateY(180deg);
+}
+
+.flip-front, .flip-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    margin: 6px 0;
+    justify-content: space-between;
+    padding: 0;
 }
 
-.target-trend {
-    font-size: 14px;
+.flip-back {
+    transform: rotateY(180deg);
+    gap: 8px;
+}
+
+.scenarios-title {
+    font-size: 12px;
     font-weight: 600;
     color: white;
-    opacity: 0.95;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.scenarios-grid {
     display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.scenario-mini {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 4px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    border-left: 3px solid;
 }
 
-.target-trend.positive {
-    color: #34D399;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+.scenario-mini.conservative {
+    border-left-color: #F59E0B;
 }
 
-.target-trend.neutral {
-    color: #FBBF24;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+.scenario-mini.realistic {
+    border-left-color: #10B981;
 }
 
-.target-trend.negative {
-    color: #F87171;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+.scenario-mini.optimistic {
+    border-left-color: #3B82F6;
 }
 
-.target-context {
-    font-size: 12px;
+.scenario-label-mini {
+    font-size: 10px;
+    font-weight: 600;
     color: white;
     opacity: 0.8;
-    font-weight: 500;
 }
 
-.target-meta {
-    font-size: 11px;
+.scenario-value-mini {
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+}
+
+.scenario-percent-mini {
+    font-size: 10px;
     color: white;
     opacity: 0.7;
+}
+
+.scenarios-note {
+    font-size: 10px;
+    color: white;
+    opacity: 0.6;
+    text-align: center;
     margin-top: auto;
-    padding-top: 4px;
     font-style: italic;
 }
 
@@ -366,133 +463,7 @@
     }
 }
 
-/* Enhanced Projection Scenarios - Clean White Design */
-.projection-scenarios-row {
-    display: flex;
-    gap: 12px;
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid #F3F4F6;
-}
 
-.scenario-item {
-    flex: 1;
-    text-align: center;
-    padding: 16px;
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease;
-    position: relative;
-}
-
-.scenario-item.active {
-    background: #FFFFFF;
-    border-color: #667eea;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
-}
-
-.scenario-item.conservative {
-    border-left: 3px solid #F59E0B;
-}
-
-.scenario-item.realistic {
-    border-left: 3px solid #10B981;
-}
-
-.scenario-item.optimistic {
-    border-left: 3px solid #3B82F6;
-}
-
-.scenario-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-}
-
-.scenario-label {
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #718096;
-    margin-bottom: 8px;
-    display: block;
-}
-
-.scenario-value {
-    font-size: 24px;
-    font-weight: 700;
-    color: #2D3748;
-    margin-bottom: 4px;
-    line-height: 1.2;
-}
-
-.scenario-percent {
-    font-size: 16px;
-    color: #4A5568;
-    font-weight: 500;
-}
-
-.projection-note {
-    font-size: 11px;
-    color: #9CA3AF;
-    text-align: center;
-    margin-top: 12px;
-    font-style: italic;
-    line-height: 1.3;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .projection-scenarios-row {
-        gap: 8px;
-    }
-
-    .scenario-item {
-        padding: 14px 12px;
-    }
-
-    .scenario-value {
-        font-size: 20px;
-    }
-
-    .scenario-label {
-        font-size: 11px;
-    }
-
-    .scenario-percent {
-        font-size: 14px;
-    }
-
-    .projection-note {
-        font-size: 10px;
-        margin-top: 8px;
-    }
-}
-
-@media (max-width: 480px) {
-    .projection-scenarios-row {
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .scenario-item {
-        padding: 16px;
-    }
-
-    .scenario-value {
-        font-size: 22px;
-    }
-
-    .scenario-percent {
-        font-size: 15px;
-    }
-
-    .projection-note {
-        display: none; /* Hide on very small screens to save space */
-    }
-}
 
 @media (max-width: 480px) {
     .page-header {
@@ -510,20 +481,19 @@
         min-height: 120px;
     }
 
-    .target-secondary {
-        gap: 3px;
-        margin: 4px 0;
+    .hover-hint {
+        font-size: 9px;
     }
 
-    .target-trend {
-        font-size: 13px;
+    .scenarios-grid {
+        gap: 4px;
     }
 
-    .target-context {
+    .scenario-mini {
+        padding: 3px 6px;
+    }
+
+    .scenario-value-mini {
         font-size: 11px;
-    }
-
-    .target-meta {
-        font-size: 10px;
     }
 }
