@@ -490,8 +490,7 @@
                             h('div', { className: 'flip-front' },
                                 h('div', { className: 'target-label' }, '📈 End Projection'),
                                 h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.realistic?.value || 0) : '$' + (kpis.projectionScenarios?.realistic?.value || 0)),
-                                h('div', { className: 'target-subtitle' }, `${((kpis.projectionScenarios?.realistic?.percent100 || 0) * 100).toFixed(1)}% of full target`),
-                                h('div', { className: 'hover-hint' }, 'Hover for scenarios')
+                                h('div', { className: 'target-subtitle' }, `${((kpis.projectionScenarios?.realistic?.percent100 || 0) * 100).toFixed(1)}% of full target`)
                             ),
                             // Back of card - showing all 3 scenarios
                             h('div', { className: 'flip-back' },

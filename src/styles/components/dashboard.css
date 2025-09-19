@@ -217,7 +217,8 @@
 
 .flip-back {
     transform: rotateY(180deg);
-    gap: 8px;
+    gap: 12px;
+    padding: 8px;
 }
 
 .scenarios-title {
@@ -233,18 +234,20 @@
 .scenarios-grid {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
     flex: 1;
+    justify-content: space-evenly;
 }
 
 .scenario-mini {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 4px 8px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
+    flex-direction: column;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
     border-left: 3px solid;
+    gap: 4px;
+    text-align: left;
 }
 
 .scenario-mini.conservative {
@@ -260,22 +263,27 @@
 }
 
 .scenario-label-mini {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
     color: white;
-    opacity: 0.8;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
 }
 
 .scenario-value-mini {
-    font-size: 12px;
-    font-weight: 700;
+    font-size: 16px;
+    font-weight: 800;
     color: white;
+    margin: 2px 0;
 }
 
 .scenario-percent-mini {
-    font-size: 10px;
+    font-size: 11px;
     color: white;
-    opacity: 0.7;
+    opacity: 0.8;
+    font-weight: 600;
 }
 
 .scenarios-note {
