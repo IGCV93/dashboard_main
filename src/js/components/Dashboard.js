@@ -491,30 +491,24 @@
                             h('div', { className: 'target-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.realistic?.value || 0) : '$' + (kpis.projectionScenarios?.realistic?.value || 0)),
                             h('div', { className: 'target-subtitle' }, `${((kpis.projectionScenarios?.realistic?.percent100 || 0) * 100).toFixed(1)}% of full target`)
                         ),
-                        // Hover content - showing all 3 scenarios
+                        // Hover content - showing all 3 scenarios in horizontal layout
                         h('div', { className: 'projection-hover-content' },
-                            h('div', { className: 'scenarios-title' }, 'Projection Scenarios'),
-                            h('div', { className: 'scenarios-list' },
-                                h('div', { className: 'scenario-item conservative' },
-                                    h('div', { className: 'scenario-header' },
-                                        h('span', { className: 'scenario-label' }, 'Conservative'),
-                                        h('span', { className: 'scenario-percent' }, `${((kpis.projectionScenarios?.conservative?.percent100 || 0) * 100).toFixed(1)}%`)
-                                    ),
-                                    h('div', { className: 'scenario-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.conservative?.value || 0) : '$' + (kpis.projectionScenarios?.conservative?.value || 0).toLocaleString())
+                            h('div', { className: 'scenarios-title' }, 'End Projections'),
+                            h('div', { className: 'scenarios-grid-horizontal' },
+                                h('div', { className: 'scenario-column conservative' },
+                                    h('div', { className: 'scenario-type' }, 'Conservative'),
+                                    h('div', { className: 'scenario-amount' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.conservative?.value || 0) : '$' + (kpis.projectionScenarios?.conservative?.value || 0).toLocaleString()),
+                                    h('div', { className: 'scenario-percentage' }, `${((kpis.projectionScenarios?.conservative?.percent100 || 0) * 100).toFixed(0)}%`)
                                 ),
-                                h('div', { className: 'scenario-item realistic' },
-                                    h('div', { className: 'scenario-header' },
-                                        h('span', { className: 'scenario-label' }, 'Realistic'),
-                                        h('span', { className: 'scenario-percent' }, `${((kpis.projectionScenarios?.realistic?.percent100 || 0) * 100).toFixed(1)}%`)
-                                    ),
-                                    h('div', { className: 'scenario-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.realistic?.value || 0) : '$' + (kpis.projectionScenarios?.realistic?.value || 0).toLocaleString())
+                                h('div', { className: 'scenario-column realistic' },
+                                    h('div', { className: 'scenario-type' }, 'Realistic'),
+                                    h('div', { className: 'scenario-amount' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.realistic?.value || 0) : '$' + (kpis.projectionScenarios?.realistic?.value || 0).toLocaleString()),
+                                    h('div', { className: 'scenario-percentage' }, `${((kpis.projectionScenarios?.realistic?.percent100 || 0) * 100).toFixed(0)}%`)
                                 ),
-                                h('div', { className: 'scenario-item optimistic' },
-                                    h('div', { className: 'scenario-header' },
-                                        h('span', { className: 'scenario-label' }, 'Optimistic'),
-                                        h('span', { className: 'scenario-percent' }, `${((kpis.projectionScenarios?.optimistic?.percent100 || 0) * 100).toFixed(1)}%`)
-                                    ),
-                                    h('div', { className: 'scenario-value' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.optimistic?.value || 0) : '$' + (kpis.projectionScenarios?.optimistic?.value || 0).toLocaleString())
+                                h('div', { className: 'scenario-column optimistic' },
+                                    h('div', { className: 'scenario-type' }, 'Optimistic'),
+                                    h('div', { className: 'scenario-amount' }, formatCurrency ? formatCurrency(kpis.projectionScenarios?.optimistic?.value || 0) : '$' + (kpis.projectionScenarios?.optimistic?.value || 0).toLocaleString()),
+                                    h('div', { className: 'scenario-percentage' }, `${((kpis.projectionScenarios?.optimistic?.percent100 || 0) * 100).toFixed(0)}%`)
                                 )
                             ),
                             h('div', { className: 'scenarios-note' }, '14-day weighted average')
