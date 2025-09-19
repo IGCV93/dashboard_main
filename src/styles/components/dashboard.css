@@ -198,7 +198,7 @@
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(10px);
     border-radius: 16px;
-    padding: 20px;
+    padding: 12px;
     opacity: 0;
     transform: translateY(10px);
     transition: all 0.3s ease;
@@ -217,27 +217,27 @@
 }
 
 .scenarios-title {
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 600;
     color: white;
     opacity: 0.9;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 12px;
+    margin-bottom: 6px;
     text-align: center;
 }
 
 .scenarios-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
     flex: 1;
 }
 
 .scenario-item {
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 8px 12px;
+    border-radius: 6px;
+    padding: 6px 8px;
     border-left: 3px solid;
 }
 
@@ -257,11 +257,11 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .scenario-label {
-    font-size: 11px;
+    font-size: 9px;
     font-weight: 600;
     color: white;
     opacity: 0.9;
@@ -270,24 +270,24 @@
 }
 
 .scenario-percent {
-    font-size: 10px;
+    font-size: 9px;
     color: white;
     opacity: 0.8;
     font-weight: 600;
 }
 
 .scenario-value {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 800;
     color: white;
 }
 
 .scenarios-note {
-    font-size: 10px;
+    font-size: 8px;
     color: white;
     opacity: 0.6;
     text-align: center;
-    margin-top: 8px;
+    margin-top: 4px;
     font-style: italic;
 }
 
