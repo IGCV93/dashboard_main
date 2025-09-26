@@ -387,7 +387,7 @@
                             dateValIsEmpty: dateVal === '',
                             rawBrand: rawBrand,
                             rawChannel: rawChannel
-                        });
+                        };
                     }
 
                     // Convert date to string if it's a Date object or number

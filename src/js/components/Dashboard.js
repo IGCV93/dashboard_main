@@ -195,31 +195,13 @@
             }
             
             // DEBUG: Log filtering results
-//             console.log('🔍 Dashboard: Filtering debug', {
-                view,
-                selectedYear,
-                selectedMonth,
-                selectedBrand,
-                canonicalDataLength: canonicalData.length,
-                filteredDataLength: filteredData.length,
-                sampleFilteredData: filteredData.slice(0, 2),
-                sampleCanonicalData: canonicalData.slice(0, 2)
-            });
+//             console.log('🔍 Dashboard: Filtering debug');
             
             // DEBUG: Log what we're filtering for
-//             console.log('🔍 Dashboard: Filter criteria', {
-                'Looking for year': selectedYear,
-                'Looking for month': selectedMonth ? selectedMonth.toString().padStart(2, '0') : 'N/A',
-                'Looking for brand': selectedBrand,
-                'Brand key': selectedBrand !== 'All Brands' && selectedBrand !== 'All Brands (Company Total)' ? normalizeKey(selectedBrand) : 'N/A'
-            });
+//             console.log('🔍 Dashboard: Filter criteria');
             
             // DEBUG: Log sample data dates and brands to see what we're working with
-//             console.log('🔍 Dashboard: Sample data analysis', {
-                'Sample dates': canonicalData.slice(0, 5).map(d => d.date),
-                'Sample brands': canonicalData.slice(0, 5).map(d => ({ brand: d.brand, brand_name: d.brand_name, _brandKey: d._brandKey })),
-                'Sample channels': canonicalData.slice(0, 5).map(d => ({ channel: d.channel, channel_name: d.channel_name, _channelKey: d._channelKey }))
-            });
+//             console.log('🔍 Dashboard: Sample data analysis');
             
             // Calculate revenue by channel (only for available channels)
             const channelRevenues = {};
@@ -387,12 +369,7 @@
             try { console.debug('KPIs debug:', debugSummary); } catch (e) {}
             
             // DEBUG: Log what we're passing to Charts
-//             console.log('🔍 Dashboard: KPIs being passed to Charts', {
-                filteredDataLength: filteredData.length,
-                filteredDataSample: filteredData.slice(0, 2),
-                channelRevenues,
-                availableChannels
-            });
+//             console.log('🔍 Dashboard: KPIs being passed to Charts');
 
             return {
                 totalRevenue,

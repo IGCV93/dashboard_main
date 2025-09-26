@@ -74,12 +74,7 @@
         
         // Optimized data processing with memoization
         const processedChartData = useMemo(() => {
-//             console.log('🔍 Charts: processedChartData useMemo triggered', {
-                hasKpis: !!kpis,
-                hasFilteredData: !!(kpis && kpis.filteredData),
-                filteredDataLength: kpis && kpis.filteredData ? kpis.filteredData.length : 0,
-                kpisKeys: kpis ? Object.keys(kpis) : []
-            });
+//             console.log('🔍 Charts: processedChartData useMemo triggered');
             
             if (!kpis || !kpis.filteredData) {
 //                 console.log('🔍 Charts: processedChartData returning null - no kpis or filteredData');
@@ -199,11 +194,7 @@
         
         // Debounced chart update
         const updateCharts = useCallback(() => {
-//             console.log('🔍 Charts: updateCharts called', {
-                hasProcessedChartData: !!processedChartData,
-                processedChartDataType: typeof processedChartData,
-                processedChartDataKeys: processedChartData ? Object.keys(processedChartData) : []
-            });
+//             console.log('🔍 Charts: updateCharts called');
             
             if (chartUpdateTimeout.current) {
                 clearTimeout(chartUpdateTimeout.current);
@@ -350,34 +341,17 @@
             if (!barChartRef.current) return;
             
             // DEBUG: Check if we have valid data
-//             console.log('🔍 Charts: createBarChart called with data:', {
-                hasData: !!data,
-                dataType: typeof data,
-                dataKeys: data ? Object.keys(data) : [],
-                hasChannelData: !!(data && data.channelData),
-                channelDataType: data && data.channelData ? typeof data.channelData : 'undefined',
-                channelDataIsArray: data && data.channelData ? Array.isArray(data.channelData) : false,
-                channelDataLength: data && data.channelData ? data.channelData.length : 0,
-                channelDataSample: data && data.channelData ? data.channelData.slice(0, 2) : [],
-                fullDataObject: data
-            });
+//             console.log('🔍 Charts: createBarChart called with data');
             
             if (!data || !data.channelData || data.channelData.length === 0) {
-//                 console.log('🔍 Charts: Skipping bar chart creation - no valid channel data', {
-                    hasData: !!data,
-                    hasChannelData: !!(data && data.channelData),
-                    channelDataLength: data && data.channelData ? data.channelData.length : 0
-                });
+//                 console.log('🔍 Charts: Skipping bar chart creation - no valid channel data');
                 return;
             }
             
             const ctx = barChartRef.current.getContext('2d');
             
             // DEBUG: Log what we're working with
-//             console.log('🔍 Charts: Channel data for bar chart:', {
-                channelData: data.channelData,
-                channelDataLength: data.channelData.length
-            });
+//             console.log('🔍 Charts: Channel data for bar chart');
             
             // Extract channel names and revenues from channelData
             const channelNames = data.channelData.map(ch => ch.channel);
@@ -386,11 +360,7 @@
             // Get target data from the data parameter
             const target85Data = channelNames.map(ch => Number(data.channelTargets?.[ch] || 0));
             
-//             console.log('🔍 Charts: Bar chart data prepared:', {
-                channelNames,
-                actualData,
-                target85Data
-            });
+//             console.log('🔍 Charts: Bar chart data prepared');
             barChartInstance.current = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -512,13 +482,7 @@
         
         // Update charts when data changes
         useEffect(() => {
-//             console.log('🔍 Charts: useEffect triggered', {
-                isChartsVisible,
-                hasProcessedChartData: !!processedChartData,
-                hasKpis: !!kpis,
-                filteredDataLength: kpis && kpis.filteredData ? kpis.filteredData.length : 0,
-                timestamp: new Date().toISOString()
-            });
+//             console.log('🔍 Charts: useEffect triggered');
             
             if (isChartsVisible && processedChartData) {
                 updateCharts();
