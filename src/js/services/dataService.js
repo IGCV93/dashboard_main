@@ -43,11 +43,11 @@
             const now = Date.now();
             
             if (cached && (now - cached.timestamp) < this.cacheTimeout) {
-                console.log(`📦 Using cached data for: ${key}`);
+                // Using cached data for: ${key}
                 return cached.data;
             }
             
-            console.log(`🔄 Fetching fresh data for: ${key}`);
+            // Fetching fresh data for: ${key}
             const data = await fetchFunction();
             
             this.cache.set(key, {
@@ -76,12 +76,12 @@
         }
         
         async loadSalesData() {
-            console.log('🔍 Loading sales data...');
+            // Loading sales data
             
             return this.getCachedData('sales_data', async () => {
                 if (this.supabase && this.config.FEATURES.ENABLE_SUPABASE) {
                     try {
-                        console.log('🔍 Trying Supabase (MAIN DataService)...');
+                        // Trying Supabase (MAIN DataService)
                         const { data, error } = await this.supabase
                             .from('sales_data')
                             .select('*')
@@ -92,7 +92,7 @@
                             throw error;
                         }
                         
-                        console.log('✅ Supabase data loaded:', data?.length || 0, 'records');
+                        // Supabase data loaded: ${data?.length || 0} records
 
                         // Normalize types/fields for frontend calculations
                         const normalized = (data || []).map(row => ({
@@ -114,7 +114,7 @@
                         return [];
                     }
                 } else {
-                    console.log('🔍 Supabase disabled, using local data...');
+                    // Supabase disabled, using local data
                     return this.loadLocalData();
                 }
             });
@@ -129,7 +129,7 @@
                     return Array.isArray(parsed) ? parsed : [];
                 }
             } catch (error) {
-                console.warn('Failed to parse stored sales data, clearing:', error);
+                // Failed to parse stored sales data, clearing
                 localStorage.removeItem('chai_vision_sales_data');
             }
             
@@ -285,7 +285,7 @@
         }
         
         generateSampleData() {
-            console.log('📊 Generating sample sales data...');
+            // Generating sample sales data
             const data = [];
             const startDate = new Date('2025-01-01');
             const endDate = new Date();
@@ -355,7 +355,7 @@
          */
         clearCache() {
             this.cache.clear();
-            console.log('🗑️ Cache cleared');
+            // Cache cleared
         }
         
         /**
@@ -390,5 +390,5 @@
     window.ChaiVision.services = window.ChaiVision.services || {};
     window.ChaiVision.services.DataService = DataService;
     
-    console.log('✅ DataService loaded with performance optimizations');
+    // DataService loaded with performance optimizations
 })();

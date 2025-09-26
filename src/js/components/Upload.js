@@ -284,7 +284,7 @@
                                 hasRevenue: !!hasRevenue,
                                 revenueValue: row.Revenue || row.revenue,
                                 row: row
-                            });
+                            };
                         }
                         
                         return isValid;

@@ -26,8 +26,8 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     
     <!-- Preload critical resources -->
-    <link rel="preload" href="https://unpkg.com/react@18/umd/react.production.min.js" as="script">
-    <link rel="preload" href="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" as="script">
+    <link rel="preload" href="https://unpkg.com/react@18/umd/react.production.min.js" as="script" crossorigin>
+    <link rel="preload" href="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" as="script" crossorigin>
     <link rel="preload" href="src/styles/main.css" as="style">
     
     <!-- Favicon (fallback emoji used; public assets removed) -->
@@ -178,8 +178,8 @@
         const performanceObserver = new PerformanceObserver((list) => {
             for (const entry of list.getEntries()) {
                 if (entry.entryType === 'navigation') {
-                    console.log('🚀 Page Load Time:', entry.loadEventEnd - entry.loadEventStart, 'ms');
-                    console.log('🚀 DOM Content Loaded:', entry.domContentLoadedEventEnd - entry.domContentLoadedEventStart, 'ms');
+                    // Page Load Time: entry.loadEventEnd - entry.loadEventStart ms
+                    // DOM Content Loaded: entry.domContentLoadedEventEnd - entry.domContentLoadedEventStart ms
                 }
             }
         });
@@ -194,7 +194,7 @@
         
         // Wait for all scripts to load
         window.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 DOM Content Loaded - Checking dependencies...');
+            // DOM Content Loaded - Checking dependencies
             
             // Check dependencies
             const dependencies = {
@@ -206,19 +206,14 @@
                 'Supabase': typeof supabase !== 'undefined'
             };
             
-            // Log dependency status
-            if (APP_CONFIG.DEBUG_MODE) {
-                console.log('📦 Dependency Status:');
-                Object.entries(dependencies).forEach(([name, loaded]) => {
-                    console.log(`  ${loaded ? '✅' : '❌'} ${name}`);
-                });
-            }
+            // Dependency status check
+            // All dependencies verified silently
             
             // Check if all required dependencies are loaded
             const allDepsLoaded = Object.values(dependencies).every(v => v === true);
             
             if (!allDepsLoaded) {
-                console.error('❌ Not all dependencies loaded. Please check CDN links.');
+                // Not all dependencies loaded. Please check CDN links.
                 showErrorScreen('Dependencies failed to load. Please refresh the page.');
                 return;
             }
@@ -252,21 +247,21 @@
                 // Check if ChaiVision namespace exists
                 if (typeof window.ChaiVision !== 'undefined' && 
                     typeof window.ChaiVision.initializeApp === 'function') {
-                    console.log('✅ Initializing via ChaiVision namespace...');
+                    // Initializing via ChaiVision namespace
                     window.ChaiVision.initializeApp();
                 } 
                 // Check if global initializeApp exists
                 else if (typeof window.initializeApp === 'function') {
-                    console.log('✅ Initializing via global function...');
+                    // Initializing via global function
                     window.initializeApp();
                 }
                 // Fallback to inline initialization
                 else {
-                    console.warn('⚠️ No initialization function found. Using fallback...');
+                    // No initialization function found. Using fallback
                     initializeFallbackApp();
                 }
             } catch (error) {
-                console.error('❌ Failed to initialize application:', error);
+                // Failed to initialize application: error
                 showErrorScreen('Failed to initialize. Error: ' + error.message);
             }
         }
@@ -279,7 +274,7 @@
                 const [initialized, setInitialized] = useState(false);
                 
                 useEffect(() => {
-                    console.log('Fallback app mounted');
+                    // Fallback app mounted
                     // Try to load the actual app after a delay
                     setTimeout(() => {
                         if (window.ChaiVision && window.ChaiVision.initializeApp) {
@@ -394,14 +389,14 @@
         
         // Error boundary for production
         window.addEventListener('error', (event) => {
-            console.error('Global error:', event.error);
+            // Global error: event.error
             if (APP_CONFIG.DEBUG_MODE) {
-                console.error('Stack trace:', event.error?.stack);
+                // Stack trace: event.error?.stack
             }
         });
         
         // Log successful load
-        console.log('✅ Index.html loaded successfully');
+        // Index.html loaded successfully
     </script>
 </body>
 </html>

@@ -145,7 +145,7 @@
                             code: auditError.code,
                             details: auditError.details,
                             hint: auditError.hint
-                        });
+                        };
                     } else {
                         // Audit log created successfully
                     }

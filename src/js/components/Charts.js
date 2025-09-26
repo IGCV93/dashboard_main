@@ -74,7 +74,7 @@
         
         // Optimized data processing with memoization
         const processedChartData = useMemo(() => {
-            console.log('🔍 Charts: processedChartData useMemo triggered', {
+//             console.log('🔍 Charts: processedChartData useMemo triggered', {
                 hasKpis: !!kpis,
                 hasFilteredData: !!(kpis && kpis.filteredData),
                 filteredDataLength: kpis && kpis.filteredData ? kpis.filteredData.length : 0,
@@ -82,12 +82,12 @@
             });
             
             if (!kpis || !kpis.filteredData) {
-                console.log('🔍 Charts: processedChartData returning null - no kpis or filteredData');
+//                 console.log('🔍 Charts: processedChartData returning null - no kpis or filteredData');
                 return null;
             }
             
             const filteredSalesData = kpis.filteredData;
-            console.log('🔍 Charts: filteredSalesData sample:', filteredSalesData.slice(0, 2));
+//             console.log('🔍 Charts: filteredSalesData sample:', filteredSalesData.slice(0, 2));
             // Use explicitly available channels from kpis when provided (permission-filtered), otherwise fallback
             const availableFromKpis = Array.isArray(kpis.availableChannels) && kpis.availableChannels.length > 0
                 ? kpis.availableChannels
@@ -162,7 +162,7 @@
                 const key = normalizeKey(channel);
                 const channelSales = filteredSalesData.filter(d => normalizeKey(d.channel_name || d.channel) === key);
                 const totalRevenue = channelSales.reduce((sum, d) => sum + (d.revenue || 0), 0);
-                console.log(`🔍 Charts: Channel "${channel}" (key: "${key}") - Sales: ${channelSales.length}, Revenue: ${totalRevenue}`);
+//                 console.log(`🔍 Charts: Channel "${channel}" (key: "${key}") - Sales: ${channelSales.length}, Revenue: ${totalRevenue}`);
                 return {
                     channel,
                     revenue: totalRevenue,
@@ -170,7 +170,7 @@
                 };
             }).sort((a, b) => b.revenue - a.revenue);
             
-            console.log('🔍 Charts: channelData created:', channelData);
+//             console.log('🔍 Charts: channelData created:', channelData);
             
             // Build 85% target series per label for the selected view (daily/monthly target)
             const totalTarget85 = kpis?.totalTarget85 || 0;
@@ -193,13 +193,13 @@
                 totalRevenue: trendData.reduce((sum, val) => sum + val, 0)
             };
             
-            console.log('🔍 Charts: processedChartData final result:', result);
+//             console.log('🔍 Charts: processedChartData final result:', result);
             return result;
         }, [kpis, selectedChannels, view, selectedPeriod, selectedMonth, selectedYear, ALL_CHANNELS, CHANNEL_COLORS]);
         
         // Debounced chart update
         const updateCharts = useCallback(() => {
-            console.log('🔍 Charts: updateCharts called', {
+//             console.log('🔍 Charts: updateCharts called', {
                 hasProcessedChartData: !!processedChartData,
                 processedChartDataType: typeof processedChartData,
                 processedChartDataKeys: processedChartData ? Object.keys(processedChartData) : []
@@ -211,12 +211,12 @@
             
             chartUpdateTimeout.current = setTimeout(() => {
                 if (!processedChartData) {
-                    console.log('🔍 Charts: updateCharts - no processedChartData, returning');
+//                     console.log('🔍 Charts: updateCharts - no processedChartData, returning');
                     return;
                 }
                 
-                console.log('🔍 Charts: updateCharts - calling createBarChart with:', processedChartData);
-                console.log('🔍 Charts: updateCharts - processedChartData.channelData:', processedChartData.channelData);
+//                 console.log('🔍 Charts: updateCharts - calling createBarChart with:', processedChartData);
+//                 console.log('🔍 Charts: updateCharts - processedChartData.channelData:', processedChartData.channelData);
                 // Update chart data state
                 setChartData(processedChartData);
                 
@@ -259,8 +259,8 @@
                         return;
                     }
                     destroyCharts();
-                    console.log('🔍 Charts: createCharts - calling createBarChart with data:', data);
-                    console.log('🔍 Charts: createCharts - data.channelData:', data.channelData);
+//                     console.log('🔍 Charts: createCharts - calling createBarChart with data:', data);
+//                     console.log('🔍 Charts: createCharts - data.channelData:', data.channelData);
                     createLineChart(data);
                     createBarChart(data); // Pass processed data
                     createPieChart(data);
@@ -350,7 +350,7 @@
             if (!barChartRef.current) return;
             
             // DEBUG: Check if we have valid data
-            console.log('🔍 Charts: createBarChart called with data:', {
+//             console.log('🔍 Charts: createBarChart called with data:', {
                 hasData: !!data,
                 dataType: typeof data,
                 dataKeys: data ? Object.keys(data) : [],
@@ -363,7 +363,7 @@
             });
             
             if (!data || !data.channelData || data.channelData.length === 0) {
-                console.log('🔍 Charts: Skipping bar chart creation - no valid channel data', {
+//                 console.log('🔍 Charts: Skipping bar chart creation - no valid channel data', {
                     hasData: !!data,
                     hasChannelData: !!(data && data.channelData),
                     channelDataLength: data && data.channelData ? data.channelData.length : 0
@@ -374,7 +374,7 @@
             const ctx = barChartRef.current.getContext('2d');
             
             // DEBUG: Log what we're working with
-            console.log('🔍 Charts: Channel data for bar chart:', {
+//             console.log('🔍 Charts: Channel data for bar chart:', {
                 channelData: data.channelData,
                 channelDataLength: data.channelData.length
             });
@@ -386,7 +386,7 @@
             // Get target data from the data parameter
             const target85Data = channelNames.map(ch => Number(data.channelTargets?.[ch] || 0));
             
-            console.log('🔍 Charts: Bar chart data prepared:', {
+//             console.log('🔍 Charts: Bar chart data prepared:', {
                 channelNames,
                 actualData,
                 target85Data
@@ -512,7 +512,7 @@
         
         // Update charts when data changes
         useEffect(() => {
-            console.log('🔍 Charts: useEffect triggered', {
+//             console.log('🔍 Charts: useEffect triggered', {
                 isChartsVisible,
                 hasProcessedChartData: !!processedChartData,
                 hasKpis: !!kpis,
@@ -618,5 +618,5 @@
     window.ChaiVision.components = window.ChaiVision.components || {};
     window.ChaiVision.components.Charts = Charts;
     
-    console.log('✅ Charts component loaded with performance optimizations');
+//     console.log('✅ Charts component loaded with performance optimizations');
 })();
