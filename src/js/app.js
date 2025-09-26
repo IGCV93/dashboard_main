@@ -35,14 +35,12 @@
         }
         
         try {
-            console.log('🚀 Starting Chai Vision Dashboard initialization...');
-            
             // Validate configuration
             const validateConfig = window.validateConfig || window.ChaiVision?.validateConfig;
             if (validateConfig) {
                 const configErrors = validateConfig();
                 if (configErrors.length > 0) {
-                    console.warn('Configuration warnings:', configErrors);
+                    // Configuration warnings detected but not logged
                 }
             }
             
@@ -57,7 +55,7 @@
                 // Set up auth listener with multi-tab sync
                 if (APP_STATE.supabaseClient) {
                     APP_STATE.supabaseClient.auth.onAuthStateChange((event, session) => {
-                        console.log('Auth state changed:', event);
+                        // Auth state changed: event
                         
                         // Broadcast auth changes to other tabs
                         if (window.BroadcastChannel) {
@@ -92,7 +90,7 @@
             if (DataService) {
                 APP_STATE.dataService = new DataService(APP_STATE.supabaseClient, config);
             } else {
-                console.warn('DataService not found, using fallback');
+                // DataService not found, using fallback
                 APP_STATE.dataService = createFallbackDataService(config);
             }
             
@@ -108,7 +106,7 @@
             // Mark as initialized
             APP_STATE.initialized = true;
             
-            console.log('✅ Chai Vision Dashboard initialized successfully!');
+            // Dashboard initialized successfully
             
         } catch (error) {
             console.error('❌ Failed to initialize application:', error);
@@ -247,7 +245,7 @@
             root.style.setProperty('--border-color', '#e5e7eb');
         }
         
-        console.log(`🎨 Theme applied: ${theme}`);
+        // Theme applied: ${theme}
     }
     
     /**
@@ -266,7 +264,7 @@
             root.style.setProperty('--font-size-base', '1rem');
         }
         
-        console.log(`📏 Compact mode: ${enabled ? 'enabled' : 'disabled'}`);
+        // Compact mode: ${enabled ? 'enabled' : 'disabled'}
     }
     
     /**
@@ -277,17 +275,13 @@
             // Request notification permission if not already granted
             if (Notification.permission === 'default') {
                 Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        console.log('🔔 Notifications enabled');
-                    } else {
-                        console.log('🔕 Notifications permission denied');
-                    }
+                    // Notification permission handled
                 });
             } else if (Notification.permission === 'granted') {
-                console.log('🔔 Notifications already enabled');
+                // Notifications already enabled
             }
         } else {
-            console.log('🔕 Notifications disabled');
+            // Notifications disabled
         }
     }
     
@@ -305,7 +299,7 @@
             window.chaiVisionRefreshInterval = setInterval(() => {
                 // Trigger data refresh
                 if (window.APP_STATE && window.APP_STATE.dataService) {
-                    console.log('🔄 Auto-refreshing data...');
+                    // Auto-refreshing data
                     // This would trigger a data refresh in the dashboard
                     if (window.refreshDashboardData) {
                         window.refreshDashboardData();
@@ -313,7 +307,7 @@
                 }
             }, interval * 1000);
             
-            console.log(`⏰ Refresh interval set to ${interval} seconds`);
+            // Refresh interval set to ${interval} seconds
         }
     }
     
@@ -323,12 +317,12 @@
     function applyTutorials(enabled) {
         if (enabled) {
             // Show tutorial tooltips or guides
-            console.log('📚 Tutorials enabled');
+            // Tutorials enabled
             // This would show tutorial elements
             document.body.classList.add('show-tutorials');
         } else {
             // Hide tutorial elements
-            console.log('📚 Tutorials disabled');
+            // Tutorials disabled
             document.body.classList.remove('show-tutorials');
         }
     }
@@ -337,7 +331,7 @@
      * Handle sign out
      */
     function handleSignOut() {
-        console.log('🔄 Handling sign out...');
+        // Handling sign out
         
         // Clear all local storage
         Object.keys(localStorage).forEach(key => {
@@ -361,7 +355,7 @@
         }
         
         // Force a page reload to reset React state completely
-        console.log('✅ Sign out completed - reloading page');
+        // Sign out completed - reloading page
         window.location.reload();
     }
 
@@ -450,7 +444,7 @@
      * Show success message (fallback)
      */
     window.showSuccessMessage = window.showSuccessMessage || function(message) {
-        console.log('✅', message);
+        // Success: message
     };
 
     /**
@@ -514,12 +508,12 @@
             // Check for saved session with remember me
             useEffect(() => {
                 const checkAuth = async () => {
-                    console.log('🔐 Starting authentication check...');
+                    // Starting authentication check
                     setCheckingAuth(true);
                     
                     // Add timeout to prevent infinite loading
                     const authTimeout = setTimeout(() => {
-                        console.warn('⏰ Auth check timeout - proceeding without authentication');
+                        // Auth check timeout - proceeding without authentication
                         setCheckingAuth(false);
                         setLoading(false);
                         setIsAuthenticated(false); // Force to login screen
@@ -608,11 +602,11 @@
                                 }
                             }
                         } else {
-                            console.log('🔐 Supabase disabled, checking demo mode...');
+                            // Supabase disabled, checking demo mode
                             // Check demo mode session
                             const savedUser = localStorage.getItem('chai_vision_user_session');
                             if (savedUser) {
-                                console.log('✅ Found saved demo user session');
+                                // Found saved demo user session
                                 const user = JSON.parse(savedUser);
                                 setCurrentUser(user);
                                 setUserPermissions(user.permissions || { brands: ['All Brands'], channels: ['All Channels'] });
@@ -620,7 +614,7 @@
                                 APP_STATE.currentUser = user;
                                 APP_STATE.userPermissions = user.permissions;
                             } else {
-                                console.log('ℹ️ No saved demo session found');
+                                // No saved demo session found
                             }
                         }
                     } catch (error) {
@@ -739,11 +733,11 @@
             // Load initial data
             async function loadInitialData() {
                 try {
-                    console.log('🔄 Loading initial data...');
+                    // Loading initial data
                     setLoading(true);
                     if (APP_STATE.dataService) {
                         const data = await APP_STATE.dataService.loadSalesData();
-                        console.log('📊 Raw data loaded:', data?.length || 0, 'records');
+                        // Data loaded: ${data?.length || 0} records
                         
                         // Only filter if we have valid permissions
                         let filteredData = data;
@@ -756,14 +750,14 @@
                                                       userPermissions.channels.includes(d.channel);
                                 return brandAllowed && channelAllowed;
                             });
-                            console.log('📊 Filtered data:', filteredData?.length || 0, 'records');
+                            // Filtered data: ${filteredData?.length || 0} records
                         } else {
-                            console.log('⚠️ No permissions set, using all data');
+                            // No permissions set, using all data
                         }
                         
                         setSalesData(filteredData || []);
                     } else {
-                        console.log('⚠️ No data service available');
+                        // No data service available
                         setSalesData([]);
                     }
                     setLoading(false);
@@ -909,19 +903,7 @@
             const ProfileSettings = window.ProfileSettings || window.ChaiVision?.components?.ProfileSettings;
             const Preferences = window.Preferences || window.ChaiVision?.components?.Preferences;
             
-            // Debug component loading
-            console.log('🔍 Component Loading Status:');
-            console.log('  Login:', !!Login);
-            console.log('  Navigation:', !!Navigation);
-            console.log('  Sidebar:', !!Sidebar);
-            console.log('  Dashboard:', !!Dashboard);
-            console.log('  Settings:', !!Settings);
-            console.log('  Upload:', !!Upload);
-            console.log('  UserManagement:', !!UserManagement);
-            console.log('  AuditLogs:', !!AuditLogs);
-            console.log('  ProfileMenu:', !!ProfileMenu);
-            console.log('  ProfileSettings:', !!ProfileSettings);
-            console.log('  Preferences:', !!Preferences);
+            // Component loading verified
             
             // If checking auth, show loading
             if (checkingAuth) {
@@ -933,7 +915,7 @@
             
             // If not authenticated, show login
             if (!isAuthenticated) {
-                console.log('🔐 User not authenticated, showing login...');
+                // User not authenticated, showing login
                 if (Login) {
                     return h(Login, { 
                         onLogin: handleLogin,
@@ -969,13 +951,7 @@
                 }
             }
             
-            // Debug currentUser state
-            console.log('🔍 Debug - currentUser:', currentUser);
-            console.log('🔍 Debug - isAuthenticated:', isAuthenticated);
-            console.log('🔍 Debug - Navigation component:', Navigation);
-            console.log('🔍 Debug - ProfileMenu component:', ProfileMenu);
-            console.log('🔍 Debug - UserManagement component:', UserManagement);
-            console.log('🔍 Debug - activeSection:', activeSection);
+            // State verified and ready
             
             // Render navigation
             const navigation = Navigation ? h(Navigation, {
@@ -1177,7 +1153,7 @@
     // Global refresh function for preferences
     window.refreshDashboardData = function() {
         if (window.APP_STATE && window.APP_STATE.dataService) {
-            console.log('🔄 Refreshing dashboard data...');
+            // Refreshing dashboard data
             // This would trigger a data refresh in the dashboard
             // The actual implementation would depend on how the dashboard handles data updates
         }

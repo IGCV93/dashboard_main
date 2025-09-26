@@ -886,7 +886,7 @@
         isMemoryUsageHigh: () => {
             const memory = performanceUtils.getMemoryUsage();
             if (memory && memory.used > CONFIG.PERFORMANCE.MEMORY_WARNING_THRESHOLD) {
-                console.warn('⚠️ High memory usage detected:', memory);
+                // High memory usage detected
                 return true;
             }
             return false;

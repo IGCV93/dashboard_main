@@ -123,7 +123,7 @@
                     if (c?.name) channelMap.set(normalizeKey(c.name), { id: c.id, name: c.name });
                 });
             } catch (e) {
-                console.warn('Failed to load canonical brand/channel maps:', e);
+                // Failed to load canonical brand/channel maps
             }
             return { brandMap, channelMap };
         };
@@ -157,7 +157,7 @@
                     
                 return uploadBatchId;
             } catch (error) {
-                console.error('Failed to log upload:', error);
+                // Failed to log upload
                 return null;
             }
         };
@@ -276,7 +276,8 @@
                         const isValid = hasDate && hasChannel && hasBrand && hasRevenue;
                         
                         if (!isValid) {
-                            console.log(`🔍 Filtering out invalid row:`, {
+                            // Filtering out invalid row
+                            const filterReason = {
                                 hasDate: !!hasDate,
                                 hasChannel: !!hasChannel,
                                 hasBrand: !!hasBrand,
@@ -289,12 +290,11 @@
                         return isValid;
                     });
                     
-                    console.log(`🔍 Excel parsing: ${rawData.length} total rows, ${data.length} valid rows after filtering`);
+                    // Excel parsing: ${rawData.length} total rows, ${data.length} valid rows after filtering
                     
                     // Debug: Log the first row to see column headers
                     if (data.length > 0) {
-                        console.log('🔍 Excel column headers found:', Object.keys(data[0]));
-                        console.log('🔍 First row data:', data[0]);
+                        // Excel column headers found and first row data processed
                     }
                     
                     setUploadProgress(60);
@@ -377,7 +377,8 @@
 
                     // Debug logging for first few rows
                     if (index < 3) {
-                        console.log(`🔍 Row ${index + 1} debug:`, {
+                        // Row ${index + 1} debug
+                        const rowDebug = {
                             originalRow: row,
                             dateVal: dateVal,
                             dateValType: typeof dateVal,
@@ -400,7 +401,7 @@
                     } else if (typeof dateVal === 'string') {
                         finalDate = dateVal.trim();
                     } else if (!dateVal) {
-                        console.error(`❌ Row ${index + 1}: dateVal is null/undefined/empty:`, dateVal);
+                        // Row ${index + 1}: dateVal is null/undefined/empty
                         finalDate = null; // This will cause the error we're seeing
                     }
 
@@ -457,7 +458,7 @@
                     setValidationErrors([]);
                 }, 3000);
             } catch (error) {
-                console.error('Error uploading data:', error);
+                // Error uploading data
                 setUploadStatus('error');
                 setValidationErrors([`Upload failed: ${error.message || 'Unknown error occurred'}`]);
                 setUploadProgress(0);

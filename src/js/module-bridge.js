@@ -80,7 +80,7 @@ window.ChaiVision.services = {
         }
         
         async loadSalesData() {
-            console.log('🔍 Loading from FALLBACK DataService...');
+            // Loading from FALLBACK DataService
             // Load from localStorage for demo
             const stored = localStorage.getItem('chai_vision_sales_data');
             if (stored) {
@@ -88,7 +88,7 @@ window.ChaiVision.services = {
             }
             
             // Generate sample data
-            console.log('⚠️ Generating sample data (FALLBACK DataService)');
+            // Generating sample data (FALLBACK DataService)
             return window.ChaiVision.INITIAL_DATA.generateSampleData(
                 '2025-01-01',
                 new Date().toISOString().split('T')[0]
@@ -157,7 +157,7 @@ window.ChaiVision.components = {
 // MAIN APP INITIALIZATION
 // ============================================
 window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
-    console.log('✅ Initializing Chai Vision Dashboard with bridge...');
+    // Initializing Chai Vision Dashboard with bridge
     
     const { useState, useEffect, useMemo, useRef, createElement: h } = React;
     
@@ -171,9 +171,9 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
                 config.SUPABASE.URL,
                 config.SUPABASE.ANON_KEY
             );
-            console.log('✅ Supabase client initialized');
+            // Supabase client initialized
         } catch (error) {
-            console.warn('⚠️ Failed to initialize Supabase:', error);
+            // Failed to initialize Supabase: error
         }
     }
     
@@ -357,7 +357,7 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
             try {
                 await dataService.updateSettings(updatedData);
                 await loadInitialData();
-                console.log('Settings updated successfully');
+                // Settings updated successfully
             } catch (err) {
                 console.error('Failed to update settings:', err);
             }
@@ -368,7 +368,7 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
             try {
                 const mergedData = [...salesData, ...uploadedData];
                 setSalesData(mergedData);
-                console.log(`Successfully uploaded ${uploadedData.length} records`);
+                // Successfully uploaded ${uploadedData.length} records
             } catch (err) {
                 console.error('Failed to process upload:', err);
             }
@@ -388,7 +388,7 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
     
     // Render the app
     ReactDOM.render(React.createElement(App), document.getElementById('root'));
-    console.log('✅ Chai Vision Dashboard rendered successfully!');
+    // Chai Vision Dashboard rendered successfully
 };
 
 // Auto-initialize if all components are loaded
@@ -396,11 +396,11 @@ window.addEventListener('load', () => {
     // Check if components are loaded after a short delay
     setTimeout(() => {
         if (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
-            console.log('Auto-initializing Chai Vision Dashboard...');
+            // Auto-initializing Chai Vision Dashboard
             // You can auto-initialize here if desired
             // window.ChaiVision.initializeApp();
         }
     }, 100);
 });
 
-console.log('✅ Chai Vision module bridge loaded');
+// Chai Vision module bridge loaded

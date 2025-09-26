@@ -68,7 +68,7 @@
             
             try {
                 // Supabase authentication
-                console.log('Attempting login for:', email);
+                // Attempting login for user
                 
                 const { data, error: authError } = await supabase.auth.signInWithPassword({
                     email,
@@ -77,7 +77,7 @@
                 
                 if (authError) throw authError;
                 
-                console.log('Authentication successful, fetching profile...');
+                // Authentication successful, fetching profile
                 
                 // Get user profile
                 const { data: profile, error: profileError } = await supabase
@@ -88,7 +88,7 @@
                 
                 if (profileError) throw profileError;
                 
-                console.log('Profile fetched:', profile);
+                // Profile fetched successfully
                 
                 // Check if user is active
                 if (profile.status !== 'active') {
@@ -107,15 +107,15 @@
                         .eq('id', data.user.id);
                     
                     if (updateError) {
-                        console.warn('Failed to update last login:', updateError);
+                        // Failed to update last login
                     }
                 } catch (updateErr) {
-                    console.warn('Could not update last login:', updateErr);
+                    // Could not update last login
                 }
                 
                 // Log the login to audit_logs with better error handling
                 try {
-                    console.log('Creating audit log entry...');
+                    // Creating audit log entry
                     
                     const auditEntry = {
                         user_id: data.user.id,
@@ -131,7 +131,7 @@
                         reference_id: `LOGIN_${Date.now()}_${data.user.id.substring(0, 8)}`
                     };
                     
-                    console.log('Audit entry to be created:', auditEntry);
+                    // Audit entry prepared
                     
                     const { data: auditData, error: auditError } = await supabase
                         .from('audit_logs')
@@ -139,18 +139,18 @@
                         .select();
                     
                     if (auditError) {
-                        console.error('Audit log error:', auditError);
-                        console.error('Error details:', {
+                        // Audit log error occurred
+                        const errorDetails = {
                             message: auditError.message,
                             code: auditError.code,
                             details: auditError.details,
                             hint: auditError.hint
                         });
                     } else {
-                        console.log('✅ Audit log created successfully:', auditData);
+                        // Audit log created successfully
                     }
                 } catch (auditErr) {
-                    console.error('Failed to create audit log:', auditErr);
+                    // Failed to create audit log
                     // Don't fail the login just because audit failed
                 }
                 
@@ -167,11 +167,11 @@
                     ...profile
                 };
                 
-                console.log('Login complete, calling onLogin handler');
+                // Login complete, calling onLogin handler
                 onLogin(userData);
                 
             } catch (err) {
-                console.error('Login error:', err);
+                // Login error occurred
                 setError(err.message || 'Failed to login. Please try again.');
             } finally {
                 setLoading(false);
@@ -214,7 +214,7 @@
                             reference_id: `RESET_${Date.now()}`
                         });
                 } catch (auditErr) {
-                    console.error('Failed to log password reset:', auditErr);
+                    // Failed to log password reset
                 }
                 
                 setResetSent(true);
@@ -239,9 +239,9 @@
                 if (supabase) {
                     try {
                         const { data: { session } } = await supabase.auth.getSession();
-                        console.log('Existing session:', session ? 'Found' : 'None');
+                        // Checking existing session
                     } catch (err) {
-                        console.error('Supabase connection error:', err);
+                        // Supabase connection error
                     }
                 }
             };
