@@ -164,7 +164,7 @@
                         return true;
                     } catch (error) {
                         // Handle specific error codes
-                        if (error?.code === '23505' || error?.code === '21000') {
+                        if (error?.code === '23505' || error?.code === '21000' || error?.message?.includes('duplicate constrained values')) {
                             // Unique constraint violation or duplicate key error
                             console.warn('Unique constraint violation, attempting individual inserts:', error.message);
                             return await this.insertIndividualRows(data);
