@@ -277,12 +277,27 @@
             
             const results = [];
             let processedBatches = 0;
+            let successfulRows = 0;
+            let failedRows = 0;
             
             for (const batch of batches) {
                 try {
-                    const result = await this.saveSalesData(batch);
+                    // Deduplicate rows within the batch by source_id
+                    const uniqueBatch = this.deduplicateBatch(batch);
+                    
+                    if (uniqueBatch.length === 0) {
+                        console.log(`Batch ${processedBatches + 1}: No unique rows after deduplication`);
+                        results.push(true);
+                        processedBatches++;
+                        continue;
+                    }
+                    
+                    const result = await this.saveSalesData(uniqueBatch);
                     results.push(result);
                     processedBatches++;
+                    successfulRows += uniqueBatch.length;
+                    
+                    console.log(`Batch ${processedBatches} completed: ${uniqueBatch.length} rows (${batch.length - uniqueBatch.length} duplicates removed)`);
                     
                     // Report progress
                     if (onProgress) {
@@ -291,8 +306,10 @@
                             processedBatches,
                             totalBatches: batches.length,
                             progress,
-                            processedRows: processedBatches * batchSize,
-                            totalRows: dataArray.length
+                            processedRows: successfulRows,
+                            totalRows: dataArray.length,
+                            currentBatch: processedBatches,
+                            batchSize: uniqueBatch.length
                         });
                     }
                     
@@ -304,6 +321,7 @@
                     console.error(`Batch ${processedBatches + 1} failed:`, error);
                     results.push(false);
                     processedBatches++;
+                    failedRows += batch.length;
                     
                     // Continue with next batch even if one fails
                     if (onProgress) {
@@ -312,10 +330,16 @@
                             processedBatches,
                             totalBatches: batches.length,
                             progress,
-                            processedRows: processedBatches * batchSize,
+                            processedRows: successfulRows,
                             totalRows: dataArray.length,
-                            error: error.message
+                            error: error.message,
+                            currentBatch: processedBatches
                         });
+                    }
+                    
+                    // Add small delay between batches to prevent overwhelming the server
+                    if (processedBatches < batches.length) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
                     }
                 }
             }
@@ -324,8 +348,31 @@
                 success: results.filter(r => r === true).length,
                 failed: results.filter(r => r === false).length,
                 total: results.length,
-                allSuccessful: results.every(r => r === true)
+                allSuccessful: results.every(r => r === true),
+                successfulRows,
+                failedRows
             };
+        }
+        
+        /**
+         * Deduplicate rows within a batch by source_id
+         * Keeps the last occurrence of each source_id
+         */
+        deduplicateBatch(batch) {
+            const seen = new Map();
+            
+            // Process batch in reverse order to keep the last occurrence
+            for (let i = batch.length - 1; i >= 0; i--) {
+                const row = batch[i];
+                const sourceId = row.source_id;
+                
+                if (!seen.has(sourceId)) {
+                    seen.set(sourceId, row);
+                }
+            }
+            
+            // Return unique rows in original order
+            return Array.from(seen.values()).reverse();
         }
         
         generateSampleData() {

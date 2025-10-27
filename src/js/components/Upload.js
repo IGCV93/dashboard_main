@@ -445,12 +445,16 @@
                             // Update status message
                             if (progressData.error) {
                                 console.warn(`Batch ${progressData.processedBatches} failed:`, progressData.error);
+                                setValidationErrors(prev => [...prev, `Batch ${progressData.processedBatches} had errors (continuing...)`]);
                             }
                         }
                     );
                     
                     if (!result.allSuccessful) {
                         console.warn(`Upload completed with ${result.failed} failed batches out of ${result.total}`);
+                        setValidationErrors(prev => [...prev, `Upload completed: ${result.successfulRows} rows saved, ${result.failedRows} rows failed`]);
+                    } else {
+                        console.log(`Upload completed successfully: ${result.successfulRows} rows saved`);
                     }
                 } else {
                     // Fallback: Store in localStorage
