@@ -292,22 +292,12 @@
             
             for (const batch of batches) {
                 try {
-                    // Deduplicate rows within the batch by source_id
-                    const uniqueBatch = this.deduplicateBatch(batch);
-                    
-                    if (uniqueBatch.length === 0) {
-                        console.log(`Batch ${processedBatches + 1}: No unique rows after deduplication`);
-                        results.push(true);
-                        processedBatches++;
-                        continue;
-                    }
-                    
-                    const result = await this.saveSalesData(uniqueBatch);
+                    const result = await this.saveSalesData(batch);
                     results.push(result);
                     processedBatches++;
-                    successfulRows += uniqueBatch.length;
+                    successfulRows += batch.length;
                     
-                    console.log(`Batch ${processedBatches} completed: ${uniqueBatch.length} rows (${batch.length - uniqueBatch.length} duplicates removed)`);
+                    console.log(`Batch ${processedBatches} completed: ${batch.length} rows processed`);
                     
                     // Report progress
                     if (onProgress) {
@@ -319,7 +309,7 @@
                             processedRows: successfulRows,
                             totalRows: dataArray.length,
                             currentBatch: processedBatches,
-                            batchSize: uniqueBatch.length
+                            batchSize: batch.length
                         });
                     }
                     
@@ -393,26 +383,6 @@
             return successCount > 0;
         }
         
-        /**
-         * Deduplicate rows within a batch by source_id
-         * Keeps the last occurrence of each source_id
-         */
-        deduplicateBatch(batch) {
-            const seen = new Map();
-            
-            // Process batch in reverse order to keep the last occurrence
-            for (let i = batch.length - 1; i >= 0; i--) {
-                const row = batch[i];
-                const sourceId = row.source_id;
-                
-                if (!seen.has(sourceId)) {
-                    seen.set(sourceId, row);
-                }
-            }
-            
-            // Return unique rows in original order
-            return Array.from(seen.values()).reverse();
-        }
         
         generateSampleData() {
             // Generating sample sales data

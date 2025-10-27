@@ -102,10 +102,8 @@
                 .replace(/[^a-z0-9]+/g, '');
             return str;
         };
-        const buildSourceIdFromCanon = (dateVal, channelName, brandName, batchId = null) => {
-            const timestamp = Date.now();
-            const batchSuffix = batchId ? `_${batchId.substring(0, 8)}` : `_${timestamp}`;
-            return `${normalizeKey(dateVal)}|${normalizeKey(channelName)}|${normalizeKey(brandName)}${batchSuffix}`;
+        const buildSourceIdFromCanon = (dateVal, channelName, brandName) => {
+            return `${normalizeKey(dateVal)}|${normalizeKey(channelName)}|${normalizeKey(brandName)}`;
         };
 
         // Fetch canonical brand/channel maps from Supabase
@@ -421,7 +419,7 @@
                         revenue: parseFloat(row.Revenue || row.revenue) || 0,
                         // provenance
                         source: 'manual',
-                        source_id: buildSourceIdFromCanon(finalDate, channelName, brandName, batchId),
+                        source_id: buildSourceIdFromCanon(finalDate, channelName, brandName),
                         uploaded_by: currentUser?.id,
                         upload_batch_id: batchId,
                         is_valid_sale: true,
