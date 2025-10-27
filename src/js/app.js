@@ -870,8 +870,17 @@
                     const actualSaved = uploadResult.actualSaved || uploadedData.length;
                     const failedRows = uploadResult.failedRows || 0;
                     
-                    const mergedData = [...salesData, ...uploadedData];
-                    setSalesData(mergedData);
+                    // Refresh data from database instead of merging with cached data
+                    if (dataService) {
+                        console.log('🔄 Refreshing data from database after upload...');
+                        const freshData = await dataService.loadSalesData();
+                        setSalesData(freshData);
+                        console.log(`📊 Loaded ${freshData.length} records from database`);
+                    } else {
+                        // Fallback: merge with existing data
+                        const mergedData = [...salesData, ...uploadedData];
+                        setSalesData(mergedData);
+                    }
                     
                     if (window.showSuccessMessage) {
                         if (failedRows > 0) {

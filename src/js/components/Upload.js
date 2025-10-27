@@ -452,11 +452,29 @@
                         }
                     );
                     
+                    // Verify actual records saved by querying the database
+                    let actualSavedCount = result.successfulRows;
+                    try {
+                        const supabase = getSupabaseClient();
+                        if (supabase) {
+                            const { count, error } = await supabase
+                                .from('sales_data')
+                                .select('*', { count: 'exact', head: true });
+                            
+                            if (!error && count !== null) {
+                                actualSavedCount = count;
+                                console.log(`📊 Database verification: ${count} total records in sales_data table`);
+                            }
+                        }
+                    } catch (verifyError) {
+                        console.warn('Could not verify database count:', verifyError);
+                    }
+
                     if (!result.allSuccessful) {
                         console.warn(`Upload completed with ${result.failed} failed batches out of ${result.total}`);
-                        setValidationErrors(prev => [...prev, `Upload completed: ${result.successfulRows} rows saved, ${result.failedRows} rows failed`]);
+                        setValidationErrors(prev => [...prev, `Upload completed: ${actualSavedCount} total records in database, ${result.failedRows} rows failed`]);
                     } else {
-                        console.log(`Upload completed successfully: ${result.successfulRows} rows saved`);
+                        console.log(`Upload completed successfully: ${actualSavedCount} total records in database`);
                     }
                 } else {
                     // Fallback: Store in localStorage
@@ -604,14 +622,7 @@
                     // Upload status messages
                     uploadStatus === 'processing' && h('div', { className: 'upload-progress' },
                         h('div', { className: 'progress-header' },
-                            h('span', { className: 'progress-label' }, 'Processing file...'),
-                            h('span', { className: 'progress-percentage' }, `${uploadProgress}%`)
-                        ),
-                        h('div', { className: 'progress-bar' },
-                            h('div', {
-                                className: 'progress-fill',
-                                style: { width: `${uploadProgress}%` }
-                            })
+                            h('span', { className: 'progress-label' }, 'Processing file...')
                         )
                     ),
                     
@@ -649,14 +660,7 @@
                         h('div', { className: 'progress-header' },
                             h('span', { className: 'progress-label' }, 
                                 supabaseEnabled ? 'Uploading to database...' : 'Saving to local storage...'
-                            ),
-                            h('span', { className: 'progress-percentage' }, `${uploadProgress}%`)
-                        ),
-                        h('div', { className: 'progress-bar' },
-                            h('div', {
-                                className: 'progress-fill',
-                                style: { width: `${uploadProgress}%` }
-                            })
+                            )
                         ),
                         // Show detailed batch progress for large files
                         batchProgress && batchProgress.totalBatches > 1 && h('div', { 
