@@ -863,12 +863,22 @@
             };
             
             // Handle upload complete
-            const handleUploadComplete = async (uploadedData) => {
+            const handleUploadComplete = async (uploadResult) => {
                 try {
+                    // Handle both old format (array) and new format (object)
+                    const uploadedData = uploadResult.originalData || uploadResult;
+                    const actualSaved = uploadResult.actualSaved || uploadedData.length;
+                    const failedRows = uploadResult.failedRows || 0;
+                    
                     const mergedData = [...salesData, ...uploadedData];
                     setSalesData(mergedData);
+                    
                     if (window.showSuccessMessage) {
-                        window.showSuccessMessage(`Successfully uploaded ${uploadedData.length} records`);
+                        if (failedRows > 0) {
+                            window.showSuccessMessage(`Upload completed: ${actualSaved} records saved, ${failedRows} records failed`);
+                        } else {
+                            window.showSuccessMessage(`Successfully uploaded ${actualSaved} records`);
+                        }
                     }
                 } catch (err) {
                     console.error('Failed to process upload:', err);

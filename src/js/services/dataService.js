@@ -155,11 +155,21 @@
                         const { error } = await this.supabase
                             .from('sales_data')
                             .upsert(data, { onConflict: 'source_id' });
-                        if (error) throw error;
+                        if (error) {
+                            console.error('Supabase upsert error:', error);
+                            throw error;
+                        }
 
                         this.cache.delete('sales_data');
                         return true;
                     } catch (error) {
+                        // Handle specific error codes
+                        if (error?.code === '23505' || error?.code === '21000') {
+                            // Unique constraint violation or duplicate key error
+                            console.warn('Unique constraint violation, attempting individual inserts:', error.message);
+                            return await this.insertIndividualRows(data);
+                        }
+                        
                         // Fallback when ON CONFLICT is not available (e.g., no unique constraint)
                         if (error?.code === '42P10') {
                             try {
@@ -352,6 +362,35 @@
                 successfulRows,
                 failedRows
             };
+        }
+        
+        /**
+         * Insert rows individually to handle constraint violations
+         */
+        async insertIndividualRows(data) {
+            let successCount = 0;
+            let errorCount = 0;
+            
+            for (const row of data) {
+                try {
+                    const { error } = await this.supabase
+                        .from('sales_data')
+                        .upsert([row], { onConflict: 'source_id' });
+                    
+                    if (error) {
+                        console.warn(`Failed to insert row with source_id ${row.source_id}:`, error.message);
+                        errorCount++;
+                    } else {
+                        successCount++;
+                    }
+                } catch (err) {
+                    console.warn(`Failed to insert row with source_id ${row.source_id}:`, err.message);
+                    errorCount++;
+                }
+            }
+            
+            console.log(`Individual insert completed: ${successCount} successful, ${errorCount} failed`);
+            return successCount > 0;
         }
         
         /**

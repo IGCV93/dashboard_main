@@ -102,8 +102,10 @@
                 .replace(/[^a-z0-9]+/g, '');
             return str;
         };
-        const buildSourceIdFromCanon = (dateVal, channelName, brandName) => {
-            return `${normalizeKey(dateVal)}|${normalizeKey(channelName)}|${normalizeKey(brandName)}`;
+        const buildSourceIdFromCanon = (dateVal, channelName, brandName, batchId = null) => {
+            const timestamp = Date.now();
+            const batchSuffix = batchId ? `_${batchId.substring(0, 8)}` : `_${timestamp}`;
+            return `${normalizeKey(dateVal)}|${normalizeKey(channelName)}|${normalizeKey(brandName)}${batchSuffix}`;
         };
 
         // Fetch canonical brand/channel maps from Supabase
@@ -419,7 +421,7 @@
                         revenue: parseFloat(row.Revenue || row.revenue) || 0,
                         // provenance
                         source: 'manual',
-                        source_id: buildSourceIdFromCanon(finalDate, channelName, brandName),
+                        source_id: buildSourceIdFromCanon(finalDate, channelName, brandName, batchId),
                         uploaded_by: currentUser?.id,
                         upload_batch_id: batchId,
                         is_valid_sale: true,
@@ -469,9 +471,15 @@
                 setUploadProgress(100);
                 setUploadStatus('success');
                 
-                // Notify parent component
+                // Notify parent component with actual results
                 if (onUploadComplete) {
-                    onUploadComplete(formattedData);
+                    onUploadComplete({
+                        originalData: formattedData,
+                        actualSaved: result?.successfulRows || formattedData.length,
+                        failedRows: result?.failedRows || 0,
+                        totalBatches: result?.total || 1,
+                        successfulBatches: result?.success || 1
+                    });
                 }
                 
                 // Reset after 3 seconds
