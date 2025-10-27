@@ -16,21 +16,27 @@
     const getEnvVar = (key, defaultValue = '') => {
         // Priority 1: Vercel/Production environment variables (injected at build time)
         if (typeof window !== 'undefined' && window.__ENV__ && window.__ENV__[key]) {
+            console.log(`🔧 Loaded ${key} from window.__ENV__`);
             return window.__ENV__[key];
         }
         
         // Priority 2: Process environment variables (Node.js/Server-side)
         if (typeof process !== 'undefined' && process.env && process.env[key]) {
+            console.log(`🔧 Loaded ${key} from process.env`);
             return process.env[key];
         }
         
         // Priority 3: localStorage for development overrides
         if (ENV.DEVELOPMENT) {
             const stored = localStorage.getItem(`CHAI_VISION_${key}`);
-            if (stored) return stored;
+            if (stored) {
+                console.log(`🔧 Loaded ${key} from localStorage`);
+                return stored;
+            }
         }
         
         // Priority 4: Default fallback values
+        console.warn(`⚠️  ${key} not found in any source, using default`);
         return defaultValue;
     };
 
