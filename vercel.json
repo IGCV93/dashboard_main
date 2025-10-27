@@ -3,11 +3,6 @@
   "outputDirectory": ".",
   "framework": null,
   "installCommand": "echo 'No dependencies to install'",
-  "functions": {
-    "src/api/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "headers": [
     {
       "source": "/(.*)",
