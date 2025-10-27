@@ -73,6 +73,7 @@
         const [uploadStatus, setUploadStatus] = useState(null);
         const [validationErrors, setValidationErrors] = useState([]);
         const [isDragging, setIsDragging] = useState(false);
+        const [batchProgress, setBatchProgress] = useState(null); // New state for batch progress
         
         const fileInputRef = useRef(null);
         const supabaseEnabled = config?.FEATURES?.ENABLE_SUPABASE || false;
@@ -231,8 +232,23 @@
             return { accepted, rejected, errors };
         };
         
-        // Handle file upload
+        // Handle file upload with size validation
         const handleFileUpload = (file) => {
+            // Check file size (warn for files > 50MB)
+            const maxSize = 100 * 1024 * 1024; // 100MB
+            const warningSize = 50 * 1024 * 1024; // 50MB
+            
+            if (file.size > maxSize) {
+                setUploadStatus('error');
+                setValidationErrors([`File too large: ${(file.size / 1024 / 1024).toFixed(1)}MB. Maximum size is ${maxSize / 1024 / 1024}MB.`]);
+                setUploadProgress(0);
+                return;
+            }
+            
+            if (file.size > warningSize) {
+                setValidationErrors([`Large file detected: ${(file.size / 1024 / 1024).toFixed(1)}MB. This may take several minutes to process.`]);
+            }
+            
             setUploadedFile(file);
             setUploadStatus('processing');
             setValidationErrors([]);
@@ -315,7 +331,7 @@
             }
         };
         
-        // Upload to database/storage
+        // Upload to database/storage with chunked processing for large files
         const uploadToDatabase = async () => {
             if (!uploadedData || uploadedData.length === 0) return;
             
@@ -375,21 +391,6 @@
                     const brandName = brandEntry?.name || (rawBrand || '').trim();
                     const channelName = channelEntry?.name || (rawChannel || '').trim();
 
-                    // Debug logging for first few rows
-                    if (index < 3) {
-                        // Row ${index + 1} debug
-                        const rowDebug = {
-                            originalRow: row,
-                            dateVal: dateVal,
-                            dateValType: typeof dateVal,
-                            dateValIsNull: dateVal === null,
-                            dateValIsUndefined: dateVal === undefined,
-                            dateValIsEmpty: dateVal === '',
-                            rawBrand: rawBrand,
-                            rawChannel: rawChannel
-                        };
-                    }
-
                     // Convert date to string if it's a Date object or number
                     let finalDate = dateVal;
                     if (dateVal instanceof Date) {
@@ -401,7 +402,6 @@
                     } else if (typeof dateVal === 'string') {
                         finalDate = dateVal.trim();
                     } else if (!dateVal) {
-                        // Row ${index + 1}: dateVal is null/undefined/empty
                         finalDate = null; // This will cause the error we're seeing
                     }
 
@@ -428,7 +428,30 @@
                 });
                 
                 if (dataService) {
-                    await dataService.saveSalesData(formattedData);
+                    // Use batch processing for large files with progress tracking
+                    const configBatchSize = config?.SUPABASE?.PERFORMANCE?.BATCH_SIZE || 1000;
+                    const largeFileBatchSize = config?.SUPABASE?.PERFORMANCE?.LARGE_FILE_BATCH_SIZE || 2000;
+                    const batchSize = accepted.length > 10000 ? largeFileBatchSize : configBatchSize;
+                    
+                    const result = await dataService.batchSaveSalesData(
+                        formattedData, 
+                        batchSize,
+                        (progressData) => {
+                            // Update progress with real-time data
+                            const uploadProgress = Math.round(90 + (progressData.progress * 0.1)); // 90-100%
+                            setUploadProgress(uploadProgress);
+                            setBatchProgress(progressData); // Store batch progress details
+                            
+                            // Update status message
+                            if (progressData.error) {
+                                console.warn(`Batch ${progressData.processedBatches} failed:`, progressData.error);
+                            }
+                        }
+                    );
+                    
+                    if (!result.allSuccessful) {
+                        console.warn(`Upload completed with ${result.failed} failed batches out of ${result.total}`);
+                    }
                 } else {
                     // Fallback: Store in localStorage
                     const existingData = JSON.parse(localStorage.getItem('chai_vision_sales_data') || '[]');
@@ -456,6 +479,7 @@
                     setUploadProgress(0);
                     setUploadStatus(null);
                     setValidationErrors([]);
+                    setBatchProgress(null); // Clear batch progress
                 }, 3000);
             } catch (error) {
                 // Error uploading data
@@ -621,6 +645,28 @@
                                 className: 'progress-fill',
                                 style: { width: `${uploadProgress}%` }
                             })
+                        ),
+                        // Show detailed batch progress for large files
+                        batchProgress && batchProgress.totalBatches > 1 && h('div', { 
+                            className: 'batch-progress',
+                            style: { 
+                                marginTop: '8px', 
+                                fontSize: '12px', 
+                                color: '#6B7280',
+                                textAlign: 'center'
+                            }
+                        },
+                            h('div', null, 
+                                `Batch ${batchProgress.processedBatches} of ${batchProgress.totalBatches} completed`
+                            ),
+                            h('div', null, 
+                                `${batchProgress.processedRows.toLocaleString()} of ${batchProgress.totalRows.toLocaleString()} rows processed`
+                            ),
+                            batchProgress.error && h('div', { 
+                                style: { color: '#DC2626', marginTop: '4px' }
+                            }, 
+                                `⚠️ Batch ${batchProgress.processedBatches} had errors (continuing...)`
+                            )
                         )
                     ),
                     

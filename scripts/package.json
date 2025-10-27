@@ -1,0 +1,22 @@
+{
+  "name": "chai-vision-scripts",
+  "version": "1.0.0",
+  "description": "Secure scripts for Chai Vision Dashboard data operations",
+  "main": "scripts/secure-large-import.js",
+  "scripts": {
+    "import": "node scripts/secure-large-import.js",
+    "inject-env": "node scripts/inject-env.js",
+    "install-deps": "npm install dotenv @supabase/supabase-js csv-parser"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "@supabase/supabase-js": "^2.38.0",
+    "csv-parser": "^3.0.0"
+  },
+  "keywords": ["sales", "data", "import", "csv", "supabase", "secure"],
+  "author": "Chai Vision",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

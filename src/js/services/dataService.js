@@ -267,21 +267,65 @@
         }
         
         /**
-         * Batch operations for better performance
+         * Batch operations for better performance with progress tracking
          */
-        async batchSaveSalesData(dataArray, batchSize = 100) {
+        async batchSaveSalesData(dataArray, batchSize = 1000, onProgress = null) {
             const batches = [];
             for (let i = 0; i < dataArray.length; i += batchSize) {
                 batches.push(dataArray.slice(i, i + batchSize));
             }
             
             const results = [];
+            let processedBatches = 0;
+            
             for (const batch of batches) {
-                const result = await this.saveSalesData(batch);
-                results.push(result);
+                try {
+                    const result = await this.saveSalesData(batch);
+                    results.push(result);
+                    processedBatches++;
+                    
+                    // Report progress
+                    if (onProgress) {
+                        const progress = Math.round((processedBatches / batches.length) * 100);
+                        onProgress({
+                            processedBatches,
+                            totalBatches: batches.length,
+                            progress,
+                            processedRows: processedBatches * batchSize,
+                            totalRows: dataArray.length
+                        });
+                    }
+                    
+                    // Add small delay between batches to prevent overwhelming the server
+                    if (processedBatches < batches.length) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                } catch (error) {
+                    console.error(`Batch ${processedBatches + 1} failed:`, error);
+                    results.push(false);
+                    processedBatches++;
+                    
+                    // Continue with next batch even if one fails
+                    if (onProgress) {
+                        const progress = Math.round((processedBatches / batches.length) * 100);
+                        onProgress({
+                            processedBatches,
+                            totalBatches: batches.length,
+                            progress,
+                            processedRows: processedBatches * batchSize,
+                            totalRows: dataArray.length,
+                            error: error.message
+                        });
+                    }
+                }
             }
             
-            return results.every(r => r === true);
+            return {
+                success: results.filter(r => r === true).length,
+                failed: results.filter(r => r === false).length,
+                total: results.length,
+                allSuccessful: results.every(r => r === true)
+            };
         }
         
         generateSampleData() {

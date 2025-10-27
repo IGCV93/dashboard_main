@@ -12,18 +12,25 @@
         DEVELOPMENT: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     };
 
-    // Load environment variables (if using a build tool)
-    // In production, these would be replaced during build
+    // Load environment variables from multiple sources
     const getEnvVar = (key, defaultValue = '') => {
-        // Check if environment variables are available (e.g., through a build process)
+        // Priority 1: Vercel/Production environment variables (injected at build time)
+        if (typeof window !== 'undefined' && window.__ENV__ && window.__ENV__[key]) {
+            return window.__ENV__[key];
+        }
+        
+        // Priority 2: Process environment variables (Node.js/Server-side)
         if (typeof process !== 'undefined' && process.env && process.env[key]) {
             return process.env[key];
         }
-        // Check localStorage for development overrides
+        
+        // Priority 3: localStorage for development overrides
         if (ENV.DEVELOPMENT) {
             const stored = localStorage.getItem(`CHAI_VISION_${key}`);
             if (stored) return stored;
         }
+        
+        // Priority 4: Default fallback values
         return defaultValue;
     };
 
@@ -58,12 +65,17 @@
             }
         },
 
-        // Supabase Configuration - REPLACE WITH YOUR ACTUAL VALUES
+        // Supabase Configuration - Uses environment variables for security
         SUPABASE: {
-            // IMPORTANT: Replace these with your actual Supabase project details
-            URL: getEnvVar('SUPABASE_URL', 'https://ebardgekhelbaoiwzwmu.supabase.co'), // Replace with your URL
-            ANON_KEY: getEnvVar('SUPABASE_ANON_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViYXJkZ2VraGVsYmFvaXd6d211Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMzM4MzksImV4cCI6MjA3MTgwOTgzOX0.9DAaE4c4C8HOaNcV7J3xhfdTc85Drc2fKnLTs_4lk0w'), // Replace with your anon key
-            ENABLED: true, // Set to true to enable Supabase
+            // These values come from environment variables (Vercel/Production)
+            // ANON_KEY is safe to expose - designed for client-side use
+            URL: getEnvVar('SUPABASE_URL', ''),
+            ANON_KEY: getEnvVar('SUPABASE_ANON_KEY', ''),
+            ENABLED: getEnvVar('SUPABASE_URL', '') !== '' && getEnvVar('SUPABASE_ANON_KEY', '') !== '',
+            
+            // Service Key - NEVER expose in client-side code!
+            // Only use for server-side operations or admin scripts
+            SERVICE_KEY: getEnvVar('SUPABASE_SERVICE_KEY', ''), // Empty by default for security
             
             // Table names (matching our schema)
             TABLES: {
@@ -739,11 +751,11 @@
         
         // Check Supabase configuration if enabled
         if (CONFIG.FEATURES.ENABLE_SUPABASE) {
-            if (CONFIG.SUPABASE.URL === 'https://YOUR-PROJECT-ID.supabase.co') {
-                errors.push('Supabase URL not configured - please update with your project URL');
+            if (!CONFIG.SUPABASE.URL || CONFIG.SUPABASE.URL === '') {
+                errors.push('Supabase URL not configured - please set SUPABASE_URL environment variable');
             }
-            if (CONFIG.SUPABASE.ANON_KEY === 'YOUR-ANON-KEY-HERE') {
-                errors.push('Supabase Anon Key not configured - please update with your anon key');
+            if (!CONFIG.SUPABASE.ANON_KEY || CONFIG.SUPABASE.ANON_KEY === '') {
+                errors.push('Supabase ANON_KEY not configured - please set SUPABASE_ANON_KEY environment variable');
             }
         }
         
@@ -795,8 +807,10 @@
         
         try {
             if (window.supabase && 
-                CONFIG.SUPABASE.URL !== 'https://YOUR-PROJECT-ID.supabase.co' && 
-                CONFIG.SUPABASE.ANON_KEY !== 'YOUR-ANON-KEY-HERE') {
+                CONFIG.SUPABASE.URL && 
+                CONFIG.SUPABASE.ANON_KEY &&
+                CONFIG.SUPABASE.URL !== '' && 
+                CONFIG.SUPABASE.ANON_KEY !== '') {
                 
                 const client = window.supabase.createClient(
                     CONFIG.SUPABASE.URL,
@@ -814,10 +828,10 @@
                     }
                 );
                 
-                console.log('✅ Supabase client initialized');
+                console.log('✅ Supabase client initialized with environment variables');
                 return client;
             } else {
-                console.warn('Supabase credentials not properly configured');
+                console.warn('Supabase credentials not properly configured - check environment variables');
                 return null;
             }
         } catch (error) {

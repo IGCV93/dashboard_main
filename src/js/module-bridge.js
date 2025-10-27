@@ -24,11 +24,11 @@ window.ChaiVision.CONFIG = window.ChaiVision.CONFIG || {
         FALLBACK_LOGOS: []
     },
 
-    // Supabase Configuration
+    // Supabase Configuration - Uses environment variables
     SUPABASE: {
-        URL: 'YOUR_SUPABASE_URL',
-        ANON_KEY: 'YOUR_SUPABASE_ANON_KEY',
-        ENABLED: false,
+        URL: 'YOUR_SUPABASE_URL', // Will be replaced by environment variables
+        ANON_KEY: 'YOUR_SUPABASE_ANON_KEY', // Will be replaced by environment variables
+        ENABLED: false, // Will be enabled when environment variables are set
         TABLES: {
             SALES_DATA: 'sales_data',
             BRANDS: 'brands',
@@ -164,14 +164,17 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
     // Initialize Supabase if configured
     let supabaseClient = null;
     if (config.FEATURES.ENABLE_SUPABASE && 
+        config.SUPABASE.URL && 
+        config.SUPABASE.ANON_KEY &&
         config.SUPABASE.URL !== 'YOUR_SUPABASE_URL' && 
+        config.SUPABASE.ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY' &&
         window.supabase) {
         try {
             supabaseClient = window.supabase.createClient(
                 config.SUPABASE.URL,
                 config.SUPABASE.ANON_KEY
             );
-            // Supabase client initialized
+            // Supabase client initialized with environment variables
         } catch (error) {
             // Failed to initialize Supabase: error
         }
