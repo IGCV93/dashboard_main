@@ -72,6 +72,40 @@
             return periodText;
         }, [view, selectedPeriod, selectedMonth, selectedYear]);
         
+        // Data aggregation utility - sums revenue by Date + Channel + Brand
+        const aggregateSalesData = (data) => {
+            const aggregated = {};
+            
+            data.forEach(record => {
+                const date = record.date;
+                const channel = record.channel || record.channel_name;
+                const brand = record.brand || record.brand_name;
+                const revenue = parseFloat(record.revenue) || 0;
+                
+                // Create unique key for Date + Channel + Brand combination
+                const key = `${date}|${channel}|${brand}`;
+                
+                if (!aggregated[key]) {
+                    aggregated[key] = {
+                        date: date,
+                        channel: channel,
+                        brand: brand,
+                        revenue: 0,
+                        count: 0,
+                        // Preserve other fields from the first record
+                        ...record
+                    };
+                }
+                
+                // Sum revenue and count records
+                aggregated[key].revenue += revenue;
+                aggregated[key].count += 1;
+            });
+            
+            // Convert back to array
+            return Object.values(aggregated);
+        };
+
         // Optimized data processing with memoization
         const processedChartData = useMemo(() => {
 //             console.log('🔍 Charts: processedChartData useMemo triggered');
@@ -81,7 +115,11 @@
                 return null;
             }
             
-            const filteredSalesData = kpis.filteredData;
+            // Aggregate data by Date + Channel + Brand before processing
+            const aggregatedData = aggregateSalesData(kpis.filteredData);
+            console.log(`📊 Charts: Aggregated ${kpis.filteredData.length} records into ${aggregatedData.length} unique Date+Channel+Brand combinations`);
+            
+            const filteredSalesData = aggregatedData;
 //             console.log('🔍 Charts: filteredSalesData sample:', filteredSalesData.slice(0, 2));
             // Use explicitly available channels from kpis when provided (permission-filtered), otherwise fallback
             const availableFromKpis = Array.isArray(kpis.availableChannels) && kpis.availableChannels.length > 0

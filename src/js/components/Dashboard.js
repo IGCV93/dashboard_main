@@ -40,6 +40,40 @@
             return str;
         };
 
+        // Data aggregation utility - sums revenue by Date + Channel + Brand
+        const aggregateSalesData = (data) => {
+            const aggregated = {};
+            
+            data.forEach(record => {
+                const date = record.date;
+                const channel = record.channel || record.channel_name;
+                const brand = record.brand || record.brand_name;
+                const revenue = parseFloat(record.revenue) || 0;
+                
+                // Create unique key for Date + Channel + Brand combination
+                const key = `${date}|${channel}|${brand}`;
+                
+                if (!aggregated[key]) {
+                    aggregated[key] = {
+                        date: date,
+                        channel: channel,
+                        brand: brand,
+                        revenue: 0,
+                        count: 0,
+                        // Preserve other fields from the first record
+                        ...record
+                    };
+                }
+                
+                // Sum revenue and count records
+                aggregated[key].revenue += revenue;
+                aggregated[key].count += 1;
+            });
+            
+            // Convert back to array
+            return Object.values(aggregated);
+        };
+
         // Get dependencies from window
         const { formatCurrency, formatPercent } = window.formatters || {};
         const { getDaysInPeriod, getDaysElapsed, getDaysInQuarter, getDaysInMonth } = window.dateUtils || {};
@@ -147,7 +181,11 @@
                     revenue: parseFloat(d.revenue) || 0 // Ensure revenue is a number
                 }));
 
-            let filteredData = canonicalData;
+            // Aggregate data by Date + Channel + Brand before filtering
+            const aggregatedData = aggregateSalesData(canonicalData);
+            console.log(`📊 Aggregated ${canonicalData.length} records into ${aggregatedData.length} unique Date+Channel+Brand combinations`);
+
+            let filteredData = aggregatedData;
             
             // PERMISSION FILTER: Filter by user's brand permissions
             if (userRole !== 'Admin' && userPermissions?.brands && !userPermissions.brands.includes('All Brands')) {
