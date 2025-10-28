@@ -9,6 +9,11 @@
     function ChannelPerformance({ kpis }) {
         const { createElement: h } = React;
         
+        // Debug: Log what props ChannelPerformance receives
+        console.log('🔍 ChannelPerformance received kpis:', kpis);
+        console.log('🔍 ChannelPerformance channelRevenues:', kpis?.channelRevenues);
+        console.log('🔍 ChannelPerformance channelTargets85:', kpis?.channelTargets85);
+        
         // Get dependencies from window
         const { formatCurrency } = window.formatters || {};
         const CHANNEL_COLORS = window.CHANNEL_COLORS || {
@@ -26,6 +31,10 @@
         const channelsToDisplay = kpis.channels || kpis.availableChannels || 
             ['Amazon', 'TikTok', 'DTC-Shopify', 'Retail',
              'CA International', 'UK International', 'Wholesale', 'Omnichannel'];
+        
+        // Debug: Log channels being displayed
+        console.log('🔍 ChannelPerformance channelsToDisplay:', channelsToDisplay);
+        console.log('🔍 ChannelPerformance channelsToDisplay length:', channelsToDisplay.length);
         
         return h('div', { className: 'channel-section' },
             h('div', { className: 'section-header' },
