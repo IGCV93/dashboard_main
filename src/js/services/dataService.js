@@ -12,7 +12,7 @@
             
             // Performance optimizations
             this.cache = new Map();
-            this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
+            this.cacheTimeout = 0; // No caching for real-time data
             this.debounceTimers = new Map();
             this.lastUpdate = 0;
             this.updateThreshold = 30000; // 30 seconds
@@ -88,100 +88,100 @@
             });
         }
         
-        async loadSalesData() {
-            // Loading sales data
+        async loadSalesData(filters = {}) {
+            // Loading sales data with smart filtering (no caching for real-time data)
             
-            return this.getCachedData('sales_data', async () => {
-                if (this.supabase && this.config.FEATURES.ENABLE_SUPABASE) {
-                    try {
-                        // Trying Supabase (MAIN DataService)
-                        let { data, error } = await this.supabase
-                            .from('sales_data')
-                            .select('*')
-                            .order('date', { ascending: false })
-                            .limit(1000000); // Set high limit to get all records
-                        
-                        if (error) {
-                            console.error('❌ Supabase error:', error);
-                            throw error;
-                        }
-                        
-                        // Supabase data loaded: ${data?.length || 0} records
-                        
-                        // Check if we got limited data (likely due to Supabase default limit)
-                        if (data && data.length === 1000) {
-                            console.warn('⚠️ Only 1000 records loaded - RLS policy limiting results. Loading all records via pagination...');
-                            this.cache.delete('sales_data');
-                            
-                            // Load all records using pagination to bypass RLS limit
-                            const allData = [];
-                            let offset = 0;
-                            const pageSize = 1000;
-                            let hasMore = true;
-                            
-                            while (hasMore) {
-                                console.log(`📄 Loading page ${Math.floor(offset / pageSize) + 1} (offset: ${offset})...`);
-                                
-                                const { data: pageData, error: pageError } = await this.supabase
-                                    .from('sales_data')
-                                    .select('*')
-                                    .order('date', { ascending: false })
-                                    .range(offset, offset + pageSize - 1);
-                                
-                                if (pageError) {
-                                    console.error('❌ Page load error:', pageError);
-                                    break;
-                                }
-                                
-                                if (!pageData || pageData.length === 0) {
-                                    hasMore = false;
-                                } else {
-                                    allData.push(...pageData);
-                                    offset += pageSize;
-                                    
-                                    // Safety check to prevent infinite loops
-                                    if (allData.length > 500000) {
-                                        console.warn('⚠️ Safety limit reached (500K records)');
-                                        break;
-                                    }
-                                }
-                                
-                                // Small delay to prevent overwhelming the server
-                                await new Promise(resolve => setTimeout(resolve, 100));
-                            }
-                            
-                            if (allData.length > 0) {
-                                console.log(`✅ Pagination successful: ${allData.length} records loaded`);
-                                data = allData;
-                            } else {
-                                console.log('⚠️ Pagination failed, using original 1000 records');
-                            }
-                        }
-
-                        // Normalize types/fields for frontend calculations
-                        const normalized = (data || []).map(row => ({
-                            ...row,
-                            // Ensure revenue is a number (Supabase may return numeric as string)
-                            revenue: typeof row.revenue === 'string' ? parseFloat(row.revenue) : row.revenue,
-                            // Ensure date is YYYY-MM-DD string
-                            date: typeof row.date === 'string' ? row.date.split('T')[0] : row.date
-                        }));
-                        
-                        // Do not auto-generate sample data when Supabase is enabled
-                        // Always return the real dataset (may be empty)
-                        
-                        return normalized;
-                    } catch (error) {
-                        console.error('❌ Supabase error:', error);
-                        // Do not fall back to sample data when Supabase is enabled
-                        // Return empty array instead
-                        return [];
+            if (this.supabase && this.config.FEATURES.ENABLE_SUPABASE) {
+                try {
+                    // Build query based on filters
+                    let query = this.supabase
+                        .from('sales_data')
+                        .select('*')
+                        .order('date', { ascending: false });
+                    
+                    // Apply filters to reduce data load
+                    if (filters.startDate) {
+                        query = query.gte('date', filters.startDate);
                     }
-                } else {
-                    // Supabase disabled, using local data
-                    return this.loadLocalData();
+                    if (filters.endDate) {
+                        query = query.lte('date', filters.endDate);
+                    }
+                    if (filters.brand && filters.brand !== 'All Brands') {
+                        query = query.eq('brand', filters.brand);
+                    }
+                    if (filters.channel && filters.channel !== 'All Channels') {
+                        query = query.eq('channel', filters.channel);
+                    }
+                    
+                    // Set reasonable limit based on filters
+                    const limit = this.calculateOptimalLimit(filters);
+                    query = query.limit(limit);
+                    
+                    console.log(`🔍 Loading sales data with filters:`, filters);
+                    console.log(`📊 Limit set to: ${limit} records`);
+                    
+                    const { data, error } = await query;
+                    
+                    if (error) {
+                        console.error('❌ Supabase error:', error);
+                        throw error;
+                    }
+                    
+                    console.log(`✅ Loaded ${data?.length || 0} records`);
+                    
+                    // Check if we hit the limit (might need more data)
+                    if (data && data.length === limit) {
+                        console.warn(`⚠️ Hit limit of ${limit} records - consider refining filters`);
+                    }
+                    
+                    // Normalize types/fields for frontend calculations
+                    const normalized = (data || []).map(row => ({
+                        ...row,
+                        // Ensure revenue is a number (Supabase may return numeric as string)
+                        revenue: typeof row.revenue === 'string' ? parseFloat(row.revenue) : row.revenue,
+                        // Ensure date is YYYY-MM-DD string
+                        date: typeof row.date === 'string' ? row.date.split('T')[0] : row.date
+                    }));
+                    
+                    return normalized;
+                } catch (err) {
+                    console.error('❌ Failed to load sales data:', err);
+                    return [];
                 }
-            });
+            } else {
+                // Fallback to demo data
+                return this.loadLocalData();
+            }
+        }
+        
+        /**
+         * Calculate optimal limit based on filters
+         */
+        calculateOptimalLimit(filters) {
+            // Base limit
+            let limit = 10000;
+            
+            // Reduce limit if we have specific filters
+            if (filters.brand && filters.brand !== 'All Brands') {
+                limit = Math.min(limit, 50000); // Brand-specific data
+            }
+            if (filters.channel && filters.channel !== 'All Channels') {
+                limit = Math.min(limit, 50000); // Channel-specific data
+            }
+            if (filters.startDate && filters.endDate) {
+                // Calculate days between dates
+                const start = new Date(filters.startDate);
+                const end = new Date(filters.endDate);
+                const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                
+                if (days <= 30) {
+                    limit = Math.min(limit, 5000); // Short period
+                } else if (days <= 365) {
+                    limit = Math.min(limit, 20000); // Medium period
+                }
+            }
+            
+            return limit;
         }
         
         loadLocalData() {

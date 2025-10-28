@@ -736,8 +736,16 @@
                     // Loading initial data
                     setLoading(true);
                     if (APP_STATE.dataService) {
-                        const data = await APP_STATE.dataService.loadSalesData();
-                        // Data loaded: ${data?.length || 0} records
+                        // Build filters based on current selections
+                        const filters = {
+                            startDate: getDateRangeStart(view, selectedPeriod, selectedYear, selectedMonth),
+                            endDate: getDateRangeEnd(view, selectedPeriod, selectedYear, selectedMonth),
+                            brand: selectedBrand,
+                            channel: 'All Channels' // Load all channels, filter in UI
+                        };
+                        
+                        const data = await APP_STATE.dataService.loadSalesData(filters);
+                        console.log(`📊 Data loaded: ${data?.length || 0} records`);
                         
                         // Only filter if we have valid permissions
                         let filteredData = data;
@@ -750,9 +758,9 @@
                                                       userPermissions.channels.includes(d.channel);
                                 return brandAllowed && channelAllowed;
                             });
-                            // Filtered data: ${filteredData?.length || 0} records
+                            console.log(`🔍 Filtered data: ${filteredData?.length || 0} records`);
                         } else {
-                            // No permissions set, using all data
+                            console.log('📋 No permissions set, using all data');
                         }
                         
                         setSalesData(filteredData || []);
@@ -767,6 +775,39 @@
                     setLoading(false);
                 }
             }
+            
+            // Helper functions for date range calculation
+            function getDateRangeStart(view, period, year, month) {
+                if (view === 'annual') {
+                    return `${year}-01-01`;
+                } else if (view === 'quarterly') {
+                    const quarterMonths = { 'Q1': '01', 'Q2': '04', 'Q3': '07', 'Q4': '10' };
+                    return `${year}-${quarterMonths[period]}-01`;
+                } else if (view === 'monthly') {
+                    return `${year}-${String(month).padStart(2, '0')}-01`;
+                }
+                return null;
+            }
+            
+            function getDateRangeEnd(view, period, year, month) {
+                if (view === 'annual') {
+                    return `${year}-12-31`;
+                } else if (view === 'quarterly') {
+                    const quarterEnds = { 'Q1': '03-31', 'Q2': '06-30', 'Q3': '09-30', 'Q4': '12-31' };
+                    return `${year}-${quarterEnds[period]}`;
+                } else if (view === 'monthly') {
+                    const daysInMonth = new Date(year, month, 0).getDate();
+                    return `${year}-${String(month).padStart(2, '0')}-${daysInMonth}`;
+                }
+                return null;
+            }
+            
+            // Refresh data when filters change
+            useEffect(() => {
+                if (isAuthenticated && APP_STATE.dataService) {
+                    loadInitialData();
+                }
+            }, [view, selectedPeriod, selectedYear, selectedMonth, selectedBrand]);
             
             // Regenerate sample data only in demo mode (Supabase disabled)
             useEffect(() => {
