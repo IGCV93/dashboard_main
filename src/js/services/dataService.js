@@ -98,7 +98,8 @@
                         const { data, error } = await this.supabase
                             .from('sales_data')
                             .select('*')
-                            .order('date', { ascending: false });
+                            .order('date', { ascending: false })
+                            .limit(1000000); // Set high limit to get all records
                         
                         if (error) {
                             console.error('❌ Supabase error:', error);
