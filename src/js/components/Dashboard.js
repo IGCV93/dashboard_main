@@ -286,21 +286,27 @@
             // Calculate revenue by channel (only for available channels)
             const channelRevenues = {};
             availableChannels.forEach(channel => {
-                const chKey = normalizeKey(channel);
-                channelRevenues[channel] = filteredData
+                // Handle both string channels and channel objects
+                const channelName = typeof channel === 'string' ? channel : (channel?.name || String(channel));
+                const chKey = normalizeKey(channelName);
+                channelRevenues[channelName] = filteredData
                     .filter(d => d._channelKey === chKey)
                     .reduce((sum, d) => sum + (d.revenue || 0), 0);
             });
             
-            const totalRevenue = Object.values(channelRevenues).reduce((sum, val) => sum + val, 0);
+            // Debug: Log channel revenues
+            console.log('🔍 Channel revenues:', channelRevenues);
+            console.log('🔍 Total revenue from channelRevenues:', Object.values(channelRevenues).reduce((sum, val) => sum + val, 0));
             
             // Get targets (filtered by permissions)
             const channelTargets100 = {};
             const channelTargets85 = {};
             
             availableChannels.forEach(channel => {
-                channelTargets100[channel] = 0;
-                channelTargets85[channel] = 0;
+                // Handle both string channels and channel objects
+                const channelName = typeof channel === 'string' ? channel : (channel?.name || String(channel));
+                channelTargets100[channelName] = 0;
+                channelTargets85[channelName] = 0;
             });
             
             // Calculate targets based on selection and permissions
@@ -329,15 +335,19 @@
                             const dayRatio = daysInThisMonth / daysInThisQuarter;
 
                             availableChannels.forEach(ch => {
+                                // Handle both string channels and channel objects
+                                const channelName = typeof ch === 'string' ? ch : (ch?.name || String(ch));
                                 // Distribute quarterly target based on actual days in month vs quarter
-                                monthlyData[ch] = (periodData[ch] || 0) * dayRatio;
+                                monthlyData[channelName] = (periodData[channelName] || 0) * dayRatio;
                             });
                             periodData = monthlyData;
                         }
                     }
                     if (periodData) {
                         availableChannels.forEach(channel => {
-                            channelTargets100[channel] += periodData[channel] || 0;
+                            // Handle both string channels and channel objects
+                            const channelName = typeof channel === 'string' ? channel : (channel?.name || String(channel));
+                            channelTargets100[channelName] += periodData[channelName] || 0;
                         });
                     }
                 }
@@ -345,11 +355,20 @@
             
             // Calculate 85% targets
             availableChannels.forEach(channel => {
-                channelTargets85[channel] = channelTargets100[channel] * 0.85;
+                // Handle both string channels and channel objects
+                const channelName = typeof channel === 'string' ? channel : (channel?.name || String(channel));
+                channelTargets85[channelName] = channelTargets100[channelName] * 0.85;
             });
             
             const totalTarget100 = Object.values(channelTargets100).reduce((sum, val) => sum + val, 0);
             const totalTarget85 = totalTarget100 * 0.85;
+            
+            const totalRevenue = Object.values(channelRevenues).reduce((sum, val) => sum + val, 0);
+            
+            // Debug: Log final calculations
+            console.log('🔍 Final totalRevenue:', totalRevenue);
+            console.log('🔍 Final totalTarget100:', totalTarget100);
+            console.log('🔍 Final totalTarget85:', totalTarget85);
             
             // Time calculations
             const daysInPeriod = getDaysInPeriod ? getDaysInPeriod(view, selectedPeriod, selectedYear, selectedMonth) : 30;
@@ -434,8 +453,10 @@
             // Channel achievements (only for available channels)
             const channelAchievements = {};
             availableChannels.forEach(channel => {
-                channelAchievements[channel] = channelTargets85[channel] > 0 ? 
-                    (channelRevenues[channel] / channelTargets85[channel]) * 100 : 0;
+                // Handle both string channels and channel objects
+                const channelName = typeof channel === 'string' ? channel : (channel?.name || String(channel));
+                channelAchievements[channelName] = channelTargets85[channelName] > 0 ? 
+                    (channelRevenues[channelName] / channelTargets85[channelName]) * 100 : 0;
             });
             
             const debugSummary = {
