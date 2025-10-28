@@ -214,6 +214,12 @@
             // Aggregate data by Date + Channel + Brand before filtering
             const aggregatedData = aggregateSalesData(canonicalData);
             console.log(`📊 Aggregated ${canonicalData.length} records into ${aggregatedData.length} unique Date+Channel+Brand combinations`);
+            
+            // Debug: Log sample aggregated data
+            if (aggregatedData.length > 0) {
+                console.log('🔍 Sample aggregated data:', aggregatedData.slice(0, 3));
+                console.log('🔍 Total revenue in aggregated data:', aggregatedData.reduce((sum, d) => sum + (d.revenue || 0), 0));
+            }
 
             let filteredData = aggregatedData;
             
@@ -266,6 +272,12 @@
 //             console.log('🔍 Dashboard: Filtering debug');
             
             // DEBUG: Log what we're filtering for
+            console.log(`🔍 Filtering for: view=${view}, selectedPeriod=${selectedPeriod}, selectedYear=${selectedYear}, selectedBrand=${selectedBrand}`);
+            console.log(`🔍 After filtering: ${filteredData.length} records remain`);
+            if (filteredData.length > 0) {
+                console.log('🔍 Sample filtered data:', filteredData.slice(0, 3));
+                console.log('🔍 Total revenue in filtered data:', filteredData.reduce((sum, d) => sum + (d.revenue || 0), 0));
+            }
 //             console.log('🔍 Dashboard: Filter criteria');
             
             // DEBUG: Log sample data dates and brands to see what we're working with
