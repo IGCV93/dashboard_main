@@ -179,6 +179,11 @@
                 });
             }
             
+            // Debug: Log what data we're working with
+            console.log('🔍 Dashboard Debug - Raw salesData length:', salesData?.length || 0);
+            console.log('🔍 Dashboard Debug - Filtered data length:', filteredData.length);
+            console.log('🔍 Dashboard Debug - Sample filtered data:', filteredData.slice(0, 3));
+            
             // Aggregate data by Date + Channel + Brand before calculating channel revenues
             const aggregatedData = {};
             filteredData.forEach(record => {
@@ -209,6 +214,11 @@
             
             // Convert aggregated data back to array for further processing
             const aggregatedArray = Object.values(aggregatedData);
+            
+            // Debug: Log aggregation results
+            console.log('🔍 Dashboard Debug - Aggregated data length:', aggregatedArray.length);
+            console.log('🔍 Dashboard Debug - Sample aggregated data:', aggregatedArray.slice(0, 3));
+            console.log('🔍 Dashboard Debug - Total revenue in aggregated data:', aggregatedArray.reduce((sum, d) => sum + (d.revenue || 0), 0));
             
             // Calculate revenue by channel (only for available channels)
             const channelRevenues = {};
