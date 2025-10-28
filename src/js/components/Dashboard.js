@@ -164,7 +164,25 @@
         
         // Calculate KPIs with permission filtering
         const kpis = useMemo(() => {
-            // Data validation function - conservative to avoid excluding legitimate data
+            // Don't calculate KPIs until channels are loaded
+            if (!availableChannels || availableChannels.length === 0) {
+                console.log('🔍 Skipping KPI calculation - channels not loaded yet');
+                return {
+                    totalRevenue: 0,
+                    totalTarget100: 0,
+                    totalTarget85: 0,
+                    kpiAchievement: 0,
+                    achievement100: 0,
+                    gapToKPI: 0,
+                    gapTo100: 0,
+                    channelRevenues: {},
+                    channelTargets100: {},
+                    channelTargets85: {},
+                    channelAchievements: {},
+                    filteredData: [],
+                    availableChannels: []
+                };
+            }
             const validateSalesRecord = (record) => {
                 // Skip records that are clearly invalid
                 if (!record) return false;
