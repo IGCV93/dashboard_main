@@ -33,12 +33,14 @@
             ),
             h('div', { className: 'channel-grid' },
                 channelsToDisplay.map(channel => {
-                    const achievement = kpis.channelAchievements?.[channel] || 0;
-                    const channelClass = channel.toLowerCase().replace(/[\s-]/g, '-');
+                    // Ensure channel is a string
+                    const channelName = typeof channel === 'string' ? channel : (channel?.name || String(channel));
+                    const achievement = kpis.channelAchievements?.[channelName] || 0;
+                    const channelClass = channelName.toLowerCase().replace(/[\s-]/g, '-');
                     
-                    return h('div', { key: channel, className: `channel-card ${channelClass}` },
+                    return h('div', { key: channelName, className: `channel-card ${channelClass}` },
                         h('div', { className: 'channel-header' },
-                            h('h3', { className: 'channel-name' }, channel),
+                            h('h3', { className: 'channel-name' }, channelName),
                             h('span', { 
                                 className: 'channel-badge',
                                 style: {

@@ -567,12 +567,14 @@
             ),
             h('div', { className: 'channel-grid' },
                 channelsToDisplay.map(channel => {
-                    const achievement = kpis.channelAchievements?.[channel] || 0;
-                    const channelClass = channel.toLowerCase().replace(/[\s-]/g, '-');
+                    // Ensure channel is a string
+                    const channelName = typeof channel === 'string' ? channel : (channel?.name || String(channel));
+                    const achievement = kpis.channelAchievements?.[channelName] || 0;
+                    const channelClass = channelName.toLowerCase().replace(/[\s-]/g, '-');
                     
-                    return h('div', { key: channel, className: `channel-card ${channelClass}` },
+                    return h('div', { key: channelName, className: `channel-card ${channelClass}` },
                         h('div', { className: 'channel-header' },
-                            h('h3', { className: 'channel-name' }, channel),
+                            h('h3', { className: 'channel-name' }, channelName),
                             h('span', { 
                                 className: 'channel-badge',
                                 style: {
@@ -1027,20 +1029,22 @@
                     ),
                     h('div', { className: 'channel-grid' },
                         ...availableChannels.map(channel => {
-                            const revenue = kpis.channelRevenues[channel] || 0;
-                            const target = kpis.channelTargets85[channel] || 0;
-                            const achievement = kpis.channelAchievements[channel] || 0;
-                            const channelClass = channel.toLowerCase().replace(/\s+/g, '-').replace('ca-international', 'ca-intl');
+                            // Ensure channel is a string
+                            const channelName = typeof channel === 'string' ? channel : (channel?.name || String(channel));
+                            const revenue = kpis.channelRevenues[channelName] || 0;
+                            const target = kpis.channelTargets85[channelName] || 0;
+                            const achievement = kpis.channelAchievements[channelName] || 0;
+                            const channelClass = channelName.toLowerCase().replace(/\s+/g, '-').replace('ca-international', 'ca-intl');
                             
                             // Get channel-specific color
-                            const channelColor = INITIAL_DATA.CHANNEL_COLORS?.[channel] || '#667eea';
+                            const channelColor = INITIAL_DATA.CHANNEL_COLORS?.[channelName] || '#667eea';
                             
                             return h('div', { 
-                                key: channel,
+                                key: channelName,
                                 className: `channel-card ${channelClass}`
                             },
                                 h('div', { className: 'channel-header' },
-                                    h('h3', { className: 'channel-name' }, channel),
+                                    h('h3', { className: 'channel-name' }, channelName),
                                     h('div', { className: 'channel-achievement' }, `${achievement.toFixed(0)}%`)
                                 ),
                                 h('div', { className: 'channel-metrics' },
