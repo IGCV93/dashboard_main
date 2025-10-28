@@ -145,7 +145,7 @@
         }, [dynamicBrands, userPermissions, userRole]);
         
         // Filter channels based on user permissions
-        const availableChannels = useMemo(() => {
+        const filteredChannels = useMemo(() => {
             const allChannels = (dynamicChannels && dynamicChannels.length > 0) ? dynamicChannels : (INITIAL_DATA.channels || [
                 'Amazon', 'TikTok', 'DTC-Shopify', 'Retail',
                 'CA International', 'UK International', 'Wholesale', 'Omnichannel'
@@ -460,7 +460,7 @@
                 gapTo100,
                 channelAchievements,
                 filteredData,
-                availableChannels // Pass available channels to child components
+                availableChannels: availableChannels // Pass available channels to child components
             };
         }, [salesData, view, selectedPeriod, selectedYear, selectedMonth, selectedBrand, 
             dynamicTargets, availableBrands, availableChannels, userRole, userPermissions]);

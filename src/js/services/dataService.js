@@ -131,6 +131,8 @@
                     return this.loadLocalData();
                 }
             });
+        }
+        
         async loadChannels() {
             return this.getCachedData('channels', async () => {
                 if (this.supabase && this.config.FEATURES.ENABLE_SUPABASE) {
