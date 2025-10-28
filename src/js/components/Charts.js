@@ -72,64 +72,13 @@
             return periodText;
         }, [view, selectedPeriod, selectedMonth, selectedYear]);
         
-        // Data aggregation utility - sums revenue by Date + Channel + Brand
-        const aggregateSalesData = (data) => {
-            const aggregated = {};
-            
-            data.forEach(record => {
-                const date = record.date;
-                // Handle both channel names and channel IDs
-                let channel = record.channel || record.channel_name;
-                
-                // If channel is a number (ID), find the corresponding name from availableChannels
-                if (typeof channel === 'number' || (typeof channel === 'string' && /^\d+$/.test(channel))) {
-                    const channelId = parseInt(channel);
-                    const channelObj = ALL_CHANNELS.find(c => c.id === channelId);
-                    channel = channelObj ? channelObj.name : channel;
-                }
-                
-                const brand = record.brand || record.brand_name;
-                const revenue = parseFloat(record.revenue) || 0;
-                
-                // Create unique key for Date + Channel + Brand combination
-                const key = `${date}|${channel}|${brand}`;
-                
-                if (!aggregated[key]) {
-                    aggregated[key] = {
-                        date: date,
-                        channel: channel,
-                        brand: brand,
-                        revenue: 0,
-                        count: 0,
-                        // Preserve other fields from the first record
-                        ...record
-                    };
-                }
-                
-                // Sum revenue and count records
-                aggregated[key].revenue += revenue;
-                aggregated[key].count += 1;
-            });
-            
-            // Convert back to array
-            return Object.values(aggregated);
-        };
-
         // Optimized data processing with memoization
         const processedChartData = useMemo(() => {
-//             console.log('🔍 Charts: processedChartData useMemo triggered');
-            
             if (!kpis || !kpis.filteredData) {
-//                 console.log('🔍 Charts: processedChartData returning null - no kpis or filteredData');
                 return null;
             }
             
-            // Aggregate data by Date + Channel + Brand before processing
-            const aggregatedData = aggregateSalesData(kpis.filteredData);
-            console.log(`📊 Charts: Aggregated ${kpis.filteredData.length} records into ${aggregatedData.length} unique Date+Channel+Brand combinations`);
-            
-            const filteredSalesData = aggregatedData;
-//             console.log('🔍 Charts: filteredSalesData sample:', filteredSalesData.slice(0, 2));
+            const filteredSalesData = kpis.filteredData;
             // Use explicitly available channels from kpis when provided (permission-filtered), otherwise fallback
             const availableFromKpis = Array.isArray(kpis.availableChannels) && kpis.availableChannels.length > 0
                 ? kpis.availableChannels
@@ -204,15 +153,12 @@
                 const key = normalizeKey(channel);
                 const channelSales = filteredSalesData.filter(d => normalizeKey(d.channel_name || d.channel) === key);
                 const totalRevenue = channelSales.reduce((sum, d) => sum + (d.revenue || 0), 0);
-//                 console.log(`🔍 Charts: Channel "${channel}" (key: "${key}") - Sales: ${channelSales.length}, Revenue: ${totalRevenue}`);
                 return {
                     channel,
                     revenue: totalRevenue,
                     color: CHANNEL_COLORS[channel] || '#6B7280'
                 };
             }).sort((a, b) => b.revenue - a.revenue);
-            
-//             console.log('🔍 Charts: channelData created:', channelData);
             
             // Build 85% target series per label for the selected view (daily/monthly target)
             const totalTarget85 = kpis?.totalTarget85 || 0;
@@ -235,7 +181,6 @@
                 totalRevenue: trendData.reduce((sum, val) => sum + val, 0)
             };
             
-//             console.log('🔍 Charts: processedChartData final result:', result);
             return result;
         }, [kpis, selectedChannels, view, selectedPeriod, selectedMonth, selectedYear, ALL_CHANNELS, CHANNEL_COLORS]);
         

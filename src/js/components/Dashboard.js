@@ -40,49 +40,6 @@
             return str;
         };
 
-        // Data aggregation utility - sums revenue by Date + Channel + Brand
-        const aggregateSalesData = (data) => {
-            const aggregated = {};
-            
-            data.forEach(record => {
-                const date = record.date;
-                // Handle both channel names and channel IDs
-                let channel = record.channel || record.channel_name;
-                
-                // If channel is a number (ID), find the corresponding name from availableChannels
-                if (typeof channel === 'number' || (typeof channel === 'string' && /^\d+$/.test(channel))) {
-                    const channelId = parseInt(channel);
-                    const channelObj = availableChannels.find(c => c.id === channelId);
-                    channel = channelObj ? channelObj.name : channel;
-                }
-                
-                const brand = record.brand || record.brand_name;
-                const revenue = parseFloat(record.revenue) || 0;
-                
-                // Create unique key for Date + Channel + Brand combination
-                const key = `${date}|${channel}|${brand}`;
-                
-                if (!aggregated[key]) {
-                    aggregated[key] = {
-                        date: date,
-                        channel: channel,
-                        brand: brand,
-                        revenue: 0,
-                        count: 0,
-                        // Preserve other fields from the first record
-                        ...record
-                    };
-                }
-                
-                // Sum revenue and count records
-                aggregated[key].revenue += revenue;
-                aggregated[key].count += 1;
-            });
-            
-            // Convert back to array
-            return Object.values(aggregated);
-        };
-
         // Get dependencies from window
         const { formatCurrency, formatPercent } = window.formatters || {};
         const { getDaysInPeriod, getDaysElapsed, getDaysInQuarter, getDaysInMonth } = window.dateUtils || {};
@@ -92,41 +49,6 @@
         
         // State for charts and dynamic channels
         const [selectedChannels, setSelectedChannels] = useState([]);
-        const [availableChannels, setAvailableChannels] = useState([]);
-        
-        // Load channels from database
-        useEffect(() => {
-            const loadChannels = async () => {
-                if (dataService) {
-                    try {
-                        const channels = await dataService.loadChannels();
-                        setAvailableChannels(channels);
-                        
-                        // Initialize selected channels based on user permissions
-                        if (userPermissions?.channels) {
-                            if (userPermissions.channels.includes('All Channels') || userRole === 'Admin') {
-                                setSelectedChannels(channels.map(c => c.name));
-                            } else {
-                                setSelectedChannels(userPermissions.channels);
-                            }
-                        } else {
-                            setSelectedChannels(channels.map(c => c.name));
-                        }
-                    } catch (error) {
-                        console.error('Failed to load channels:', error);
-                        // Fallback to hardcoded channels
-                        const fallbackChannels = [
-                            'Amazon', 'TikTok', 'DTC-Shopify', 'Retail', 
-                            'CA International', 'UK International', 'Wholesale', 'Omnichannel'
-                        ];
-                        setAvailableChannels(fallbackChannels.map((name, index) => ({ id: index + 1, name })));
-                        setSelectedChannels(fallbackChannels);
-                    }
-                }
-            };
-            
-            loadChannels();
-        }, [dataService, userPermissions, userRole]);
         
         // Get initial data
         const INITIAL_DATA = window.ChaiVision?.INITIAL_DATA || {};
@@ -145,7 +67,7 @@
         }, [dynamicBrands, userPermissions, userRole]);
         
         // Filter channels based on user permissions
-        const filteredChannels = useMemo(() => {
+        const availableChannels = useMemo(() => {
             const allChannels = (dynamicChannels && dynamicChannels.length > 0) ? dynamicChannels : (INITIAL_DATA.channels || [
                 'Amazon', 'TikTok', 'DTC-Shopify', 'Retail',
                 'CA International', 'UK International', 'Wholesale', 'Omnichannel'
@@ -164,25 +86,6 @@
         
         // Calculate KPIs with permission filtering
         const kpis = useMemo(() => {
-            // Don't calculate KPIs until channels are loaded
-            if (!availableChannels || availableChannels.length === 0) {
-                console.log('🔍 Skipping KPI calculation - channels not loaded yet');
-                return {
-                    totalRevenue: 0,
-                    totalTarget100: 0,
-                    totalTarget85: 0,
-                    kpiAchievement: 0,
-                    achievement100: 0,
-                    gapToKPI: 0,
-                    gapTo100: 0,
-                    channelRevenues: {},
-                    channelTargets100: {},
-                    channelTargets85: {},
-                    channelAchievements: {},
-                    filteredData: [],
-                    availableChannels: []
-                };
-            }
             const validateSalesRecord = (record) => {
                 // Skip records that are clearly invalid
                 if (!record) return false;
@@ -229,17 +132,7 @@
                     revenue: parseFloat(d.revenue) || 0 // Ensure revenue is a number
                 }));
 
-            // Aggregate data by Date + Channel + Brand before filtering
-            const aggregatedData = aggregateSalesData(canonicalData);
-            console.log(`📊 Aggregated ${canonicalData.length} records into ${aggregatedData.length} unique Date+Channel+Brand combinations`);
-            
-            // Debug: Log sample aggregated data
-            if (aggregatedData.length > 0) {
-                console.log('🔍 Sample aggregated data:', aggregatedData.slice(0, 3));
-                console.log('🔍 Total revenue in aggregated data:', aggregatedData.reduce((sum, d) => sum + (d.revenue || 0), 0));
-            }
-
-            let filteredData = aggregatedData;
+            let filteredData = canonicalData;
             
             // PERMISSION FILTER: Filter by user's brand permissions
             if (userRole !== 'Admin' && userPermissions?.brands && !userPermissions.brands.includes('All Brands')) {
@@ -286,45 +179,22 @@
                 });
             }
             
-            // DEBUG: Log filtering results
-//             console.log('🔍 Dashboard: Filtering debug');
-            
-            // DEBUG: Log what we're filtering for
-            console.log(`🔍 Filtering for: view=${view}, selectedPeriod=${selectedPeriod}, selectedYear=${selectedYear}, selectedBrand=${selectedBrand}`);
-            console.log(`🔍 After filtering: ${filteredData.length} records remain`);
-            if (filteredData.length > 0) {
-                console.log('🔍 Sample filtered data:', filteredData.slice(0, 3));
-                console.log('🔍 Total revenue in filtered data:', filteredData.reduce((sum, d) => sum + (d.revenue || 0), 0));
-            }
-//             console.log('🔍 Dashboard: Filter criteria');
-            
-            // DEBUG: Log sample data dates and brands to see what we're working with
-//             console.log('🔍 Dashboard: Sample data analysis');
-            
             // Calculate revenue by channel (only for available channels)
             const channelRevenues = {};
             availableChannels.forEach(channel => {
-                // Handle both string channels and channel objects
-                const channelName = typeof channel === 'string' ? channel : (channel?.name || String(channel));
-                const chKey = normalizeKey(channelName);
-                channelRevenues[channelName] = filteredData
+                const chKey = normalizeKey(channel);
+                channelRevenues[channel] = filteredData
                     .filter(d => d._channelKey === chKey)
                     .reduce((sum, d) => sum + (d.revenue || 0), 0);
             });
-            
-            // Debug: Log channel revenues
-            console.log('🔍 Channel revenues:', channelRevenues);
-            console.log('🔍 Total revenue from channelRevenues:', Object.values(channelRevenues).reduce((sum, val) => sum + val, 0));
             
             // Get targets (filtered by permissions)
             const channelTargets100 = {};
             const channelTargets85 = {};
             
             availableChannels.forEach(channel => {
-                // Handle both string channels and channel objects
-                const channelName = typeof channel === 'string' ? channel : (channel?.name || String(channel));
-                channelTargets100[channelName] = 0;
-                channelTargets85[channelName] = 0;
+                channelTargets100[channel] = 0;
+                channelTargets85[channel] = 0;
             });
             
             // Calculate targets based on selection and permissions
@@ -353,19 +223,15 @@
                             const dayRatio = daysInThisMonth / daysInThisQuarter;
 
                             availableChannels.forEach(ch => {
-                                // Handle both string channels and channel objects
-                                const channelName = typeof ch === 'string' ? ch : (ch?.name || String(ch));
                                 // Distribute quarterly target based on actual days in month vs quarter
-                                monthlyData[channelName] = (periodData[channelName] || 0) * dayRatio;
+                                monthlyData[ch] = (periodData[ch] || 0) * dayRatio;
                             });
                             periodData = monthlyData;
                         }
                     }
                     if (periodData) {
                         availableChannels.forEach(channel => {
-                            // Handle both string channels and channel objects
-                            const channelName = typeof channel === 'string' ? channel : (channel?.name || String(channel));
-                            channelTargets100[channelName] += periodData[channelName] || 0;
+                            channelTargets100[channel] += periodData[channel] || 0;
                         });
                     }
                 }
@@ -373,20 +239,13 @@
             
             // Calculate 85% targets
             availableChannels.forEach(channel => {
-                // Handle both string channels and channel objects
-                const channelName = typeof channel === 'string' ? channel : (channel?.name || String(channel));
-                channelTargets85[channelName] = channelTargets100[channelName] * 0.85;
+                channelTargets85[channel] = channelTargets100[channel] * 0.85;
             });
             
             const totalTarget100 = Object.values(channelTargets100).reduce((sum, val) => sum + val, 0);
             const totalTarget85 = totalTarget100 * 0.85;
             
             const totalRevenue = Object.values(channelRevenues).reduce((sum, val) => sum + val, 0);
-            
-            // Debug: Log final calculations
-            console.log('🔍 Final totalRevenue:', totalRevenue);
-            console.log('🔍 Final totalTarget100:', totalTarget100);
-            console.log('🔍 Final totalTarget85:', totalTarget85);
             
             // Time calculations
             const daysInPeriod = getDaysInPeriod ? getDaysInPeriod(view, selectedPeriod, selectedYear, selectedMonth) : 30;
@@ -471,10 +330,8 @@
             // Channel achievements (only for available channels)
             const channelAchievements = {};
             availableChannels.forEach(channel => {
-                // Handle both string channels and channel objects
-                const channelName = typeof channel === 'string' ? channel : (channel?.name || String(channel));
-                channelAchievements[channelName] = channelTargets85[channelName] > 0 ? 
-                    (channelRevenues[channelName] / channelTargets85[channelName]) * 100 : 0;
+                channelAchievements[channel] = channelTargets85[channel] > 0 ? 
+                    (channelRevenues[channel] / channelTargets85[channel]) * 100 : 0;
             });
             
             const debugSummary = {
@@ -486,9 +343,6 @@
                 totalRevenue
             };
             try { console.debug('KPIs debug:', debugSummary); } catch (e) {}
-            
-            // DEBUG: Log what we're passing to Charts
-//             console.log('🔍 Dashboard: KPIs being passed to Charts');
 
             return {
                 totalRevenue,
@@ -510,8 +364,7 @@
                 gapToKPI,
                 gapTo100,
                 channelAchievements,
-                filteredData,
-                availableChannels: availableChannels // Pass available channels to child components
+                filteredData
             };
         }, [salesData, view, selectedPeriod, selectedYear, selectedMonth, selectedBrand, 
             dynamicTargets, availableBrands, availableChannels, userRole, userPermissions]);
