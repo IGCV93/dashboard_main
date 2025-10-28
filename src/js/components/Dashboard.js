@@ -179,11 +179,42 @@
                 });
             }
             
+            // Aggregate data by Date + Channel + Brand before calculating channel revenues
+            const aggregatedData = {};
+            filteredData.forEach(record => {
+                const date = record.date;
+                const channel = record._channel || record.channel_name || record.channel;
+                const brand = record._brand || record.brand_name || record.brand;
+                const revenue = parseFloat(record.revenue) || 0;
+                
+                // Create unique key for Date + Channel + Brand combination
+                const key = `${date}|${channel}|${brand}`;
+                
+                if (!aggregatedData[key]) {
+                    aggregatedData[key] = {
+                        date: date,
+                        channel: channel,
+                        brand: brand,
+                        revenue: 0,
+                        count: 0,
+                        // Preserve other fields from the first record
+                        ...record
+                    };
+                }
+                
+                // Sum revenue and count records
+                aggregatedData[key].revenue += revenue;
+                aggregatedData[key].count += 1;
+            });
+            
+            // Convert aggregated data back to array for further processing
+            const aggregatedArray = Object.values(aggregatedData);
+            
             // Calculate revenue by channel (only for available channels)
             const channelRevenues = {};
             availableChannels.forEach(channel => {
                 const chKey = normalizeKey(channel);
-                channelRevenues[channel] = filteredData
+                channelRevenues[channel] = aggregatedArray
                     .filter(d => d._channelKey === chKey)
                     .reduce((sum, d) => sum + (d.revenue || 0), 0);
             });
@@ -364,7 +395,7 @@
                 gapToKPI,
                 gapTo100,
                 channelAchievements,
-                filteredData
+                filteredData: aggregatedArray // Use aggregated data instead of raw filtered data
             };
         }, [salesData, view, selectedPeriod, selectedYear, selectedMonth, selectedBrand, 
             dynamicTargets, availableBrands, availableChannels, userRole, userPermissions]);
