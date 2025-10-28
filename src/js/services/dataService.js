@@ -107,6 +107,26 @@
                         }
                         
                         // Supabase data loaded: ${data?.length || 0} records
+                        
+                        // Check if we got limited data (likely due to Supabase default limit)
+                        if (data && data.length === 1000) {
+                            console.warn('⚠️ Only 1000 records loaded - this might be Supabase default limit. Clearing cache and retrying...');
+                            this.cache.delete('sales_data');
+                            // Retry without cache
+                            const { data: retryData, error: retryError } = await this.supabase
+                                .from('sales_data')
+                                .select('*')
+                                .order('date', { ascending: false })
+                                .limit(1000000);
+                            
+                            if (retryError) {
+                                console.error('❌ Retry Supabase error:', retryError);
+                                throw retryError;
+                            }
+                            
+                            console.log(`✅ Retry successful: ${retryData?.length || 0} records loaded`);
+                            data = retryData;
+                        }
 
                         // Normalize types/fields for frontend calculations
                         const normalized = (data || []).map(row => ({
