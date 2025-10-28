@@ -95,7 +95,7 @@
                 if (this.supabase && this.config.FEATURES.ENABLE_SUPABASE) {
                     try {
                         // Trying Supabase (MAIN DataService)
-                        const { data, error } = await this.supabase
+                        let { data, error } = await this.supabase
                             .from('sales_data')
                             .select('*')
                             .order('date', { ascending: false })
