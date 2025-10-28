@@ -36,6 +36,19 @@
         }
         
         /**
+         * Clear cache for specific key or all cache
+         */
+        clearCache(key = null) {
+            if (key) {
+                this.cache.delete(key);
+                console.log(`🗑️ Cleared cache for: ${key}`);
+            } else {
+                this.cache.clear();
+                console.log('🗑️ Cleared all cache');
+            }
+        }
+        
+        /**
          * Get cached data or fetch fresh data
          */
         async getCachedData(key, fetchFunction) {
@@ -117,6 +130,51 @@
                     // Supabase disabled, using local data
                     return this.loadLocalData();
                 }
+            });
+        async loadChannels() {
+            return this.getCachedData('channels', async () => {
+                if (this.supabase && this.config.FEATURES.ENABLE_SUPABASE) {
+                    try {
+                        const { data, error } = await this.supabase
+                            .from('channels')
+                            .select('id, name, color, icon, is_active')
+                            .eq('is_active', true)
+                            .order('name');
+                        
+                        if (error) {
+                            console.error('❌ Supabase channels error:', error);
+                            throw error;
+                        }
+                        
+                        console.log(`📊 Loaded ${data?.length || 0} channels from database`);
+                        return data || [];
+                    } catch (error) {
+                        console.error('Failed to load channels:', error);
+                        // Fallback to default channels
+                        return [
+                            { id: 1, name: 'Amazon', color: '#FF9900', icon: 'dot', is_active: true },
+                            { id: 2, name: 'TikTok', color: '#000000', icon: 'tiktok', is_active: true },
+                            { id: 3, name: 'DTC-Shopify', color: '#96bf48', icon: 'shopify', is_active: true },
+                            { id: 4, name: 'Retail', color: '#8B5CF6', icon: 'shopping-bag', is_active: true },
+                            { id: 5, name: 'CA International', color: '#DC2626', icon: 'CA', is_active: true },
+                            { id: 6, name: 'UK International', color: '#1E40AF', icon: 'GB', is_active: true },
+                            { id: 7, name: 'Wholesale', color: '#1488A6', icon: 'warehouse', is_active: true },
+                            { id: 8, name: 'Omnichannel', color: '#EC4899', icon: 'globe', is_active: true }
+                        ];
+                    }
+                }
+                
+                // Fallback for non-Supabase mode
+                return [
+                    { id: 1, name: 'Amazon', color: '#FF9900', icon: 'dot', is_active: true },
+                    { id: 2, name: 'TikTok', color: '#000000', icon: 'tiktok', is_active: true },
+                    { id: 3, name: 'DTC-Shopify', color: '#96bf48', icon: 'shopify', is_active: true },
+                    { id: 4, name: 'Retail', color: '#8B5CF6', icon: 'shopping-bag', is_active: true },
+                    { id: 5, name: 'CA International', color: '#DC2626', icon: 'CA', is_active: true },
+                    { id: 6, name: 'UK International', color: '#1E40AF', icon: 'GB', is_active: true },
+                    { id: 7, name: 'Wholesale', color: '#1488A6', icon: 'warehouse', is_active: true },
+                    { id: 8, name: 'Omnichannel', color: '#EC4899', icon: 'globe', is_active: true }
+                ];
             });
         }
         

@@ -873,6 +873,9 @@
                     // Refresh data from database instead of merging with cached data
                     if (dataService) {
                         console.log('🔄 Refreshing data from database after upload...');
+                        // Clear cache to ensure fresh data
+                        dataService.clearCache('sales_data');
+                        dataService.clearCache('channels');
                         const freshData = await dataService.loadSalesData();
                         setSalesData(freshData);
                         console.log(`📊 Loaded ${freshData.length} records from database`);

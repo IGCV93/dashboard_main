@@ -46,7 +46,16 @@
             
             data.forEach(record => {
                 const date = record.date;
-                const channel = record.channel || record.channel_name;
+                // Handle both channel names and channel IDs
+                let channel = record.channel || record.channel_name;
+                
+                // If channel is a number (ID), find the corresponding name from availableChannels
+                if (typeof channel === 'number' || (typeof channel === 'string' && /^\d+$/.test(channel))) {
+                    const channelId = parseInt(channel);
+                    const channelObj = availableChannels.find(c => c.id === channelId);
+                    channel = channelObj ? channelObj.name : channel;
+                }
+                
                 const brand = record.brand || record.brand_name;
                 const revenue = parseFloat(record.revenue) || 0;
                 
@@ -81,22 +90,43 @@
         const ChannelPerformance = window.ChannelPerformance || window.ChaiVision?.components?.ChannelPerformance || (() => null);
         const Charts = window.ChaiVision?.components?.Charts || window.Charts || (() => null);
         
-        // State for charts
+        // State for charts and dynamic channels
         const [selectedChannels, setSelectedChannels] = useState([]);
+        const [availableChannels, setAvailableChannels] = useState([]);
         
-        // Initialize selected channels based on user permissions
+        // Load channels from database
         useEffect(() => {
-            if (userPermissions?.channels) {
-                if (userPermissions.channels.includes('All Channels') || userRole === 'Admin') {
-                    setSelectedChannels([
-                        'Amazon', 'TikTok', 'DTC-Shopify', 'Retail', 
-                        'CA International', 'UK International', 'Wholesale', 'Omnichannel'
-                    ]);
-                } else {
-                    setSelectedChannels(userPermissions.channels);
+            const loadChannels = async () => {
+                if (dataService) {
+                    try {
+                        const channels = await dataService.loadChannels();
+                        setAvailableChannels(channels);
+                        
+                        // Initialize selected channels based on user permissions
+                        if (userPermissions?.channels) {
+                            if (userPermissions.channels.includes('All Channels') || userRole === 'Admin') {
+                                setSelectedChannels(channels.map(c => c.name));
+                            } else {
+                                setSelectedChannels(userPermissions.channels);
+                            }
+                        } else {
+                            setSelectedChannels(channels.map(c => c.name));
+                        }
+                    } catch (error) {
+                        console.error('Failed to load channels:', error);
+                        // Fallback to hardcoded channels
+                        const fallbackChannels = [
+                            'Amazon', 'TikTok', 'DTC-Shopify', 'Retail', 
+                            'CA International', 'UK International', 'Wholesale', 'Omnichannel'
+                        ];
+                        setAvailableChannels(fallbackChannels.map((name, index) => ({ id: index + 1, name })));
+                        setSelectedChannels(fallbackChannels);
+                    }
                 }
-            }
-        }, [userPermissions, userRole]);
+            };
+            
+            loadChannels();
+        }, [dataService, userPermissions, userRole]);
         
         // Get initial data
         const INITIAL_DATA = window.ChaiVision?.INITIAL_DATA || {};

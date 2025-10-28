@@ -78,7 +78,16 @@
             
             data.forEach(record => {
                 const date = record.date;
-                const channel = record.channel || record.channel_name;
+                // Handle both channel names and channel IDs
+                let channel = record.channel || record.channel_name;
+                
+                // If channel is a number (ID), find the corresponding name from availableChannels
+                if (typeof channel === 'number' || (typeof channel === 'string' && /^\d+$/.test(channel))) {
+                    const channelId = parseInt(channel);
+                    const channelObj = ALL_CHANNELS.find(c => c.id === channelId);
+                    channel = channelObj ? channelObj.name : channel;
+                }
+                
                 const brand = record.brand || record.brand_name;
                 const revenue = parseFloat(record.revenue) || 0;
                 
