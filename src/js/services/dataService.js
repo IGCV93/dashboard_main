@@ -110,38 +110,51 @@
                         
                         // Check if we got limited data (likely due to Supabase default limit)
                         if (data && data.length === 1000) {
-                            console.warn('⚠️ Only 1000 records loaded - investigating Supabase limits...');
+                            console.warn('⚠️ Only 1000 records loaded - RLS policy limiting results. Loading all records via pagination...');
                             this.cache.delete('sales_data');
                             
-                            // Test 1: Try without order by
-                            console.log('🔍 Test 1: Query without order by...');
-                            const { data: test1Data, error: test1Error } = await this.supabase
-                                .from('sales_data')
-                                .select('*')
-                                .limit(1000000);
+                            // Load all records using pagination to bypass RLS limit
+                            const allData = [];
+                            let offset = 0;
+                            const pageSize = 1000;
+                            let hasMore = true;
                             
-                            if (!test1Error && test1Data && test1Data.length > 1000) {
-                                console.log(`✅ Test 1 success: ${test1Data.length} records (order by was the issue)`);
-                                data = test1Data;
-                            } else {
-                                console.log(`❌ Test 1 failed: ${test1Data?.length || 0} records`);
+                            while (hasMore) {
+                                console.log(`📄 Loading page ${Math.floor(offset / pageSize) + 1} (offset: ${offset})...`);
                                 
-                                // Test 2: Try with count query
-                                console.log('🔍 Test 2: Count query...');
-                                const { count, error: countError } = await this.supabase
+                                const { data: pageData, error: pageError } = await this.supabase
                                     .from('sales_data')
-                                    .select('*', { count: 'exact', head: true });
+                                    .select('*')
+                                    .order('date', { ascending: false })
+                                    .range(offset, offset + pageSize - 1);
                                 
-                                if (!countError) {
-                                    console.log(`📊 Total records in DB: ${count}`);
-                                    if (count > 1000) {
-                                        console.error('🚨 CONFIRMED: Supabase is limiting results despite .limit(1000000)');
-                                        console.error('🚨 This suggests RLS policies or API limits are blocking the query');
+                                if (pageError) {
+                                    console.error('❌ Page load error:', pageError);
+                                    break;
+                                }
+                                
+                                if (!pageData || pageData.length === 0) {
+                                    hasMore = false;
+                                } else {
+                                    allData.push(...pageData);
+                                    offset += pageSize;
+                                    
+                                    // Safety check to prevent infinite loops
+                                    if (allData.length > 500000) {
+                                        console.warn('⚠️ Safety limit reached (500K records)');
+                                        break;
                                     }
                                 }
                                 
-                                // Use original data for now
-                                console.log('⚠️ Using original 1000 records due to Supabase limitations');
+                                // Small delay to prevent overwhelming the server
+                                await new Promise(resolve => setTimeout(resolve, 100));
+                            }
+                            
+                            if (allData.length > 0) {
+                                console.log(`✅ Pagination successful: ${allData.length} records loaded`);
+                                data = allData;
+                            } else {
+                                console.log('⚠️ Pagination failed, using original 1000 records');
                             }
                         }
 
