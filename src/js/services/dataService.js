@@ -110,22 +110,39 @@
                         
                         // Check if we got limited data (likely due to Supabase default limit)
                         if (data && data.length === 1000) {
-                            console.warn('⚠️ Only 1000 records loaded - this might be Supabase default limit. Clearing cache and retrying...');
+                            console.warn('⚠️ Only 1000 records loaded - investigating Supabase limits...');
                             this.cache.delete('sales_data');
-                            // Retry without cache
-                            const { data: retryData, error: retryError } = await this.supabase
+                            
+                            // Test 1: Try without order by
+                            console.log('🔍 Test 1: Query without order by...');
+                            const { data: test1Data, error: test1Error } = await this.supabase
                                 .from('sales_data')
                                 .select('*')
-                                .order('date', { ascending: false })
                                 .limit(1000000);
                             
-                            if (retryError) {
-                                console.error('❌ Retry Supabase error:', retryError);
-                                throw retryError;
+                            if (!test1Error && test1Data && test1Data.length > 1000) {
+                                console.log(`✅ Test 1 success: ${test1Data.length} records (order by was the issue)`);
+                                data = test1Data;
+                            } else {
+                                console.log(`❌ Test 1 failed: ${test1Data?.length || 0} records`);
+                                
+                                // Test 2: Try with count query
+                                console.log('🔍 Test 2: Count query...');
+                                const { count, error: countError } = await this.supabase
+                                    .from('sales_data')
+                                    .select('*', { count: 'exact', head: true });
+                                
+                                if (!countError) {
+                                    console.log(`📊 Total records in DB: ${count}`);
+                                    if (count > 1000) {
+                                        console.error('🚨 CONFIRMED: Supabase is limiting results despite .limit(1000000)');
+                                        console.error('🚨 This suggests RLS policies or API limits are blocking the query');
+                                    }
+                                }
+                                
+                                // Use original data for now
+                                console.log('⚠️ Using original 1000 records due to Supabase limitations');
                             }
-                            
-                            console.log(`✅ Retry successful: ${retryData?.length || 0} records loaded`);
-                            data = retryData;
                         }
 
                         // Normalize types/fields for frontend calculations
