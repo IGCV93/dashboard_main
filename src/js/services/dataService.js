@@ -12,7 +12,7 @@
             
             // Performance optimizations
             this.cache = new Map();
-            this.cacheTimeout = 0; // No caching for real-time data
+            this.cacheTimeout = 5 * 60 * 1000; // 5 minutes for filtered data
             this.debounceTimers = new Map();
             this.lastUpdate = 0;
             this.updateThreshold = 30000; // 30 seconds
@@ -89,11 +89,20 @@
         }
         
         async loadSalesData(filters = {}) {
-            // Loading sales data with smart filtering (no caching for real-time data)
+            // Loading sales data with smart filtering and caching
             
             if (this.supabase && this.config.FEATURES.ENABLE_SUPABASE) {
                 try {
+                    // Create cache key based on filters
+                    const cacheKey = this.createCacheKey(filters);
                     console.log(`🔍 Loading sales data with filters:`, filters);
+                    
+                    // Check cache first
+                    const cached = this.cache.get(cacheKey);
+                    if (cached && (Date.now() - cached.timestamp) < this.cacheTimeout) {
+                        console.log(`⚡ Cache hit: ${cached.data.length} records`);
+                        return cached.data;
+                    }
                     
                     // Try filtered query first (optimized)
                     let data = await this.loadFilteredData(filters);
@@ -116,6 +125,12 @@
                         date: typeof row.date === 'string' ? row.date.split('T')[0] : row.date
                     }));
                     
+                    // Cache the result
+                    this.cache.set(cacheKey, {
+                        data: normalized,
+                        timestamp: Date.now()
+                    });
+                    
                     console.log(`✅ Final result: ${normalized.length} records loaded`);
                     return normalized;
                 } catch (err) {
@@ -126,6 +141,19 @@
                 // Fallback to demo data
                 return this.loadLocalData();
             }
+        }
+        
+        /**
+         * Create cache key from filters
+         */
+        createCacheKey(filters) {
+            const key = JSON.stringify({
+                startDate: filters.startDate || 'all',
+                endDate: filters.endDate || 'all',
+                brand: filters.brand || 'all',
+                channel: filters.channel || 'all'
+            });
+            return `sales_data_${key}`;
         }
         
         /**

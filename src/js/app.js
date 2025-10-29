@@ -735,6 +735,8 @@
                 try {
                     // Loading initial data
                     setLoading(true);
+                    setError(null);
+                    
                     if (APP_STATE.dataService) {
                         // Build filters based on current selections
                         const filters = {
@@ -768,10 +770,10 @@
                         // No data service available
                         setSalesData([]);
                     }
-                    setLoading(false);
                 } catch (err) {
                     console.error('❌ Failed to load data:', err);
                     setError('Failed to load sales data');
+                } finally {
                     setLoading(false);
                 }
             }
@@ -802,10 +804,15 @@
                 return null;
             }
             
-            // Refresh data when filters change
+            // Refresh data when filters change (with debouncing)
             useEffect(() => {
                 if (isAuthenticated && APP_STATE.dataService) {
-                    loadInitialData();
+                    // Debounce filter changes to prevent rapid API calls
+                    const timeoutId = setTimeout(() => {
+                        loadInitialData();
+                    }, 300); // 300ms delay
+                    
+                    return () => clearTimeout(timeoutId);
                 }
             }, [view, selectedPeriod, selectedYear, selectedMonth, selectedBrand]);
             
