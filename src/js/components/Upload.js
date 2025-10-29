@@ -429,13 +429,16 @@
                     };
                 });
                 
+                let result = null;
+                let actualSavedCount = formattedData.length;
+                
                 if (dataService) {
                     // Use batch processing for large files with progress tracking
                     const configBatchSize = config?.SUPABASE?.PERFORMANCE?.BATCH_SIZE || 1000;
                     const largeFileBatchSize = config?.SUPABASE?.PERFORMANCE?.LARGE_FILE_BATCH_SIZE || 2000;
                     const batchSize = accepted.length > 10000 ? largeFileBatchSize : configBatchSize;
                     
-                    const result = await dataService.batchSaveSalesData(
+                    result = await dataService.batchSaveSalesData(
                         formattedData, 
                         batchSize,
                         (progressData) => {
@@ -453,7 +456,7 @@
                     );
                     
                     // Verify actual records saved by querying the database
-                    let actualSavedCount = result.successfulRows;
+                    actualSavedCount = result.successfulRows;
                     try {
                         const supabase = getSupabaseClient();
                         if (supabase) {
