@@ -93,45 +93,18 @@
             
             if (this.supabase && this.config.FEATURES.ENABLE_SUPABASE) {
                 try {
-                    // Build query based on filters
-                    let query = this.supabase
-                        .from('sales_data')
-                        .select('*')
-                        .order('date', { ascending: false });
-                    
-                    // Apply filters to reduce data load
-                    if (filters.startDate) {
-                        query = query.gte('date', filters.startDate);
-                    }
-                    if (filters.endDate) {
-                        query = query.lte('date', filters.endDate);
-                    }
-                    if (filters.brand && filters.brand !== 'All Brands') {
-                        query = query.eq('brand', filters.brand);
-                    }
-                    if (filters.channel && filters.channel !== 'All Channels') {
-                        query = query.eq('channel', filters.channel);
-                    }
-                    
-                    // Set reasonable limit based on filters
-                    const limit = this.calculateOptimalLimit(filters);
-                    query = query.limit(limit);
-                    
                     console.log(`🔍 Loading sales data with filters:`, filters);
-                    console.log(`📊 Limit set to: ${limit} records`);
                     
-                    const { data, error } = await query;
+                    // Try filtered query first (optimized)
+                    let data = await this.loadFilteredData(filters);
                     
-                    if (error) {
-                        console.error('❌ Supabase error:', error);
-                        throw error;
-                    }
-                    
-                    console.log(`✅ Loaded ${data?.length || 0} records`);
-                    
-                    // Check if we hit the limit (might need more data)
-                    if (data && data.length === limit) {
-                        console.warn(`⚠️ Hit limit of ${limit} records - consider refining filters`);
+                    // If we got 0 records or hit RLS limit (1000), try fallback strategies
+                    if (!data || data.length === 0) {
+                        console.warn('⚠️ Filtered query returned 0 records, trying fallback...');
+                        data = await this.loadWithFallback(filters);
+                    } else if (data.length === 1000) {
+                        console.warn('⚠️ Hit RLS limit (1000 records), loading via pagination...');
+                        data = await this.loadWithPagination(filters);
                     }
                     
                     // Normalize types/fields for frontend calculations
@@ -143,6 +116,7 @@
                         date: typeof row.date === 'string' ? row.date.split('T')[0] : row.date
                     }));
                     
+                    console.log(`✅ Final result: ${normalized.length} records loaded`);
                     return normalized;
                 } catch (err) {
                     console.error('❌ Failed to load sales data:', err);
@@ -152,6 +126,151 @@
                 // Fallback to demo data
                 return this.loadLocalData();
             }
+        }
+        
+        /**
+         * Load data with optimized filters
+         */
+        async loadFilteredData(filters) {
+            let query = this.supabase
+                .from('sales_data')
+                .select('*')
+                .order('date', { ascending: false });
+            
+            // Apply filters to reduce data load
+            if (filters.startDate) {
+                query = query.gte('date', filters.startDate);
+            }
+            if (filters.endDate) {
+                query = query.lte('date', filters.endDate);
+            }
+            if (filters.brand && filters.brand !== 'All Brands') {
+                // Try exact match first, then fallback to case-insensitive
+                query = query.eq('brand', filters.brand);
+            }
+            if (filters.channel && filters.channel !== 'All Channels') {
+                query = query.eq('channel', filters.channel);
+            }
+            
+            // Set reasonable limit based on filters
+            const limit = this.calculateOptimalLimit(filters);
+            query = query.limit(limit);
+            
+            const { data, error } = await query;
+            
+            if (error) {
+                console.error('❌ Filtered query error:', error);
+                throw error;
+            }
+            
+            return data || [];
+        }
+        
+        /**
+         * Fallback: Load without brand filter (case-sensitive matching issue)
+         */
+        async loadWithFallback(filters) {
+            // Try without brand filter (might be case mismatch)
+            const fallbackFilters = { ...filters };
+            delete fallbackFilters.brand;
+            
+            console.log('🔄 Fallback: Trying without brand filter...');
+            let data = await this.loadFilteredData(fallbackFilters);
+            
+            // If still no data, try with just date range
+            if (!data || data.length === 0) {
+                console.log('🔄 Fallback: Trying with date range only...');
+                const dateOnlyFilters = {
+                    startDate: filters.startDate,
+                    endDate: filters.endDate
+                };
+                data = await this.loadFilteredData(dateOnlyFilters);
+            }
+            
+            // Filter client-side for brand (case-insensitive)
+            if (data && data.length > 0 && filters.brand && filters.brand !== 'All Brands') {
+                const brandKey = filters.brand.toLowerCase();
+                data = data.filter(row => {
+                    const rowBrand = String(row.brand || '').toLowerCase();
+                    return rowBrand === brandKey;
+                });
+                console.log(`🔍 Client-side brand filter: ${data.length} records match "${filters.brand}"`);
+            }
+            
+            return data || [];
+        }
+        
+        /**
+         * Load data via pagination when hitting RLS limits
+         */
+        async loadWithPagination(filters) {
+            const allData = [];
+            let offset = 0;
+            const pageSize = 1000;
+            let hasMore = true;
+            const maxPages = 500; // Safety limit
+            
+            console.log('📄 Starting pagination...');
+            
+            while (hasMore && allData.length < 500000 && (offset / pageSize) < maxPages) {
+                let query = this.supabase
+                    .from('sales_data')
+                    .select('*')
+                    .order('date', { ascending: false })
+                    .range(offset, offset + pageSize - 1);
+                
+                // Apply same filters
+                if (filters.startDate) {
+                    query = query.gte('date', filters.startDate);
+                }
+                if (filters.endDate) {
+                    query = query.lte('date', filters.endDate);
+                }
+                if (filters.brand && filters.brand !== 'All Brands') {
+                    query = query.eq('brand', filters.brand);
+                }
+                if (filters.channel && filters.channel !== 'All Channels') {
+                    query = query.eq('channel', filters.channel);
+                }
+                
+                const { data: pageData, error } = await query;
+                
+                if (error) {
+                    console.error('❌ Pagination error:', error);
+                    break;
+                }
+                
+                if (!pageData || pageData.length === 0) {
+                    hasMore = false;
+                } else {
+                    allData.push(...pageData);
+                    offset += pageSize;
+                    
+                    if (offset % 10000 === 0) {
+                        console.log(`📄 Loaded ${allData.length} records so far...`);
+                    }
+                }
+                
+                // Small delay to prevent overwhelming server
+                if (hasMore) {
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+            }
+            
+            console.log(`✅ Pagination complete: ${allData.length} records`);
+            
+            // Apply client-side brand filter if needed (case-insensitive)
+            if (allData.length > 0 && filters.brand && filters.brand !== 'All Brands') {
+                const brandKey = filters.brand.toLowerCase();
+                const filtered = allData.filter(row => {
+                    const rowBrand = String(row.brand || '').toLowerCase();
+                    return rowBrand === brandKey;
+                });
+                console.log(`🔍 Client-side brand filter applied: ${filtered.length} records match "${filters.brand}"`);
+                return filtered;
+            }
+            
+            return allData;
         }
         
         /**
