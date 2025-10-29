@@ -145,8 +145,8 @@
                 query = query.lte('date', filters.endDate);
             }
             if (filters.brand && filters.brand !== 'All Brands') {
-                // Try exact match first, then fallback to case-insensitive
-                query = query.eq('brand', filters.brand);
+                // Use case-insensitive matching for brand names
+                query = query.ilike('brand', filters.brand);
             }
             if (filters.channel && filters.channel !== 'All Channels') {
                 query = query.eq('channel', filters.channel);
@@ -227,7 +227,7 @@
                     query = query.lte('date', filters.endDate);
                 }
                 if (filters.brand && filters.brand !== 'All Brands') {
-                    query = query.eq('brand', filters.brand);
+                    query = query.ilike('brand', filters.brand);
                 }
                 if (filters.channel && filters.channel !== 'All Channels') {
                     query = query.eq('channel', filters.channel);
