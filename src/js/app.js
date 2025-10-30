@@ -743,7 +743,8 @@
                             startDate: getDateRangeStart(view, selectedPeriod, selectedYear, selectedMonth),
                             endDate: getDateRangeEnd(view, selectedPeriod, selectedYear, selectedMonth),
                             brand: selectedBrand,
-                            channel: 'All Channels' // Load all channels, filter in UI
+                            channel: 'All Channels', // Load all channels, filter in UI
+                            view
                         };
                         
                         const data = await APP_STATE.dataService.loadSalesData(filters);

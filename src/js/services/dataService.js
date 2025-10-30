@@ -104,6 +104,34 @@
                         return cached.data;
                     }
                     
+                    // Try RPC aggregate first (fast, small payload)
+                    try {
+                        const granularity = this.getGranularityFromFilters(filters);
+                        const rpcParams = {
+                            start_date: filters.startDate,
+                            end_date: filters.endDate,
+                            brand_filter: (!filters.brand || filters.brand === 'All Brands') ? null : filters.brand,
+                            channel_filter: (!filters.channel || filters.channel === 'All Channels') ? null : filters.channel,
+                            group_by: granularity
+                        };
+                        const { data: rpcData, error: rpcError } = await this.supabase.rpc('sales_agg', rpcParams);
+                        if (!rpcError && Array.isArray(rpcData)) {
+                            const normalizedRpc = (rpcData || []).map(r => ({
+                                date: r.period_date,
+                                brand: r.brand,
+                                channel: r.channel,
+                                revenue: typeof r.revenue === 'string' ? parseFloat(r.revenue) : r.revenue
+                            }));
+                            this.cache.set(cacheKey, { data: normalizedRpc, timestamp: Date.now() });
+                            console.log(`✅ RPC loaded: ${normalizedRpc.length} records (group_by=${granularity})`);
+                            return normalizedRpc;
+                        } else if (rpcError) {
+                            console.warn('RPC sales_agg error, falling back to REST:', rpcError.message || rpcError);
+                        }
+                    } catch (rpcTryErr) {
+                        console.warn('RPC attempt failed, using REST fallback:', rpcTryErr?.message || rpcTryErr);
+                    }
+
                     // Try filtered query first (optimized)
                     let data = await this.loadFilteredData(filters);
                     
@@ -141,6 +169,15 @@
                 // Fallback to demo data
                 return this.loadLocalData();
             }
+        }
+
+        getGranularityFromFilters(filters) {
+            // Expecting caller to pass view info via filters.view (optional). Default month.
+            const view = (filters.view || '').toLowerCase();
+            if (view === 'monthly') return 'day';
+            if (view === 'quarterly') return 'month';
+            if (view === 'annual') return 'month';
+            return 'month';
         }
         
         /**
