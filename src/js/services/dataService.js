@@ -160,9 +160,11 @@
          * Load data with optimized filters
          */
         async loadFilteredData(filters) {
+            // Aggregate at the database: daily totals by date + brand + channel
+            // This dramatically reduces rows while preserving what the UI needs
             let query = this.supabase
                 .from('sales_data')
-                .select('*')
+                .select('date, brand, channel, revenue:sum(revenue)')
                 .order('date', { ascending: false });
             
             // Apply filters to reduce data load
@@ -180,9 +182,9 @@
                 query = query.eq('channel', filters.channel);
             }
             
-            // Set reasonable limit based on filters
+            // No hard limit needed when aggregating, but keep guard for extremely large windows
             const limit = this.calculateOptimalLimit(filters);
-            query = query.limit(limit);
+            if (limit) query = query.limit(limit);
             
             const { data, error } = await query;
             
@@ -243,7 +245,7 @@
             while (hasMore && allData.length < 500000 && (offset / pageSize) < maxPages) {
                 let query = this.supabase
                     .from('sales_data')
-                    .select('*')
+                    .select('date, brand, channel, revenue:sum(revenue)')
                     .order('date', { ascending: false })
                     .range(offset, offset + pageSize - 1);
                 
