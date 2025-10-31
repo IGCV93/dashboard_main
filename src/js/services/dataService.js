@@ -105,8 +105,10 @@
                     }
                     
                     // Try RPC aggregate first (fast, small payload)
+                    console.log('🎯 Attempting RPC call...');
                     try {
                         const granularity = this.getGranularityFromFilters(filters);
+                        console.log(`📊 RPC params: granularity=${granularity}, start=${filters.startDate}, end=${filters.endDate}, brand=${filters.brand}`);
                         const rpcParams = {
                             start_date: filters.startDate,
                             end_date: filters.endDate,
@@ -114,6 +116,7 @@
                             channel_filter: (!filters.channel || filters.channel === 'All Channels') ? null : filters.channel,
                             group_by: granularity
                         };
+                        console.log('📞 Calling sales_agg RPC...', rpcParams);
                         const { data: rpcData, error: rpcError } = await this.supabase.rpc('sales_agg', rpcParams);
                         if (!rpcError && Array.isArray(rpcData)) {
                             const normalizedRpc = (rpcData || []).map(r => ({
@@ -126,10 +129,12 @@
                             console.log(`✅ RPC loaded: ${normalizedRpc.length} records (group_by=${granularity})`);
                             return normalizedRpc;
                         } else if (rpcError) {
-                            console.warn('RPC sales_agg error, falling back to REST:', rpcError.message || rpcError);
+                            console.error('❌ RPC sales_agg error:', rpcError);
+                            console.warn('⚠️ Falling back to REST query due to RPC error');
                         }
                     } catch (rpcTryErr) {
-                        console.warn('RPC attempt failed, using REST fallback:', rpcTryErr?.message || rpcTryErr);
+                        console.error('❌ RPC attempt exception:', rpcTryErr);
+                        console.warn('⚠️ Falling back to REST query due to exception');
                     }
 
                     // Try filtered query first (optimized)
