@@ -105,28 +105,40 @@
                     }
                     
                     // Try RPC aggregate first (fast, small payload)
+                    // Always use 'day' granularity to return daily aggregates
+                    // Dashboard will handle aggregation by date+channel+brand
                     console.log('🎯 Attempting RPC call...');
                     try {
-                        const granularity = this.getGranularityFromFilters(filters);
-                        console.log(`📊 RPC params: granularity=${granularity}, start=${filters.startDate}, end=${filters.endDate}, brand=${filters.brand}`);
+                        // Always request daily aggregates - Dashboard handles grouping
+                        console.log(`📊 RPC params: granularity=day, start=${filters.startDate}, end=${filters.endDate}, brand=${filters.brand}`);
+                        // Normalize brand name for case-insensitive matching
+                        let brandFilter = null;
+                        if (filters.brand && filters.brand !== 'All Brands' && filters.brand !== 'All Brands (Company Total)') {
+                            brandFilter = filters.brand;
+                        }
+                        
                         const rpcParams = {
                             start_date: filters.startDate,
                             end_date: filters.endDate,
-                            brand_filter: (!filters.brand || filters.brand === 'All Brands') ? null : filters.brand,
+                            brand_filter: brandFilter,
                             channel_filter: (!filters.channel || filters.channel === 'All Channels') ? null : filters.channel,
-                            group_by: granularity
+                            group_by: 'day' // Always use daily aggregates for proper Dashboard aggregation
                         };
                         console.log('📞 Calling sales_agg RPC...', rpcParams);
+                        console.log(`🔍 Brand filter applied: ${brandFilter || 'ALL BRANDS'}`);
                         const { data: rpcData, error: rpcError } = await this.supabase.rpc('sales_agg', rpcParams);
                         if (!rpcError && Array.isArray(rpcData)) {
+                            // RPC returns daily aggregates (date+brand+channel already summed per day)
+                            // Format: period_date (actual date), brand, channel, revenue (sum for that day+brand+channel)
                             const normalizedRpc = (rpcData || []).map(r => ({
-                                date: r.period_date,
+                                date: typeof r.period_date === 'string' ? r.period_date.split('T')[0] : r.period_date,
                                 brand: r.brand,
                                 channel: r.channel,
                                 revenue: typeof r.revenue === 'string' ? parseFloat(r.revenue) : r.revenue
                             }));
                             this.cache.set(cacheKey, { data: normalizedRpc, timestamp: Date.now() });
-                            console.log(`✅ RPC loaded: ${normalizedRpc.length} records (group_by=${granularity})`);
+                            console.log(`✅ RPC loaded: ${normalizedRpc.length} records (daily aggregates)`);
+                            console.log(`📊 Sample RPC data:`, normalizedRpc.slice(0, 3));
                             return normalizedRpc;
                         } else if (rpcError) {
                             console.error('❌ RPC sales_agg error:', rpcError);
@@ -177,12 +189,10 @@
         }
 
         getGranularityFromFilters(filters) {
-            // Expecting caller to pass view info via filters.view (optional). Default month.
-            const view = (filters.view || '').toLowerCase();
-            if (view === 'monthly') return 'day';
-            if (view === 'quarterly') return 'month';
-            if (view === 'annual') return 'month';
-            return 'month';
+            // DEPRECATED: Always use 'day' granularity for RPC
+            // Dashboard handles grouping by date+channel+brand regardless of view
+            // This ensures proper aggregation without double-counting
+            return 'day';
         }
         
         /**

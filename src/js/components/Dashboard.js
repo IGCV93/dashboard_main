@@ -151,7 +151,11 @@
             // Filter by selected brand (from dropdown). Treat "All Brands (Company Total)" as company total as well.
             if (selectedBrand !== 'All Brands' && selectedBrand !== 'All Brands (Company Total)') {
                 const selKey = normalizeKey(selectedBrand);
+                const beforeFilterCount = filteredData.length;
                 filteredData = filteredData.filter(d => d._brandKey === selKey);
+                console.log(`🔍 Brand filter "${selectedBrand}": ${beforeFilterCount} → ${filteredData.length} records`);
+                console.log(`🔍 Sample brands in data before filter:`, [...new Set(canonicalData.map(d => d._brand))].slice(0, 5));
+                console.log(`🔍 Sample brands in data after filter:`, [...new Set(filteredData.map(d => d._brand))].slice(0, 5));
             }
             
             // Filter by period
@@ -216,9 +220,15 @@
             const aggregatedArray = Object.values(aggregatedData);
             
             // Debug: Log aggregation results
+            const totalRevenueBeforeAgg = filteredData.reduce((sum, d) => sum + (parseFloat(d.revenue) || 0), 0);
+            const totalRevenueAfterAgg = aggregatedArray.reduce((sum, d) => sum + (d.revenue || 0), 0);
             console.log('🔍 Dashboard Debug - Aggregated data length:', aggregatedArray.length);
             console.log('🔍 Dashboard Debug - Sample aggregated data:', aggregatedArray.slice(0, 3));
-            console.log('🔍 Dashboard Debug - Total revenue in aggregated data:', aggregatedArray.reduce((sum, d) => sum + (d.revenue || 0), 0));
+            console.log('🔍 Dashboard Debug - Total revenue BEFORE aggregation:', totalRevenueBeforeAgg);
+            console.log('🔍 Dashboard Debug - Total revenue AFTER aggregation:', totalRevenueAfterAgg);
+            if (Math.abs(totalRevenueBeforeAgg - totalRevenueAfterAgg) > 0.01) {
+                console.warn('⚠️ Revenue mismatch: aggregation may have changed totals');
+            }
             
             // Calculate revenue by channel (only for available channels)
             const channelRevenues = {};
