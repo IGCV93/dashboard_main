@@ -39,6 +39,58 @@
                 .replace(/[^a-z0-9]+/g, '');
             return str;
         };
+        
+        // Channel name mapping: Maps database channel names to dashboard channel names
+        // This handles variations in how channels are named in uploaded data vs dashboard
+        const CHANNEL_NAME_MAP = {
+            // Exact mappings from database name -> dashboard name
+            'shopify': 'DTC-Shopify',
+            'retailsale': 'Retail',
+            'retail sale': 'Retail',
+            // Add more mappings as needed
+            // Format: normalized_database_name: 'Dashboard Name'
+        };
+        
+        // Reverse mapping for lookup (dashboard -> possible DB variations)
+        const CHANNEL_REVERSE_MAP = {
+            'DTC-Shopify': ['Shopify', 'shopify', 'dtc-shopify', 'DTC Shopify'],
+            'Retail': ['Retail', 'Retail Sale', 'retail sale', 'retail'],
+            // Add more as needed
+        };
+        
+        /**
+         * Map a channel name from database to dashboard format
+         * @param {string} dbChannelName - Channel name from database
+         * @param {Array} availableChannels - List of valid dashboard channel names
+         * @returns {string|null} - Mapped dashboard channel name, or null if no match
+         */
+        const mapChannelName = (dbChannelName, availableChannels) => {
+            if (!dbChannelName) return null;
+            
+            const normalized = normalizeKey(dbChannelName);
+            
+            // First, try exact match
+            const exactMatch = availableChannels.find(ch => 
+                normalizeKey(ch) === normalized
+            );
+            if (exactMatch) return exactMatch;
+            
+            // Try mapping table
+            const mappedName = CHANNEL_NAME_MAP[normalized];
+            if (mappedName && availableChannels.includes(mappedName)) {
+                return mappedName;
+            }
+            
+            // Try fuzzy matching (contains check)
+            const fuzzyMatch = availableChannels.find(ch => {
+                const chNorm = normalizeKey(ch);
+                return normalized.includes(chNorm) || chNorm.includes(normalized);
+            });
+            if (fuzzyMatch) return fuzzyMatch;
+            
+            // No match found - return null to indicate unmapped channel
+            return null;
+        };
 
         // Get dependencies from window
         const { formatCurrency, formatPercent } = window.formatters || {};
@@ -302,24 +354,56 @@
                 console.warn('⚠️ Sample record comparison:', sampleMismatches);
             }
             
-            // Calculate revenue by channel (only for available channels)
+            // Calculate revenue by channel with intelligent mapping
             const channelRevenues = {};
+            const unmappedChannels = new Map(); // Track unmapped channels and their revenue
+            
+            // Initialize all available channels to 0
             availableChannels.forEach(channel => {
-                const chKey = normalizeKey(channel);
-                const channelRevenue = aggregatedArray
-                    .filter(d => {
-                        // Match using normalized channel key if available, otherwise normalize on-the-fly
-                        const dChannelKey = d._channelKey || normalizeKey(d.channel || '');
-                        return dChannelKey === chKey;
-                    })
-                    .reduce((sum, d) => sum + (d.revenue || 0), 0);
-                channelRevenues[channel] = channelRevenue;
+                channelRevenues[channel] = 0;
             });
+            
+            // Process each aggregated record and map it to the correct dashboard channel
+            aggregatedArray.forEach(record => {
+                const dbChannelName = record.channel;
+                const mappedChannel = mapChannelName(dbChannelName, availableChannels);
+                const revenue = record.revenue || 0;
+                
+                if (mappedChannel) {
+                    // Add to mapped channel
+                    channelRevenues[mappedChannel] = (channelRevenues[mappedChannel] || 0) + revenue;
+                } else {
+                    // Track unmapped channel
+                    const currentRevenue = unmappedChannels.get(dbChannelName) || 0;
+                    unmappedChannels.set(dbChannelName, currentRevenue + revenue);
+                }
+            });
+            
+            // If there are unmapped channels with significant revenue, add them to available channels
+            // and show a warning in console
+            if (unmappedChannels.size > 0) {
+                const unmappedList = Array.from(unmappedChannels.entries()).map(([name, rev]) => ({
+                    dbName: name,
+                    revenue: rev
+                }));
+                console.warn(`⚠️ Found ${unmappedChannels.size} unmapped channel(s) in database:`, unmappedList);
+                console.warn(`💡 Tip: Add mapping for these channels in CHANNEL_NAME_MAP to display them correctly`);
+                
+                // For now, add unmapped channels dynamically to show them
+                // In the future, this could be configurable or shown in a separate "Other Channels" section
+                unmappedChannels.forEach((revenue, dbChannelName) => {
+                    // Add to channelRevenues with a marker that it's unmapped
+                    channelRevenues[`${dbChannelName} (Unmapped)`] = revenue;
+                });
+            }
             
             // Debug: Log channel revenue calculation
             console.log('🔍 Dashboard Debug - Channel revenues:', channelRevenues);
             console.log('🔍 Dashboard Debug - Available channels:', availableChannels);
             console.log('🔍 Dashboard Debug - Sample aggregated channels:', [...new Set(aggregatedArray.map(d => d.channel))].slice(0, 10));
+            if (unmappedChannels.size > 0) {
+                console.log('🔍 Dashboard Debug - Unmapped channels revenue:', Object.fromEntries(unmappedChannels));
+            }
             
             // Get targets (filtered by permissions)
             const channelTargets100 = {};
