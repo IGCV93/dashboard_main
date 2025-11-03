@@ -121,16 +121,30 @@
             };
 
             // Build canonical fields for robust filtering with validation
+            // IMPORTANT: Extract revenue FIRST to avoid double-counting if record has multiple revenue fields
             const canonicalData = (salesData || [])
                 .filter(validateSalesRecord)
-                .map(d => ({
-                    ...d,
-                    _brand: (d.brand_name || d.brand || '').trim(),
-                    _brandKey: normalizeKey(d.brand_name || d.brand),
-                    _channel: (d.channel_name || d.channel || '').trim(),
-                    _channelKey: normalizeKey(d.channel_name || d.channel),
-                    revenue: parseFloat(d.revenue) || 0 // Ensure revenue is a number
-                }));
+                .map(d => {
+                    // Extract revenue ONCE and ensure it's a number
+                    const revenueValue = parseFloat(d.revenue) || 0;
+                    return {
+                        // Spread record but exclude revenue fields to avoid duplication
+                        ...Object.fromEntries(
+                            Object.entries(d).filter(([key]) => 
+                                !key.toLowerCase().includes('revenue') && 
+                                key !== 'revenue' && 
+                                key !== 'period_date' // RPC field that's normalized to 'date'
+                            )
+                        ),
+                        // Now add our normalized fields with revenue set explicitly ONCE
+                        date: d.period_date || d.date, // RPC uses period_date, normalize to date
+                        _brand: (d.brand_name || d.brand || '').trim(),
+                        _brandKey: normalizeKey(d.brand_name || d.brand),
+                        _channel: (d.channel_name || d.channel || '').trim(),
+                        _channelKey: normalizeKey(d.channel_name || d.channel),
+                        revenue: revenueValue // Single source of truth for revenue
+                    };
+                });
 
             let filteredData = canonicalData;
             
@@ -189,45 +203,101 @@
             console.log('🔍 Dashboard Debug - Sample filtered data:', filteredData.slice(0, 3));
             
             // Aggregate data by Date + Channel + Brand before calculating channel revenues
-            const aggregatedData = {};
+            // IMPORTANT: RPC data is already aggregated per day+brand+channel, so we only aggregate if there are duplicates
+            // Check if we have duplicate keys - if not, data is already aggregated (from RPC)
+            const keyCounts = {};
+            const keyMap = new Map();
+            
             filteredData.forEach(record => {
-                const date = record.date;
+                const date = typeof record.date === 'string' ? record.date.split('T')[0] : record.date;
                 const channel = record._channel || record.channel_name || record.channel;
                 const brand = record._brand || record.brand_name || record.brand;
                 const revenue = parseFloat(record.revenue) || 0;
                 
-                // Create unique key for Date + Channel + Brand combination
-                const key = `${date}|${channel}|${brand}`;
+                // Use normalized keys for consistent matching
+                const dateKey = date;
+                const channelKey = normalizeKey(channel);
+                const brandKey = normalizeKey(brand);
                 
-                if (!aggregatedData[key]) {
-                    aggregatedData[key] = {
-                        date: date,
-                        channel: channel,
-                        brand: brand,
+                // Create unique key for Date + Channel + Brand combination
+                const key = `${dateKey}|${channelKey}|${brandKey}`;
+                
+                // Track occurrences
+                keyCounts[key] = (keyCounts[key] || 0) + 1;
+                
+                if (!keyMap.has(key)) {
+                    keyMap.set(key, {
+                        date: dateKey,
+                        channel: channel, // Preserve original channel name for display
+                        brand: brand, // Preserve original brand name for display
                         revenue: 0,
-                        count: 0,
-                        // Preserve other fields from the first record
-                        ...record
-                    };
+                        count: 0
+                    });
                 }
                 
-                // Sum revenue and count records
-                aggregatedData[key].revenue += revenue;
-                aggregatedData[key].count += 1;
+                // Only add revenue if this is actually a duplicate (multiple records for same key)
+                // If this is the first occurrence, just set the revenue directly
+                if (keyCounts[key] === 1) {
+                    keyMap.get(key).revenue = revenue; // Set directly for first occurrence
+                    keyMap.get(key).count = 1;
+                } else {
+                    // This is a duplicate - sum the revenue
+                    keyMap.get(key).revenue += revenue;
+                    keyMap.get(key).count += 1;
+                }
             });
             
-            // Convert aggregated data back to array for further processing
-            const aggregatedArray = Object.values(aggregatedData);
+            // Debug: Check for duplicate keys
+            const duplicates = Object.entries(keyCounts).filter(([key, count]) => count > 1);
+            if (duplicates.length > 0) {
+                console.warn(`⚠️ Found ${duplicates.length} duplicate keys - aggregating revenue`);
+                console.warn('⚠️ Sample duplicates:', duplicates.slice(0, 3));
+            } else {
+                console.log(`✅ No duplicate keys found - data is already aggregated (from RPC)`);
+            }
+            
+            // Convert to array for further processing
+            const aggregatedArray = Array.from(keyMap.values());
             
             // Debug: Log aggregation results
-            const totalRevenueBeforeAgg = filteredData.reduce((sum, d) => sum + (parseFloat(d.revenue) || 0), 0);
+            const totalRevenueBeforeAgg = filteredData.reduce((sum, d) => {
+                const rev = parseFloat(d.revenue) || 0;
+                return sum + rev;
+            }, 0);
             const totalRevenueAfterAgg = aggregatedArray.reduce((sum, d) => sum + (d.revenue || 0), 0);
             console.log('🔍 Dashboard Debug - Aggregated data length:', aggregatedArray.length);
             console.log('🔍 Dashboard Debug - Sample aggregated data:', aggregatedArray.slice(0, 3));
+            console.log('🔍 Dashboard Debug - Sample filtered data (first 3 records with revenue):', 
+                filteredData.slice(0, 3).map(r => ({
+                    date: r.date,
+                    channel: r._channel || r.channel,
+                    brand: r._brand || r.brand,
+                    revenue: parseFloat(r.revenue) || 0,
+                    revenueRaw: r.revenue
+                }))
+            );
             console.log('🔍 Dashboard Debug - Total revenue BEFORE aggregation:', totalRevenueBeforeAgg);
             console.log('🔍 Dashboard Debug - Total revenue AFTER aggregation:', totalRevenueAfterAgg);
+            console.log('🔍 Dashboard Debug - Revenue difference:', totalRevenueAfterAgg - totalRevenueBeforeAgg);
             if (Math.abs(totalRevenueBeforeAgg - totalRevenueAfterAgg) > 0.01) {
-                console.warn('⚠️ Revenue mismatch: aggregation may have changed totals');
+                console.warn('⚠️ Revenue mismatch: aggregation changed totals by', 
+                    ((totalRevenueAfterAgg / totalRevenueBeforeAgg - 1) * 100).toFixed(2) + '%');
+                // Check if any aggregated records have revenue that doesn't match source
+                const sampleMismatches = aggregatedArray.slice(0, 5).map(agg => {
+                    const sourceRecords = filteredData.filter(r => {
+                        const rDate = typeof r.date === 'string' ? r.date.split('T')[0] : r.date;
+                        return rDate === agg.date && 
+                               normalizeKey(r._channel || r.channel) === normalizeKey(agg.channel) &&
+                               normalizeKey(r._brand || r.brand) === normalizeKey(agg.brand);
+                    });
+                    return {
+                        key: `${agg.date}|${agg.channel}|${agg.brand}`,
+                        aggRevenue: agg.revenue,
+                        sourceCount: sourceRecords.length,
+                        sourceRevenue: sourceRecords.reduce((sum, r) => sum + (parseFloat(r.revenue) || 0), 0)
+                    };
+                });
+                console.warn('⚠️ Sample record comparison:', sampleMismatches);
             }
             
             // Calculate revenue by channel (only for available channels)
