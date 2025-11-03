@@ -136,10 +136,24 @@
                                 channel: r.channel,
                                 revenue: typeof r.revenue === 'string' ? parseFloat(r.revenue) : r.revenue
                             }));
-                            this.cache.set(cacheKey, { data: normalizedRpc, timestamp: Date.now() });
-                            console.log(`✅ RPC loaded: ${normalizedRpc.length} records (daily aggregates)`);
-                            console.log(`📊 Sample RPC data:`, normalizedRpc.slice(0, 3));
-                            return normalizedRpc;
+                            
+                            // CRITICAL: Check if RPC hit a limit (exactly 1000 records is suspicious for annual data)
+                            // For annual view with daily aggregates, we could have 365 days × multiple channels = 2000+ records
+                            // If we get exactly 1000, it's likely truncated and we need to fall back to REST with pagination
+                            const isAnnualView = filters.view === 'annual';
+                            const isLargeDateRange = filters.startDate && filters.endDate && 
+                                (new Date(filters.endDate) - new Date(filters.startDate)) / (1000 * 60 * 60 * 24) > 90; // More than 90 days
+                            
+                            if (normalizedRpc.length === 1000 && (isAnnualView || isLargeDateRange)) {
+                                console.warn(`⚠️ RPC returned exactly 1000 records (likely limit hit) for ${filters.view} view`);
+                                console.warn(`⚠️ Falling back to REST query with pagination to get all data...`);
+                                // Don't return here - fall through to REST query with pagination
+                            } else {
+                                this.cache.set(cacheKey, { data: normalizedRpc, timestamp: Date.now() });
+                                console.log(`✅ RPC loaded: ${normalizedRpc.length} records (daily aggregates)`);
+                                console.log(`📊 Sample RPC data:`, normalizedRpc.slice(0, 3));
+                                return normalizedRpc;
+                            }
                         } else if (rpcError) {
                             console.error('❌ RPC sales_agg error:', rpcError);
                             console.warn('⚠️ Falling back to REST query due to RPC error');
