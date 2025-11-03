@@ -45,4 +45,36 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 -- Grant execute to anon/authenticated roles
 GRANT EXECUTE ON FUNCTION public.sales_agg(date, date, text, text, text) TO anon, authenticated;
 
+-- Function: sales_channel_agg
+-- Returns aggregated revenue grouped by channel (like SQL GROUP BY channel)
+-- This is much faster than loading all records - returns only 1 row per channel
+CREATE OR REPLACE FUNCTION public.sales_channel_agg(
+    start_date date,
+    end_date date,
+    brand_filter text DEFAULT NULL
+)
+RETURNS TABLE(
+    channel text,
+    total_revenue numeric,
+    record_count bigint
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        sd.channel::text,
+        SUM(sd.revenue)::numeric AS total_revenue,
+        COUNT(*)::bigint AS record_count
+    FROM public.sales_data sd
+    WHERE sd.date BETWEEN start_date AND end_date
+      AND (brand_filter IS NULL OR LOWER(sd.brand) = LOWER(brand_filter))
+    GROUP BY sd.channel
+    ORDER BY total_revenue DESC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Grant execute to anon/authenticated roles
+GRANT EXECUTE ON FUNCTION public.sales_channel_agg(date, date, text) TO anon, authenticated;
+
+
+
 

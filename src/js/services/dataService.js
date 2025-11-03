@@ -88,6 +88,119 @@
             });
         }
         
+        /**
+         * Load aggregated data using database-side aggregation (fast, efficient)
+         * This uses PostgREST aggregate queries similar to SQL GROUP BY
+         */
+        async loadAggregatedSalesData(filters = {}) {
+            if (!this.supabase || !this.config.FEATURES.ENABLE_SUPABASE) {
+                return { totalRevenue: 0, channelRevenues: {}, dailyData: [] };
+            }
+            
+            try {
+                const cacheKey = `agg_${this.createCacheKey(filters)}`;
+                const cached = this.cache.get(cacheKey);
+                if (cached && (Date.now() - cached.timestamp) < this.cacheTimeout) {
+                    console.log(`⚡ Cache hit for aggregated data`);
+                    return cached.data;
+                }
+                
+                // Build base query
+                let query = this.supabase.from('sales_data');
+                
+                // Apply filters
+                if (filters.startDate) {
+                    query = query.gte('date', filters.startDate);
+                }
+                if (filters.endDate) {
+                    query = query.lte('date', filters.endDate);
+                }
+                if (filters.brand && filters.brand !== 'All Brands' && filters.brand !== 'All Brands (Company Total)') {
+                    query = query.ilike('brand', filters.brand);
+                }
+                if (filters.channel && filters.channel !== 'All Channels') {
+                    query = query.ilike('channel', filters.channel);
+                }
+                
+                // Query 1: Get total revenue (single aggregated value)
+                const { data: totalData, error: totalError } = await query
+                    .select('revenue', { count: 'exact', head: false })
+                    .single();
+                
+                // Actually, PostgREST doesn't support SUM directly in select
+                // We need to use RPC or aggregate via grouping
+                // Let's use a channel-grouped query instead
+                
+                // Query 2: Get revenue by channel using RPC (GROUP BY channel) - this is what the user's SQL does
+                // This returns only 1 row per channel with SUM(revenue), much faster!
+                const brandFilter = (filters.brand && filters.brand !== 'All Brands') ? filters.brand : null;
+                const { data: channelData, error: channelError } = await this.supabase.rpc('sales_channel_agg', {
+                    start_date: filters.startDate,
+                    end_date: filters.endDate,
+                    brand_filter: brandFilter
+                });
+                
+                if (channelError) {
+                    console.error('❌ Channel aggregation RPC error:', channelError);
+                    throw channelError;
+                }
+                
+                // Calculate total revenue from channel aggregates
+                const totalRevenue = (channelData || []).reduce((sum, row) => {
+                    return sum + (parseFloat(row.total_revenue) || 0);
+                }, 0);
+                
+                // Map channel aggregates
+                const channelRevenues = {};
+                (channelData || []).forEach(row => {
+                    channelRevenues[row.channel] = parseFloat(row.total_revenue) || 0;
+                });
+                
+                // For charts, we still need daily/monthly aggregates
+                // Use RPC for that but with appropriate granularity
+                let dailyData = [];
+                try {
+                    const granularity = filters.view === 'monthly' ? 'day' : 
+                                       filters.view === 'quarterly' ? 'month' : 
+                                       filters.view === 'annual' ? 'month' : 'day';
+                    
+                    const brandFilter = (filters.brand && filters.brand !== 'All Brands') ? filters.brand : null;
+                    const { data: rpcData } = await this.supabase.rpc('sales_agg', {
+                        start_date: filters.startDate,
+                        end_date: filters.endDate,
+                        brand_filter: brandFilter,
+                        channel_filter: null,
+                        group_by: granularity
+                    });
+                    
+                    if (rpcData) {
+                        dailyData = rpcData.map(r => ({
+                            date: typeof r.period_date === 'string' ? r.period_date.split('T')[0] : r.period_date,
+                            brand: r.brand,
+                            channel: r.channel,
+                            revenue: typeof r.revenue === 'string' ? parseFloat(r.revenue) : r.revenue
+                        }));
+                    }
+                } catch (rpcErr) {
+                    console.warn('⚠️ RPC for chart data failed, using channel aggregates only');
+                }
+                
+                const result = {
+                    totalRevenue,
+                    channelRevenues,
+                    dailyData
+                };
+                
+                this.cache.set(cacheKey, { data: result, timestamp: Date.now() });
+                console.log(`✅ Aggregated data loaded: Total=${totalRevenue}, Channels=${Object.keys(channelRevenues).length}`);
+                return result;
+                
+            } catch (err) {
+                console.error('❌ Failed to load aggregated sales data:', err);
+                return { totalRevenue: 0, channelRevenues: {}, dailyData: [] };
+            }
+        }
+        
         async loadSalesData(filters = {}) {
             // Loading sales data with smart filtering and caching
             
@@ -95,6 +208,26 @@
                 try {
                     // Create cache key based on filters
                     const cacheKey = this.createCacheKey(filters);
+                    
+                    // For dashboard KPIs (total revenue, channel breakdown), use direct aggregation
+                    // This is much faster than loading all records - queries database with GROUP BY
+                    // For annual/quarterly views, we can use aggregated channel data
+                    const shouldUseAggregation = filters.view === 'annual' || 
+                        (filters.view === 'quarterly' && filters.brand && filters.brand !== 'All Brands');
+                    
+                    if (shouldUseAggregation) {
+                        console.log('📊 Using direct database aggregation (like SQL GROUP BY) for efficient loading');
+                        const aggregated = await this.loadAggregatedSalesData(filters);
+                        
+                        // Store aggregated data in cache for Dashboard to access
+                        this.cache.set(`${cacheKey}_aggregated`, { 
+                            data: aggregated, 
+                            timestamp: Date.now() 
+                        });
+                        
+                        // Return dailyData for charts/trends, but Dashboard will use aggregated.channelRevenues for totals
+                        return aggregated.dailyData;
+                    }
                     console.log(`🔍 Loading sales data with filters:`, filters);
                     
                     // Check cache first
