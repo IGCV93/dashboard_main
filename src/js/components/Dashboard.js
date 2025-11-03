@@ -230,6 +230,8 @@
                         date: dateKey,
                         channel: channel, // Preserve original channel name for display
                         brand: brand, // Preserve original brand name for display
+                        _channelKey: channelKey, // Store normalized channel key for filtering
+                        _brandKey: brandKey, // Store normalized brand key for filtering
                         revenue: 0,
                         count: 0
                     });
@@ -304,10 +306,20 @@
             const channelRevenues = {};
             availableChannels.forEach(channel => {
                 const chKey = normalizeKey(channel);
-                channelRevenues[channel] = aggregatedArray
-                    .filter(d => d._channelKey === chKey)
+                const channelRevenue = aggregatedArray
+                    .filter(d => {
+                        // Match using normalized channel key if available, otherwise normalize on-the-fly
+                        const dChannelKey = d._channelKey || normalizeKey(d.channel || '');
+                        return dChannelKey === chKey;
+                    })
                     .reduce((sum, d) => sum + (d.revenue || 0), 0);
+                channelRevenues[channel] = channelRevenue;
             });
+            
+            // Debug: Log channel revenue calculation
+            console.log('🔍 Dashboard Debug - Channel revenues:', channelRevenues);
+            console.log('🔍 Dashboard Debug - Available channels:', availableChannels);
+            console.log('🔍 Dashboard Debug - Sample aggregated channels:', [...new Set(aggregatedArray.map(d => d.channel))].slice(0, 10));
             
             // Get targets (filtered by permissions)
             const channelTargets100 = {};
