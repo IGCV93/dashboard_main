@@ -105,39 +105,19 @@
                     return cached.data;
                 }
                 
-                // Build base query
-                let query = this.supabase.from('sales_data');
-                
-                // Apply filters
-                if (filters.startDate) {
-                    query = query.gte('date', filters.startDate);
-                }
-                if (filters.endDate) {
-                    query = query.lte('date', filters.endDate);
-                }
-                if (filters.brand && filters.brand !== 'All Brands' && filters.brand !== 'All Brands (Company Total)') {
-                    query = query.ilike('brand', filters.brand);
-                }
-                if (filters.channel && filters.channel !== 'All Channels') {
-                    query = query.ilike('channel', filters.channel);
-                }
-                
-                // Query 1: Get total revenue (single aggregated value)
-                const { data: totalData, error: totalError } = await query
-                    .select('revenue', { count: 'exact', head: false })
-                    .single();
-                
-                // Actually, PostgREST doesn't support SUM directly in select
-                // We need to use RPC or aggregate via grouping
-                // Let's use a channel-grouped query instead
-                
-                // Query 2: Get revenue by channel using RPC (GROUP BY channel) - this is what the user's SQL does
-                // This returns only 1 row per channel with SUM(revenue), much faster!
-                const brandFilter = (filters.brand && filters.brand !== 'All Brands') ? filters.brand : null;
+                const normalizedBrand = (filters.brand && filters.brand !== 'All Brands' && filters.brand !== 'All Brands (Company Total)')
+                    ? filters.brand
+                    : null;
+                const normalizedChannel = (filters.channel && filters.channel !== 'All Channels')
+                    ? filters.channel
+                    : null;
+                const startDate = filters.startDate || null;
+                const endDate = filters.endDate || null;
+
                 const { data: channelData, error: channelError } = await this.supabase.rpc('sales_channel_agg', {
-                    start_date: filters.startDate,
-                    end_date: filters.endDate,
-                    brand_filter: brandFilter
+                    start_date: startDate,
+                    end_date: endDate,
+                    brand_filter: normalizedBrand
                 });
                 
                 if (channelError) {
@@ -164,15 +144,19 @@
                                        filters.view === 'quarterly' ? 'month' : 
                                        filters.view === 'annual' ? 'month' : 'day';
                     
-                    const brandFilter = (filters.brand && filters.brand !== 'All Brands') ? filters.brand : null;
-                    const { data: rpcData } = await this.supabase.rpc('sales_agg', {
-                        start_date: filters.startDate,
-                        end_date: filters.endDate,
-                        brand_filter: brandFilter,
-                        channel_filter: null,
+                    const { data: rpcData, error: aggError } = await this.supabase.rpc('sales_agg', {
+                        start_date: startDate,
+                        end_date: endDate,
+                        brand_filter: normalizedBrand,
+                        channel_filter: normalizedChannel,
                         group_by: granularity
                     });
                     
+                    if (aggError) {
+                        console.error('❌ sales_agg RPC error:', aggError);
+                        throw aggError;
+                    }
+
                     if (rpcData) {
                         dailyData = rpcData.map(r => ({
                             date: typeof r.period_date === 'string' ? r.period_date.split('T')[0] : r.period_date,
@@ -182,7 +166,8 @@
                         }));
                     }
                 } catch (rpcErr) {
-                    console.warn('⚠️ RPC for chart data failed, using channel aggregates only');
+                    console.error('❌ Failed to load aggregated chart data via RPC:', rpcErr);
+                    throw rpcErr;
                 }
                 
                 const result = {
@@ -197,7 +182,7 @@
                 
             } catch (err) {
                 console.error('❌ Failed to load aggregated sales data:', err);
-                return { totalRevenue: 0, channelRevenues: {}, dailyData: [] };
+                throw err;
             }
         }
         
@@ -327,7 +312,7 @@
                     return normalized;
                 } catch (err) {
                     console.error('❌ Failed to load sales data:', err);
-                    return [];
+                    throw err;
                 }
             } else {
                 // Fallback to demo data
