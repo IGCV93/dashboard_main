@@ -861,27 +861,16 @@
                     ];
                     
                     const tablesToClean = [
-                        { table: 'kpi_targets', column: 'brand', idColumn: 'brand_id' },
-                        { table: 'kpi_targets_history', column: 'brand', idColumn: 'brand_id' },
-                        { table: 'user_brand_permissions', column: 'brand', idColumn: 'brand_id' }
+                        { table: 'kpi_targets', column: 'brand' },
+                        { table: 'kpi_targets_history', column: 'brand' },
+                        { table: 'user_brand_permissions', column: 'brand' }
                     ];
                     
                     for (const step of cleanupActions) {
                         await step();
                     }
                     
-                    for (const { table, column, idColumn } of tablesToClean) {
-                        if (brandId !== undefined && brandId !== null && idColumn) {
-                            const { error: idDeleteError } = await this.supabase
-                                .from(table)
-                                .delete()
-                                .eq(idColumn, brandId);
-                            
-                            if (idDeleteError && !String(idDeleteError.message || '').toLowerCase().includes('does not exist')) {
-                                throw idDeleteError;
-                            }
-                        }
-                        
+                    for (const { table, column } of tablesToClean) {
                         const { error } = await this.supabase
                             .from(table)
                             .delete()
