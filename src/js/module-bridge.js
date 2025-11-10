@@ -340,6 +340,7 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
                         targets: config.INITIAL_DATA.targets,
                         channels: config.INITIAL_DATA.channels,
                         onUpdate: handleSettingsUpdate,
+                        onDeleteBrand: handleDeleteBrand,
                         salesData // Add sales data for year detection
                     });
                     
@@ -363,6 +364,43 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
                 // Settings updated successfully
             } catch (err) {
                 console.error('Failed to update settings:', err);
+            }
+        };
+
+        const handleDeleteBrand = async ({ brand, brands, targets }) => {
+            if (!brand) {
+                return;
+            }
+            
+            try {
+                if (dataService?.deleteBrand) {
+                    await dataService.deleteBrand(brand);
+                }
+                
+                if (Array.isArray(brands)) {
+                    config.INITIAL_DATA.brands = brands;
+                }
+                if (targets) {
+                    config.INITIAL_DATA.targets = targets;
+                }
+                
+                if (selectedBrand === brand) {
+                    setSelectedBrand('All Brands');
+                } else if (Array.isArray(brands) && !brands.includes(selectedBrand)) {
+                    setSelectedBrand(brands[0] || 'All Brands');
+                }
+                
+                await loadInitialData();
+                
+                if (window.showSuccessMessage) {
+                    window.showSuccessMessage(`Brand "${brand}" deleted successfully`);
+                }
+            } catch (err) {
+                console.error('Failed to delete brand:', err);
+                if (window.showErrorMessage) {
+                    window.showErrorMessage('Failed to delete brand. Please try again.');
+                }
+                throw err;
             }
         };
         

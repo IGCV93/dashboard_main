@@ -779,6 +779,144 @@
             return successCount > 0;
         }
         
+        async updateSettings(updatedData = {}) {
+            if (this.supabase && this.config?.FEATURES?.ENABLE_SUPABASE) {
+                try {
+                    // Persisting settings relies on server-side logic; for now we clear caches
+                    this.clearCache();
+                    return true;
+                } catch (error) {
+                    console.error('Failed to update settings via Supabase:', error);
+                    throw error;
+                }
+            }
+            
+            try {
+                this.config = this.config || {};
+                this.config.INITIAL_DATA = this.config.INITIAL_DATA || {};
+                
+                if (Array.isArray(updatedData.brands)) {
+                    this.config.INITIAL_DATA.brands = updatedData.brands;
+                }
+                
+                if (updatedData.targets) {
+                    this.config.INITIAL_DATA.targets = updatedData.targets;
+                }
+                
+                const persisted = {
+                    brands: updatedData.brands,
+                    targets: updatedData.targets
+                };
+                localStorage.setItem('chai_vision_settings', JSON.stringify(persisted));
+            } catch (error) {
+                console.warn('Unable to persist settings locally:', error);
+            }
+            
+            this.clearCache();
+            return true;
+        }
+        
+        async deleteBrand(brandName) {
+            if (!brandName) {
+                throw new Error('Brand name is required for deletion');
+            }
+            
+            if (this.supabase && this.config?.FEATURES?.ENABLE_SUPABASE) {
+                try {
+                    const tablesToClean = [
+                        { table: 'kpi_targets', column: 'brand' },
+                        { table: 'kpi_targets_history', column: 'brand' },
+                        { table: 'user_brand_permissions', column: 'brand' }
+                    ];
+                    
+                    for (const { table, column } of tablesToClean) {
+                        const { error } = await this.supabase
+                            .from(table)
+                            .delete()
+                            .eq(column, brandName);
+                        
+                        if (error && !String(error.message || '').toLowerCase().includes('does not exist')) {
+                            throw error;
+                        }
+                    }
+                    
+                    const { error: brandDeleteError } = await this.supabase
+                        .from('brands')
+                        .delete()
+                        .eq('name', brandName);
+                    
+                    if (brandDeleteError && !String(brandDeleteError.message || '').toLowerCase().includes('does not exist')) {
+                        throw brandDeleteError;
+                    }
+                    
+                    try {
+                        await this.supabase
+                            .from('audit_logs')
+                            .insert({
+                                action: 'brand_deleted',
+                                user_id: null,
+                                user_email: null,
+                                user_role: 'system',
+                                action_details: { brand_name: brandName },
+                                reference_id: `BRAND_DELETE_${Date.now()}_${brandName}`
+                            });
+                    } catch (auditError) {
+                        console.warn('Unable to log brand deletion:', auditError);
+                    }
+                    
+                    this.clearCache();
+                    return true;
+                } catch (error) {
+                    console.error('Failed to delete brand via Supabase:', error);
+                    throw error;
+                }
+            }
+            
+            this.config = this.config || {};
+            this.config.INITIAL_DATA = this.config.INITIAL_DATA || {};
+            
+            if (Array.isArray(this.config.INITIAL_DATA.brands)) {
+                this.config.INITIAL_DATA.brands = this.config.INITIAL_DATA.brands.filter(brand => brand !== brandName);
+            }
+            
+            if (this.config.INITIAL_DATA.targets) {
+                Object.entries(this.config.INITIAL_DATA.targets).forEach(([year, yearData]) => {
+                    if (!yearData?.brands) {
+                        return;
+                    }
+                    if (yearData.brands[brandName]) {
+                        const updatedBrands = { ...yearData.brands };
+                        delete updatedBrands[brandName];
+                        this.config.INITIAL_DATA.targets[year] = {
+                            ...yearData,
+                            brands: updatedBrands
+                        };
+                    }
+                });
+            }
+            
+            try {
+                const stored = localStorage.getItem('chai_vision_settings');
+                const parsed = stored ? JSON.parse(stored) : {};
+                if (Array.isArray(parsed.brands)) {
+                    parsed.brands = parsed.brands.filter(brand => brand !== brandName);
+                }
+                if (parsed.targets) {
+                    Object.keys(parsed.targets).forEach((year) => {
+                        if (parsed.targets[year]?.brands?.[brandName]) {
+                            delete parsed.targets[year].brands[brandName];
+                        }
+                    });
+                }
+                localStorage.setItem('chai_vision_settings', JSON.stringify(parsed));
+            } catch (error) {
+                console.warn('Unable to update cached settings for brand deletion:', error);
+            }
+            
+            this.clearCache();
+            return true;
+        }
+        
         
         generateSampleData() {
             // Generating sample sales data

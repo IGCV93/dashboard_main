@@ -14,6 +14,7 @@
             targets: initialTargets,
             channels,
             onUpdate,
+            onDeleteBrand,
             userRole,
             userPermissions,
             currentUser,
@@ -92,6 +93,7 @@
         const [dynamicTargets, setDynamicTargets] = useState(initialTargets || {});
         const [error, setError] = useState('');
         const [success, setSuccess] = useState('');
+        const [isProcessing, setIsProcessing] = useState(false);
         
         // Update local state when props change
         useEffect(() => {
@@ -275,6 +277,29 @@
             }
         };
         
+        const removeBrandFromTargets = (targets, brandToRemove) => {
+            if (!targets) return {};
+            
+            const updatedTargets = {};
+            
+            Object.entries(targets).forEach(([year, yearData]) => {
+                if (!yearData) return;
+                
+                const updatedYear = { ...yearData };
+                if (yearData.brands) {
+                    const brandsCopy = { ...yearData.brands };
+                    if (brandsCopy[brandToRemove]) {
+                        delete brandsCopy[brandToRemove];
+                    }
+                    updatedYear.brands = brandsCopy;
+                }
+                
+                updatedTargets[year] = updatedYear;
+            });
+            
+            return updatedTargets;
+        };
+        
         // Handle add new brand
         const handleAddBrand = async () => {
             if (!newBrandName.trim()) {
@@ -407,6 +432,63 @@
             }
         };
         
+        const handleDeleteBrand = async (brand) => {
+            if (!brand) return;
+            
+            if (!canManageBrands) {
+                setError('Only administrators can delete brands.');
+                return;
+            }
+            
+            const confirmed = typeof window !== 'undefined' && window.confirm 
+                ? window.confirm(`Are you sure you want to delete the brand "${brand}"? This action cannot be undone.`)
+                : true;
+            
+            if (!confirmed) {
+                return;
+            }
+            
+            setError('');
+            setSuccess('');
+            setIsProcessing(true);
+            
+            const updatedBrands = dynamicBrands.filter(b => b !== brand);
+            const updatedTargets = removeBrandFromTargets(dynamicTargets, brand);
+            
+            try {
+                if (onDeleteBrand) {
+                    await onDeleteBrand({
+                        brand,
+                        brands: updatedBrands,
+                        targets: updatedTargets
+                    });
+                }
+                
+                setDynamicBrands(updatedBrands);
+                setDynamicTargets(updatedTargets);
+                
+                if (editingBrand === brand) {
+                    setEditingBrand(null);
+                    setEditingValues({});
+                }
+                
+                if (onUpdate) {
+                    await Promise.resolve(onUpdate({
+                        brands: updatedBrands,
+                        targets: updatedTargets
+                    }));
+                }
+                
+                setSuccess(`Brand "${brand}" deleted successfully`);
+                setTimeout(() => setSuccess(''), 3000);
+            } catch (err) {
+                console.error('Failed to delete brand:', err);
+                setError('Failed to delete brand. Please try again.');
+            } finally {
+                setIsProcessing(false);
+            }
+        };
+        
         // Handle saving edited brand
         const handleSaveEdit = async () => {
             if (!editingBrand || !canEdit) return;
@@ -482,7 +564,17 @@
                         h('span', { className: 'alert-icon' }, '🔒'),
                         h('span', { className: 'alert-message' }, 
                             'You have view-only access. Contact an administrator to modify KPI targets.'
-                        )
+                        ),
+                        canManageBrands && h('button', {
+                            className: 'kpi-btn-danger',
+                            onClick: () => handleDeleteBrand(editingBrand),
+                            disabled: isProcessing,
+                            style: {
+                                marginLeft: 'auto',
+                                backgroundColor: '#DC2626',
+                                color: 'white'
+                            }
+                        }, isProcessing ? 'Deleting…' : '🗑️ Delete Brand')
                     )
                 )
             );
@@ -1026,12 +1118,28 @@
                                 onClick: () => {
                                     setEditingBrand(null);
                                     setEditingValues({});
-                                }
+                                },
+                                disabled: isProcessing
                             }, 'Cancel'),
                             h('button', {
                                 className: 'kpi-btn-primary',
-                                onClick: handleSaveEdit
-                            }, '💾 Save Changes')
+                                onClick: handleSaveEdit,
+                                disabled: isProcessing
+                            }, '💾 Save Changes'),
+                            canManageBrands && h('button', {
+                                onClick: () => handleDeleteBrand(editingBrand),
+                                disabled: isProcessing,
+                                style: {
+                                    marginLeft: 'auto',
+                                    backgroundColor: '#DC2626',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    padding: '10px 16px',
+                                    fontWeight: '600',
+                                    cursor: isProcessing ? 'not-allowed' : 'pointer'
+                                }
+                            }, isProcessing ? 'Deleting…' : '🗑️ Delete Brand')
                         )
                     )
                 ),

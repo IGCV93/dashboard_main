@@ -486,6 +486,7 @@
             const [salesData, setSalesData] = useState([]);
             const [loading, setLoading] = useState(true);
             const [error, setError] = useState(null);
+            const initialBrandSetRef = useRef(false);
             
             // Get initial data
             const INITIAL_DATA = window.ChaiVision?.INITIAL_DATA || {};
@@ -654,14 +655,48 @@
             
             // Set default brand on permission change
             useEffect(() => {
-                if (availableBrands.length > 0 && !availableBrands.includes(selectedBrand)) {
-                    if (availableBrands.includes('All Brands')) {
+                if (availableBrands.length === 0) {
+                    return;
+                }
+
+                if (selectedBrand === 'All Brands') {
+                    return;
+                }
+
+                if (!availableBrands.includes(selectedBrand)) {
+                    setSelectedBrand(availableBrands[0]);
+                }
+            }, [availableBrands, selectedBrand]);
+
+            useEffect(() => {
+                if (initialBrandSetRef.current) {
+                    return;
+                }
+
+                if (!isAuthenticated || !currentUser) {
+                    return;
+                }
+
+                const canAccessAllBrands = currentUser.role === 'Admin' ||
+                    userPermissions?.brands?.includes('All Brands');
+
+                if (canAccessAllBrands) {
+                    if (selectedBrand !== 'All Brands') {
                         setSelectedBrand('All Brands');
-                    } else {
-                        setSelectedBrand(availableBrands[0]);
+                    }
+                    initialBrandSetRef.current = true;
+                    return;
+                }
+
+                if (userPermissions?.brands?.length > 0) {
+                    const fallbackBrand = userPermissions.brands[0];
+                    if (selectedBrand !== fallbackBrand) {
+                        setSelectedBrand(fallbackBrand);
                     }
                 }
-            }, [availableBrands]);
+
+                initialBrandSetRef.current = true;
+            }, [isAuthenticated, currentUser, userPermissions, selectedBrand]);
             
             // Handle login
             const handleLogin = async (user) => {
@@ -886,6 +921,64 @@
                 setSalesData(data);
             }
             
+            const handleDeleteBrand = async ({ brand, brands, targets }) => {
+                if (!brand) {
+                    return;
+                }
+                
+                try {
+                    if (APP_STATE.dataService?.deleteBrand) {
+                        await APP_STATE.dataService.deleteBrand(brand);
+                    }
+                    
+                    if (Array.isArray(brands)) {
+                        setDynamicBrands(brands);
+                    }
+                    if (targets) {
+                        setDynamicTargets(targets);
+                    }
+                    
+                    setUserPermissions((prev) => {
+                        if (!prev || !Array.isArray(prev.brands)) {
+                            return prev;
+                        }
+                        
+                        if (prev.brands.includes('All Brands') || !prev.brands.includes(brand)) {
+                            return prev;
+                        }
+                        
+                        const updatedBrands = prev.brands.filter(b => b !== brand);
+                        const updatedPermissions = { ...prev, brands: updatedBrands };
+                        APP_STATE.userPermissions = updatedPermissions;
+                        return updatedPermissions;
+                    });
+                    
+                    if (selectedBrand === brand) {
+                        if (userPermissions?.brands?.includes('All Brands') || currentUser?.role === 'Admin') {
+                            setSelectedBrand('All Brands');
+                        } else if (Array.isArray(brands) && brands.length > 0) {
+                            setSelectedBrand(brands[0]);
+                        } else {
+                            setSelectedBrand('All Brands');
+                        }
+                    }
+                    
+                    if (APP_STATE.preferences?.last_selected_brand === brand) {
+                        APP_STATE.preferences.last_selected_brand = 'All Brands';
+                    }
+                    
+                    if (window.showSuccessMessage) {
+                        window.showSuccessMessage(`Brand "${brand}" deleted successfully`);
+                    }
+                } catch (err) {
+                    console.error('Failed to delete brand:', err);
+                    if (window.showErrorMessage) {
+                        window.showErrorMessage('Failed to delete brand. Please try again.');
+                    }
+                    throw err;
+                }
+            };
+            
             // Handle settings update
             const handleSettingsUpdate = async (updatedData) => {
                 try {
@@ -1109,6 +1202,7 @@
                             targets: dynamicTargets,
                             channels: availableChannels,
                             onUpdate: handleSettingsUpdate,
+                            onDeleteBrand: handleDeleteBrand,
                             userRole: currentUser?.role,
                             userPermissions,
                             currentUser
