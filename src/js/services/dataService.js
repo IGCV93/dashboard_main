@@ -823,13 +823,65 @@
             
             if (this.supabase && this.config?.FEATURES?.ENABLE_SUPABASE) {
                 try {
-                    const tablesToClean = [
-                        { table: 'kpi_targets', column: 'brand' },
-                        { table: 'kpi_targets_history', column: 'brand' },
-                        { table: 'user_brand_permissions', column: 'brand' }
+                    const brandLookup = await this.supabase
+                        .from('brands')
+                        .select('id, name')
+                        .eq('name', brandName)
+                        .maybeSingle();
+                    
+                    if (brandLookup.error) {
+                        throw brandLookup.error;
+                    }
+                    
+                    const brandId = brandLookup.data?.id;
+                    
+                    const cleanupActions = [
+                        async () => {
+                            if (brandId !== undefined && brandId !== null) {
+                                const { error } = await this.supabase
+                                    .from('sales_data')
+                                    .delete()
+                                    .eq('brand_id', brandId);
+                                
+                                if (error && !String(error.message || '').toLowerCase().includes('does not exist')) {
+                                    throw error;
+                                }
+                            }
+                        },
+                        async () => {
+                            const { error } = await this.supabase
+                                .from('sales_data')
+                                .delete()
+                                .eq('brand', brandName);
+                            
+                            if (error && !String(error.message || '').toLowerCase().includes('does not exist')) {
+                                throw error;
+                            }
+                        }
                     ];
                     
-                    for (const { table, column } of tablesToClean) {
+                    const tablesToClean = [
+                        { table: 'kpi_targets', column: 'brand', idColumn: 'brand_id' },
+                        { table: 'kpi_targets_history', column: 'brand', idColumn: 'brand_id' },
+                        { table: 'user_brand_permissions', column: 'brand', idColumn: 'brand_id' }
+                    ];
+                    
+                    for (const step of cleanupActions) {
+                        await step();
+                    }
+                    
+                    for (const { table, column, idColumn } of tablesToClean) {
+                        if (brandId !== undefined && brandId !== null && idColumn) {
+                            const { error: idDeleteError } = await this.supabase
+                                .from(table)
+                                .delete()
+                                .eq(idColumn, brandId);
+                            
+                            if (idDeleteError && !String(idDeleteError.message || '').toLowerCase().includes('does not exist')) {
+                                throw idDeleteError;
+                            }
+                        }
+                        
                         const { error } = await this.supabase
                             .from(table)
                             .delete()
