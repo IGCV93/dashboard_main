@@ -20,11 +20,14 @@
         // New user form state
         const [newUser, setNewUser] = useState({
             email: '',
+            password: '',
             full_name: '',
             role: 'User',
             selectedBrands: [],
             selectedChannels: []
         });
+        const [creatingUser, setCreatingUser] = useState(false);
+        const [createError, setCreateError] = useState('');
         
         // Get Supabase client
         const getSupabaseClient = () => {
@@ -190,6 +193,139 @@
             } catch (err) {
                 console.error('Error sending password reset:', err);
                 alert('Failed to send password reset email');
+            }
+        };
+        
+        // Create new user
+        const createUser = async () => {
+            setCreatingUser(true);
+            setCreateError('');
+            
+            // Validation
+            if (!newUser.email || !newUser.password) {
+                setCreateError('Email and password are required');
+                setCreatingUser(false);
+                return;
+            }
+            
+            if (newUser.password.length < 6) {
+                setCreateError('Password must be at least 6 characters');
+                setCreatingUser(false);
+                return;
+            }
+            
+            const supabase = getSupabaseClient();
+            if (!supabase) {
+                setCreateError('Supabase not configured');
+                setCreatingUser(false);
+                return;
+            }
+            
+            try {
+                // Create user via Supabase Auth
+                const { data: authData, error: authError } = await supabase.auth.signUp({
+                    email: newUser.email,
+                    password: newUser.password,
+                    options: {
+                        data: {
+                            full_name: newUser.full_name || '',
+                            role: newUser.role
+                        },
+                        email_redirect_to: null // Don't require email confirmation for admin-created users
+                    }
+                });
+                
+                if (authError) throw authError;
+                
+                if (!authData.user) {
+                    throw new Error('User creation failed - no user returned');
+                }
+                
+                // Note: If email confirmation is enabled in Supabase settings,
+                // the user may need to confirm their email before they can log in.
+                // Consider disabling email confirmation for admin-created users in Supabase Dashboard.
+                
+                // Wait a moment for the profile trigger to create the profile record
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Update profile with role and full_name
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .update({
+                        full_name: newUser.full_name || '',
+                        role: newUser.role,
+                        status: 'active'
+                    })
+                    .eq('id', authData.user.id);
+                
+                if (profileError) {
+                    console.warn('Profile update error (may be handled by trigger):', profileError);
+                }
+                
+                // Add brand permissions
+                if (newUser.selectedBrands.length > 0) {
+                    await supabase
+                        .from('user_brand_permissions')
+                        .insert(
+                            newUser.selectedBrands.map(brand => ({
+                                user_id: authData.user.id,
+                                brand,
+                                created_by: currentUser.id
+                            }))
+                        );
+                }
+                
+                // Add channel permissions
+                if (newUser.selectedChannels.length > 0) {
+                    await supabase
+                        .from('user_channel_permissions')
+                        .insert(
+                            newUser.selectedChannels.map(channel => ({
+                                user_id: authData.user.id,
+                                channel,
+                                created_by: currentUser.id
+                            }))
+                        );
+                }
+                
+                // Log the action
+                await supabase
+                    .from('audit_logs')
+                    .insert({
+                        user_id: currentUser.id,
+                        user_email: currentUser.email,
+                        user_role: currentUser.role,
+                        action: 'user_created',
+                        action_details: {
+                            new_user_id: authData.user.id,
+                            new_user_email: newUser.email,
+                            role: newUser.role,
+                            brands: newUser.selectedBrands,
+                            channels: newUser.selectedChannels
+                        },
+                        reference_id: `USER_CREATE_${Date.now()}`
+                    });
+                
+                // Store email for success message
+                const createdEmail = newUser.email;
+                
+                // Reset form and close modal
+                setNewUser({
+                    email: '',
+                    password: '',
+                    full_name: '',
+                    role: 'User',
+                    selectedBrands: [],
+                    selectedChannels: []
+                });
+                setShowAddUser(false);
+                loadUsers();
+                alert(`User ${createdEmail} created successfully!`);
+            } catch (err) {
+                console.error('Error creating user:', err);
+                setCreateError(err.message || 'Failed to create user');
+            } finally {
+                setCreatingUser(false);
             }
         };
         
@@ -462,26 +598,145 @@
                 )
             ),
             
-            // Add User Instructions
-            showAddUser && h('div', { className: 'modal-overlay' },
+            // Add User Form Modal
+            showAddUser && h('div', { className: 'modal-overlay', onClick: (e) => {
+                if (e.target.className === 'modal-overlay') {
+                    setShowAddUser(false);
+                    setCreateError('');
+                }
+            }},
                 h('div', { className: 'modal-content' },
                     h('h3', null, 'Add New User'),
-                    h('div', { className: 'info-message' },
-                        h('p', null, 'To add a new user:'),
-                        h('ol', null,
-                            h('li', null, 'Go to Supabase Dashboard → Authentication → Users'),
-                            h('li', null, 'Click "Add user" → "Create new user"'),
-                            h('li', null, 'Enter email and password'),
-                            h('li', null, 'After creation, return here to set permissions')
+                    
+                    createError && h('div', { className: 'error-message', style: { marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#fee', color: '#c33', borderRadius: '4px' } }, createError),
+                    
+                    h('div', { className: 'form-group' },
+                        h('label', null, 'Email *'),
+                        h('input', {
+                            type: 'email',
+                            value: newUser.email,
+                            onChange: (e) => setNewUser({...newUser, email: e.target.value}),
+                            placeholder: 'user@example.com',
+                            disabled: creatingUser
+                        })
+                    ),
+                    
+                    h('div', { className: 'form-group' },
+                        h('label', null, 'Password *'),
+                        h('input', {
+                            type: 'password',
+                            value: newUser.password,
+                            onChange: (e) => setNewUser({...newUser, password: e.target.value}),
+                            placeholder: 'Minimum 6 characters',
+                            disabled: creatingUser
+                        })
+                    ),
+                    
+                    h('div', { className: 'form-group' },
+                        h('label', null, 'Full Name'),
+                        h('input', {
+                            type: 'text',
+                            value: newUser.full_name,
+                            onChange: (e) => setNewUser({...newUser, full_name: e.target.value}),
+                            placeholder: 'John Doe',
+                            disabled: creatingUser
+                        })
+                    ),
+                    
+                    h('div', { className: 'form-group' },
+                        h('label', null, 'Role'),
+                        h('select', {
+                            value: newUser.role,
+                            onChange: (e) => setNewUser({...newUser, role: e.target.value}),
+                            disabled: creatingUser
+                        },
+                            h('option', { value: 'User' }, 'User'),
+                            h('option', { value: 'Manager' }, 'Manager'),
+                            h('option', { value: 'Admin' }, 'Admin')
                         )
                     ),
-                    h('button', {
-                        className: 'btn btn-secondary',
-                        onClick: () => {
-                            setShowAddUser(false);
-                            loadUsers(); // Refresh in case new user was added
-                        }
-                    }, 'Close & Refresh')
+                    
+                    h('div', { className: 'form-group' },
+                        h('label', null, 'Brands'),
+                        h('div', { className: 'checkbox-group' },
+                            brands.map(brand =>
+                                h('label', { key: brand },
+                                    h('input', {
+                                        type: 'checkbox',
+                                        checked: newUser.selectedBrands.includes(brand),
+                                        onChange: (e) => {
+                                            if (e.target.checked) {
+                                                setNewUser({
+                                                    ...newUser,
+                                                    selectedBrands: [...newUser.selectedBrands, brand]
+                                                });
+                                            } else {
+                                                setNewUser({
+                                                    ...newUser,
+                                                    selectedBrands: newUser.selectedBrands.filter(b => b !== brand)
+                                                });
+                                            }
+                                        },
+                                        disabled: creatingUser
+                                    }),
+                                    h('span', null, brand)
+                                )
+                            )
+                        )
+                    ),
+                    
+                    h('div', { className: 'form-group' },
+                        h('label', null, 'Channels'),
+                        h('div', { className: 'checkbox-group' },
+                            channels.map(channel =>
+                                h('label', { key: channel },
+                                    h('input', {
+                                        type: 'checkbox',
+                                        checked: newUser.selectedChannels.includes(channel),
+                                        onChange: (e) => {
+                                            if (e.target.checked) {
+                                                setNewUser({
+                                                    ...newUser,
+                                                    selectedChannels: [...newUser.selectedChannels, channel]
+                                                });
+                                            } else {
+                                                setNewUser({
+                                                    ...newUser,
+                                                    selectedChannels: newUser.selectedChannels.filter(c => c !== channel)
+                                                });
+                                            }
+                                        },
+                                        disabled: creatingUser
+                                    }),
+                                    h('span', null, channel)
+                                )
+                            )
+                        )
+                    ),
+                    
+                    h('div', { className: 'modal-actions' },
+                        h('button', {
+                            className: 'btn btn-primary',
+                            onClick: createUser,
+                            disabled: creatingUser || !newUser.email || !newUser.password
+                        }, creatingUser ? 'Creating...' : 'Create User'),
+                        h('button', {
+                            className: 'btn btn-secondary',
+                            onClick: () => {
+                                setShowAddUser(false);
+                                setCreateError('');
+                                setNewUser({
+                                    email: '',
+                                    password: '',
+                                    full_name: '',
+                                    role: 'User',
+                                    selectedBrands: [],
+                                    selectedChannels: []
+                                });
+                            },
+                            disabled: creatingUser
+                        }, 'Cancel')
+                    )
                 )
             )
         );

@@ -204,14 +204,64 @@
         
         /**
          * Create new user (admin only)
+         * Creates a user via Supabase Auth signUp
          */
         async createUser(userData, password, createdBy) {
-            // This would typically be done via admin API
-            // For now, return instruction
+            if (!this.client) throw new Error('Supabase client not initialized');
+            
+            // Create user via Supabase Auth
+            const { data: authData, error: authError } = await this.client.auth.signUp({
+                email: userData.email,
+                password: password,
+                options: {
+                    data: {
+                        full_name: userData.full_name || '',
+                        role: userData.role || 'User'
+                    },
+                    email_redirect_to: null // Don't require email confirmation for admin-created users
+                }
+            });
+            
+            if (authError) throw authError;
+            
+            if (!authData.user) {
+                throw new Error('User creation failed - no user returned');
+            }
+            
+            // Wait a moment for the profile trigger to create the profile record
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Update profile with role and full_name
+            const { error: profileError } = await this.client
+                .from(this.tables.USERS)
+                .update({
+                    full_name: userData.full_name || '',
+                    role: userData.role || 'User',
+                    status: 'active'
+                })
+                .eq('id', authData.user.id);
+            
+            if (profileError) {
+                console.warn('Profile update error (may be handled by trigger):', profileError);
+            }
+            
+            // Add brand permissions if provided
+            if (userData.brands && userData.brands.length > 0) {
+                await this.updateUserPermissions(authData.user.id, userData.brands, userData.channels || [], createdBy);
+            }
+            
+            // Log the action
+            await this.logAction(createdBy, 'user_created', {
+                new_user_id: authData.user.id,
+                new_user_email: userData.email,
+                role: userData.role,
+                brands: userData.brands || [],
+                channels: userData.channels || []
+            });
+            
             return {
-                message: 'User creation must be done via Supabase Dashboard',
-                userData,
-                nextSteps: 'After creating user in dashboard, update their profile and permissions'
+                user: authData.user,
+                success: true
             };
         }
         
