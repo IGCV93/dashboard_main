@@ -441,7 +441,7 @@
             }
             
             const confirmed = typeof window !== 'undefined' && window.confirm 
-                ? window.confirm(`Are you sure you want to delete the brand "${brand}"? This action cannot be undone.`)
+                ? window.confirm(`Are you sure you want to delete the brand "${brand}"?\n\nThis will permanently delete:\n- All sales data for this brand\n- All KPI targets\n- All user permissions\n\nThis action cannot be undone. For brands with large amounts of data, deletion may take several minutes.`)
                 : true;
             
             if (!confirmed) {
@@ -483,7 +483,12 @@
                 setTimeout(() => setSuccess(''), 3000);
             } catch (err) {
                 console.error('Failed to delete brand:', err);
-                setError('Failed to delete brand. Please try again.');
+                const errorMessage = err?.message || err?.toString() || '';
+                if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+                    setError(`Deletion timed out. The brand "${brand}" has a large amount of sales data. This may take several minutes. Please try again or contact support if the issue persists.`);
+                } else {
+                    setError(`Failed to delete brand: ${errorMessage || 'Please try again.'}`);
+                }
             } finally {
                 setIsProcessing(false);
             }

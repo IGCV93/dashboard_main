@@ -844,6 +844,91 @@
             return this.config?.INITIAL_DATA?.brands || [];
         }
         
+        /**
+         * Delete rows in batches to avoid timeout
+         */
+        async deleteInBatches(table, filterFn, batchSize = 1000) {
+            let totalDeleted = 0;
+            let hasMore = true;
+            const maxIterations = 1000; // Safety limit
+            let iterations = 0;
+            
+            console.log(`🗑️ Starting batch deletion from ${table}...`);
+            
+            while (hasMore && iterations < maxIterations) {
+                iterations++;
+                
+                // Get a batch of IDs to delete
+                let query = this.supabase.from(table).select('id').limit(batchSize);
+                query = filterFn(query);
+                
+                const { data: batch, error: selectError } = await query;
+                
+                if (selectError) {
+                    // If table doesn't have 'id' column, use RPC or direct delete
+                    if (selectError.message?.includes('column') || selectError.code === '42703') {
+                        console.log(`⚠️ Table ${table} doesn't have 'id' column, using direct deletion`);
+                        // Try direct deletion - this may timeout for large datasets
+                        // but it's the best we can do without an ID column
+                        let deleteQuery = this.supabase.from(table).delete();
+                        deleteQuery = filterFn(deleteQuery);
+                        const { error: deleteError, count } = await deleteQuery;
+                        
+                        if (deleteError) {
+                            // Check if it's a timeout
+                            if (deleteError.code === '57014' || deleteError.message?.includes('timeout')) {
+                                throw new Error(`Deletion timed out. The brand has too much data. Please delete sales data manually or contact support.`);
+                            }
+                            throw deleteError;
+                        }
+                        
+                        console.log(`✅ Direct deletion completed for ${table}`);
+                        hasMore = false;
+                        break;
+                    }
+                    throw selectError;
+                }
+                
+                if (!batch || batch.length === 0) {
+                    hasMore = false;
+                    break;
+                }
+                
+                // Delete this batch by IDs
+                const ids = batch.map(row => row.id);
+                const { error: deleteError, count } = await this.supabase
+                    .from(table)
+                    .delete()
+                    .in('id', ids);
+                
+                if (deleteError) {
+                    // Check for timeout
+                    if (deleteError.code === '57014' || deleteError.message?.includes('timeout')) {
+                        throw new Error(`Deletion timed out after deleting ${totalDeleted} rows. Please try again or contact support.`);
+                    }
+                    throw deleteError;
+                }
+                
+                const deletedCount = count || ids.length;
+                totalDeleted += deletedCount;
+                
+                console.log(`🗑️ Deleted batch ${iterations}: ${deletedCount} rows (total: ${totalDeleted})`);
+                
+                // If we got fewer than batchSize, we're done
+                if (batch.length < batchSize) {
+                    hasMore = false;
+                }
+                
+                // Small delay to prevent overwhelming the server
+                if (hasMore) {
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                }
+            }
+            
+            console.log(`✅ Batch deletion complete: ${totalDeleted} rows deleted from ${table}`);
+            return totalDeleted;
+        }
+        
         async deleteBrand(brandName) {
             if (!brandName) {
                 throw new Error('Brand name is required for deletion');
@@ -865,39 +950,43 @@
                     
                     const cleanupActions = [
                         async () => {
+                            // Delete sales_data by brand_id in batches
                             if (brandId !== undefined && brandId !== null) {
-                                const { error } = await this.supabase
-                                    .from('sales_data')
-                                    .delete()
-                                    .eq('brand_id', brandId);
-                                
-                                if (error && !String(error.message || '').toLowerCase().includes('does not exist')) {
-                                    throw error;
+                                try {
+                                    await this.deleteInBatches('sales_data', (query) => {
+                                        return query.eq('brand_id', brandId);
+                                    });
+                                } catch (error) {
+                                    // If brand_id column doesn't exist, continue to brand name deletion
+                                    if (!error.message?.includes('column') && error.code !== '42703') {
+                                        throw error;
+                                    }
                                 }
                             }
                         },
                         async () => {
-                            // Case-insensitive deletion using ILIKE pattern matching
-                            // First, get all matching brand names (case variations)
+                            // Delete sales_data by brand name in batches (case-insensitive)
+                            // Get unique brand name variations first
                             const { data: matchingRows } = await this.supabase
                                 .from('sales_data')
                                 .select('brand')
-                                .ilike('brand', brandName);
+                                .ilike('brand', brandName)
+                                .limit(1); // Just check if any exist
                             
                             if (matchingRows && matchingRows.length > 0) {
-                                // Get unique brand name variations
-                                const uniqueBrands = [...new Set(matchingRows.map(r => r.brand))];
+                                // Get all unique brand name variations
+                                const { data: allMatching } = await this.supabase
+                                    .from('sales_data')
+                                    .select('brand')
+                                    .ilike('brand', brandName);
                                 
-                                // Delete each variation
+                                const uniqueBrands = [...new Set((allMatching || []).map(r => r.brand))];
+                                
+                                // Delete each variation in batches
                                 for (const brandVariation of uniqueBrands) {
-                                    const { error } = await this.supabase
-                                        .from('sales_data')
-                                        .delete()
-                                        .eq('brand', brandVariation);
-                                    
-                                    if (error && !String(error.message || '').toLowerCase().includes('does not exist')) {
-                                        throw error;
-                                    }
+                                    await this.deleteInBatches('sales_data', (query) => {
+                                        return query.eq('brand', brandVariation);
+                                    });
                                 }
                             }
                         }
