@@ -631,6 +631,26 @@
                 checkAuth();
             }, []);
             
+            // Load brands from database on authentication
+            useEffect(() => {
+                const loadBrandsFromDB = async () => {
+                    if (isAuthenticated && APP_STATE.dataService?.loadBrands) {
+                        try {
+                            const dbBrands = await APP_STATE.dataService.loadBrands();
+                            if (Array.isArray(dbBrands) && dbBrands.length > 0) {
+                                setDynamicBrands(dbBrands);
+                            }
+                        } catch (error) {
+                            console.error('Failed to load brands from database:', error);
+                        }
+                    }
+                };
+                
+                if (isAuthenticated) {
+                    loadBrandsFromDB();
+                }
+            }, [isAuthenticated]);
+            
             // Filter brands based on user permissions
             const availableBrands = useMemo(() => {
                 if (!currentUser || !userPermissions.brands) return [];
@@ -931,9 +951,18 @@
                         await APP_STATE.dataService.deleteBrand(brand);
                     }
                     
-                    if (Array.isArray(brands)) {
+                    // Reload brands from database after deletion
+                    if (APP_STATE.dataService?.loadBrands) {
+                        const dbBrands = await APP_STATE.dataService.loadBrands();
+                        if (Array.isArray(dbBrands) && dbBrands.length > 0) {
+                            setDynamicBrands(dbBrands);
+                        } else if (Array.isArray(brands)) {
+                            setDynamicBrands(brands);
+                        }
+                    } else if (Array.isArray(brands)) {
                         setDynamicBrands(brands);
                     }
+                    
                     if (targets) {
                         setDynamicTargets(targets);
                     }

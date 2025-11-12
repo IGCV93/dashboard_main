@@ -816,6 +816,34 @@
             return true;
         }
         
+        /**
+         * Load brands from the brands table
+         */
+        async loadBrands() {
+            if (this.supabase && this.config?.FEATURES?.ENABLE_SUPABASE) {
+                try {
+                    const { data, error } = await this.supabase
+                        .from('brands')
+                        .select('name')
+                        .order('name', { ascending: true });
+                    
+                    if (error) {
+                        console.error('Failed to load brands:', error);
+                        // Fallback to INITIAL_DATA
+                        return this.config?.INITIAL_DATA?.brands || [];
+                    }
+                    
+                    return (data || []).map(b => b.name);
+                } catch (error) {
+                    console.error('Error loading brands:', error);
+                    return this.config?.INITIAL_DATA?.brands || [];
+                }
+            }
+            
+            // Fallback for demo mode
+            return this.config?.INITIAL_DATA?.brands || [];
+        }
+        
         async deleteBrand(brandName) {
             if (!brandName) {
                 throw new Error('Brand name is required for deletion');
@@ -849,13 +877,28 @@
                             }
                         },
                         async () => {
-                            const { error } = await this.supabase
+                            // Case-insensitive deletion using ILIKE pattern matching
+                            // First, get all matching brand names (case variations)
+                            const { data: matchingRows } = await this.supabase
                                 .from('sales_data')
-                                .delete()
-                                .eq('brand', brandName);
+                                .select('brand')
+                                .ilike('brand', brandName);
                             
-                            if (error && !String(error.message || '').toLowerCase().includes('does not exist')) {
-                                throw error;
+                            if (matchingRows && matchingRows.length > 0) {
+                                // Get unique brand name variations
+                                const uniqueBrands = [...new Set(matchingRows.map(r => r.brand))];
+                                
+                                // Delete each variation
+                                for (const brandVariation of uniqueBrands) {
+                                    const { error } = await this.supabase
+                                        .from('sales_data')
+                                        .delete()
+                                        .eq('brand', brandVariation);
+                                    
+                                    if (error && !String(error.message || '').toLowerCase().includes('does not exist')) {
+                                        throw error;
+                                    }
+                                }
                             }
                         }
                     ];
@@ -870,14 +913,27 @@
                         await step();
                     }
                     
+                    // Case-insensitive deletion for other tables
                     for (const { table, column } of tablesToClean) {
-                        const { error } = await this.supabase
+                        // Get matching rows with case variations
+                        const { data: matchingRows } = await this.supabase
                             .from(table)
-                            .delete()
-                            .eq(column, brandName);
+                            .select(column)
+                            .ilike(column, brandName);
                         
-                        if (error && !String(error.message || '').toLowerCase().includes('does not exist')) {
-                            throw error;
+                        if (matchingRows && matchingRows.length > 0) {
+                            const uniqueValues = [...new Set(matchingRows.map(r => r[column]))];
+                            
+                            for (const value of uniqueValues) {
+                                const { error } = await this.supabase
+                                    .from(table)
+                                    .delete()
+                                    .eq(column, value);
+                                
+                                if (error && !String(error.message || '').toLowerCase().includes('does not exist')) {
+                                    throw error;
+                                }
+                            }
                         }
                     }
                     
