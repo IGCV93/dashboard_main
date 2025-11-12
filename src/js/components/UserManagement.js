@@ -599,127 +599,188 @@
             ),
             
             // Add User Form Modal
-            showAddUser && h('div', { className: 'modal-overlay', onClick: (e) => {
-                if (e.target.className === 'modal-overlay') {
+            showAddUser && h('div', { className: 'user-modal-overlay', onClick: (e) => {
+                if (e.target.className === 'user-modal-overlay') {
                     setShowAddUser(false);
                     setCreateError('');
                 }
             }},
-                h('div', { className: 'modal-content' },
-                    h('h3', null, 'Add New User'),
-                    
-                    createError && h('div', { className: 'error-message', style: { marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#fee', color: '#c33', borderRadius: '4px' } }, createError),
-                    
-                    h('div', { className: 'form-group' },
-                        h('label', null, 'Email *'),
-                        h('input', {
-                            type: 'email',
-                            value: newUser.email,
-                            onChange: (e) => setNewUser({...newUser, email: e.target.value}),
-                            placeholder: 'user@example.com',
-                            disabled: creatingUser
-                        })
-                    ),
-                    
-                    h('div', { className: 'form-group' },
-                        h('label', null, 'Password *'),
-                        h('input', {
-                            type: 'password',
-                            value: newUser.password,
-                            onChange: (e) => setNewUser({...newUser, password: e.target.value}),
-                            placeholder: 'Minimum 6 characters',
-                            disabled: creatingUser
-                        })
-                    ),
-                    
-                    h('div', { className: 'form-group' },
-                        h('label', null, 'Full Name'),
-                        h('input', {
-                            type: 'text',
-                            value: newUser.full_name,
-                            onChange: (e) => setNewUser({...newUser, full_name: e.target.value}),
-                            placeholder: 'John Doe',
-                            disabled: creatingUser
-                        })
-                    ),
-                    
-                    h('div', { className: 'form-group' },
-                        h('label', null, 'Role'),
-                        h('select', {
-                            value: newUser.role,
-                            onChange: (e) => setNewUser({...newUser, role: e.target.value}),
-                            disabled: creatingUser
-                        },
-                            h('option', { value: 'User' }, 'User'),
-                            h('option', { value: 'Manager' }, 'Manager'),
-                            h('option', { value: 'Admin' }, 'Admin')
-                        )
-                    ),
-                    
-                    h('div', { className: 'form-group' },
-                        h('label', null, 'Brands'),
-                        h('div', { className: 'checkbox-group' },
-                            brands.map(brand =>
-                                h('label', { key: brand },
-                                    h('input', {
-                                        type: 'checkbox',
-                                        checked: newUser.selectedBrands.includes(brand),
-                                        onChange: (e) => {
-                                            if (e.target.checked) {
-                                                setNewUser({
-                                                    ...newUser,
-                                                    selectedBrands: [...newUser.selectedBrands, brand]
-                                                });
-                                            } else {
-                                                setNewUser({
-                                                    ...newUser,
-                                                    selectedBrands: newUser.selectedBrands.filter(b => b !== brand)
-                                                });
-                                            }
-                                        },
-                                        disabled: creatingUser
-                                    }),
-                                    h('span', null, brand)
-                                )
-                            )
-                        )
-                    ),
-                    
-                    h('div', { className: 'form-group' },
-                        h('label', null, 'Channels'),
-                        h('div', { className: 'checkbox-group' },
-                            channels.map(channel =>
-                                h('label', { key: channel },
-                                    h('input', {
-                                        type: 'checkbox',
-                                        checked: newUser.selectedChannels.includes(channel),
-                                        onChange: (e) => {
-                                            if (e.target.checked) {
-                                                setNewUser({
-                                                    ...newUser,
-                                                    selectedChannels: [...newUser.selectedChannels, channel]
-                                                });
-                                            } else {
-                                                setNewUser({
-                                                    ...newUser,
-                                                    selectedChannels: newUser.selectedChannels.filter(c => c !== channel)
-                                                });
-                                            }
-                                        },
-                                        disabled: creatingUser
-                                    }),
-                                    h('span', null, channel)
-                                )
-                            )
-                        )
-                    ),
-                    
-                    h('div', { className: 'modal-actions' },
+                h('div', { className: 'user-modal-content' },
+                    // Modal Header
+                    h('div', { className: 'user-modal-header' },
+                        h('h3', null, 'Add New User'),
                         h('button', {
-                            className: 'btn btn-primary',
-                            onClick: createUser,
-                            disabled: creatingUser || !newUser.email || !newUser.password
-                        }, creatingUser ? 'Creating...' : 'Create User'),
+                            className: 'user-modal-close',
+                            onClick: () => {
+                                setShowAddUser(false);
+                                setCreateError('');
+                                setNewUser({
+                                    email: '',
+                                    password: '',
+                                    full_name: '',
+                                    role: 'User',
+                                    selectedBrands: [],
+                                    selectedChannels: []
+                                });
+                            },
+                            disabled: creatingUser
+                        }, '×')
+                    ),
+                    
+                    // Modal Body
+                    h('div', { className: 'user-modal-body' },
+                        createError && h('div', { className: 'user-form-error' }, createError),
+                        
+                        // Basic Information Section
+                        h('div', { className: 'form-section' },
+                            h('h4', { className: 'section-title' }, 'Basic Information'),
+                            h('div', { className: 'form-row' },
+                                h('div', { className: 'form-group' },
+                                    h('label', null, 'Email Address *'),
+                                    h('input', {
+                                        type: 'email',
+                                        value: newUser.email,
+                                        onChange: (e) => setNewUser({...newUser, email: e.target.value}),
+                                        placeholder: 'user@example.com',
+                                        disabled: creatingUser
+                                    })
+                                ),
+                                h('div', { className: 'form-group' },
+                                    h('label', null, 'Password *'),
+                                    h('input', {
+                                        type: 'password',
+                                        value: newUser.password,
+                                        onChange: (e) => setNewUser({...newUser, password: e.target.value}),
+                                        placeholder: 'Minimum 6 characters',
+                                        disabled: creatingUser
+                                    })
+                                )
+                            ),
+                            h('div', { className: 'form-row' },
+                                h('div', { className: 'form-group' },
+                                    h('label', null, 'Full Name'),
+                                    h('input', {
+                                        type: 'text',
+                                        value: newUser.full_name,
+                                        onChange: (e) => setNewUser({...newUser, full_name: e.target.value}),
+                                        placeholder: 'John Doe',
+                                        disabled: creatingUser
+                                    })
+                                ),
+                                h('div', { className: 'form-group' },
+                                    h('label', null, 'Role'),
+                                    h('select', {
+                                        value: newUser.role,
+                                        onChange: (e) => setNewUser({...newUser, role: e.target.value}),
+                                        disabled: creatingUser
+                                    },
+                                        h('option', { value: 'User' }, 'User'),
+                                        h('option', { value: 'Manager' }, 'Manager'),
+                                        h('option', { value: 'Admin' }, 'Admin')
+                                    )
+                                )
+                            )
+                        ),
+                        
+                        // Permissions Section - Brands
+                        h('div', { className: 'form-section' },
+                            h('div', { className: 'section-header' },
+                                h('h4', { className: 'section-title' }, 'Brand Permissions'),
+                                h('button', {
+                                    type: 'button',
+                                    className: 'select-all-btn',
+                                    onClick: () => {
+                                        if (newUser.selectedBrands.length === brands.length) {
+                                            setNewUser({...newUser, selectedBrands: []});
+                                        } else {
+                                            setNewUser({...newUser, selectedBrands: [...brands]});
+                                        }
+                                    },
+                                    disabled: creatingUser
+                                }, newUser.selectedBrands.length === brands.length ? 'Deselect All' : 'Select All')
+                            ),
+                            h('div', { className: 'checkbox-group' },
+                                brands.map(brand => {
+                                    const isChecked = newUser.selectedBrands.includes(brand);
+                                    return h('label', { 
+                                        key: brand, 
+                                        className: `checkbox-item ${isChecked ? 'checked' : ''}` 
+                                    },
+                                        h('input', {
+                                            type: 'checkbox',
+                                            checked: isChecked,
+                                            onChange: (e) => {
+                                                if (e.target.checked) {
+                                                    setNewUser({
+                                                        ...newUser,
+                                                        selectedBrands: [...newUser.selectedBrands, brand]
+                                                    });
+                                                } else {
+                                                    setNewUser({
+                                                        ...newUser,
+                                                        selectedBrands: newUser.selectedBrands.filter(b => b !== brand)
+                                                    });
+                                                }
+                                            },
+                                            disabled: creatingUser
+                                        }),
+                                        h('span', { className: 'checkbox-label' }, brand)
+                                    );
+                                })
+                            )
+                        ),
+                        
+                        // Permissions Section - Channels
+                        h('div', { className: 'form-section' },
+                            h('div', { className: 'section-header' },
+                                h('h4', { className: 'section-title' }, 'Channel Permissions'),
+                                h('button', {
+                                    type: 'button',
+                                    className: 'select-all-btn',
+                                    onClick: () => {
+                                        if (newUser.selectedChannels.length === channels.length) {
+                                            setNewUser({...newUser, selectedChannels: []});
+                                        } else {
+                                            setNewUser({...newUser, selectedChannels: [...channels]});
+                                        }
+                                    },
+                                    disabled: creatingUser
+                                }, newUser.selectedChannels.length === channels.length ? 'Deselect All' : 'Select All')
+                            ),
+                            h('div', { className: 'checkbox-group' },
+                                channels.map(channel => {
+                                    const isChecked = newUser.selectedChannels.includes(channel);
+                                    return h('label', { 
+                                        key: channel, 
+                                        className: `checkbox-item ${isChecked ? 'checked' : ''}` 
+                                    },
+                                        h('input', {
+                                            type: 'checkbox',
+                                            checked: isChecked,
+                                            onChange: (e) => {
+                                                if (e.target.checked) {
+                                                    setNewUser({
+                                                        ...newUser,
+                                                        selectedChannels: [...newUser.selectedChannels, channel]
+                                                    });
+                                                } else {
+                                                    setNewUser({
+                                                        ...newUser,
+                                                        selectedChannels: newUser.selectedChannels.filter(c => c !== channel)
+                                                    });
+                                                }
+                                            },
+                                            disabled: creatingUser
+                                        }),
+                                        h('span', { className: 'checkbox-label' }, channel)
+                                    );
+                                })
+                            )
+                        )
+                    ),
+                    
+                    // Modal Footer
+                    h('div', { className: 'user-modal-footer' },
                         h('button', {
                             className: 'btn btn-secondary',
                             onClick: () => {
@@ -735,7 +796,12 @@
                                 });
                             },
                             disabled: creatingUser
-                        }, 'Cancel')
+                        }, 'Cancel'),
+                        h('button', {
+                            className: 'btn btn-primary',
+                            onClick: createUser,
+                            disabled: creatingUser || !newUser.email || !newUser.password
+                        }, creatingUser ? h('span', { style: { display: 'flex', alignItems: 'center', gap: '8px' } }, h('span', { className: 'spinner' }), ' Creating...') : 'Create User')
                     )
                 )
             )
