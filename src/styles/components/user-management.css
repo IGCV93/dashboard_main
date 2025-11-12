@@ -177,8 +177,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 9999;
+    z-index: 10000;
     animation: fadeIn 0.2s ease;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px;
+    /* Prevent body scroll when modal is open */
+    overscroll-behavior: contain;
+    /* Ensure it's above everything */
+    isolation: isolate;
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+    overflow: hidden;
 }
 
 @keyframes fadeIn {
@@ -191,12 +203,17 @@
     border-radius: 20px;
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
     max-width: 900px;
-    width: 90%;
-    max-height: 90vh;
+    width: 100%;
+    max-height: calc(100vh - 40px);
+    min-height: 400px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     animation: slideUp 0.3s ease;
+    margin: auto;
+    position: relative;
+    /* Ensure modal content doesn't interfere with overlay scrolling */
+    pointer-events: auto;
 }
 
 @keyframes slideUp {
@@ -260,8 +277,9 @@
 .user-modal-body {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 32px;
-    max-height: calc(90vh - 180px);
+    min-height: 0; /* Critical for flex scrolling */
 }
 
 .user-modal-body::-webkit-scrollbar {
@@ -550,9 +568,16 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .user-modal-overlay {
+        padding: 10px;
+        align-items: flex-start;
+        padding-top: 20px;
+    }
+    
     .user-modal-content {
-        max-width: 95%;
-        max-height: 95vh;
+        max-width: 100%;
+        max-height: calc(100vh - 20px);
+        border-radius: 16px;
     }
     
     .user-modal-header,
@@ -577,6 +602,17 @@
     
     .select-all-btn {
         width: 100%;
+    }
+}
+
+/* Ensure modal is always visible and scrollable */
+@media (max-height: 600px) {
+    .user-modal-content {
+        max-height: calc(100vh - 20px);
+    }
+    
+    .user-modal-body {
+        padding: 20px;
     }
 }
 

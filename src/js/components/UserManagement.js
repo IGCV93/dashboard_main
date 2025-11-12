@@ -97,6 +97,20 @@
             loadUsers();
         }, []);
         
+        // Prevent body scroll when modal is open
+        useEffect(() => {
+            if (showAddUser || editingUser) {
+                document.body.classList.add('modal-open');
+            } else {
+                document.body.classList.remove('modal-open');
+            }
+            
+            // Cleanup on unmount
+            return () => {
+                document.body.classList.remove('modal-open');
+            };
+        }, [showAddUser, editingUser]);
+        
         // Filter users based on search and filters
         const filteredUsers = users.filter(user => {
             // Search filter
@@ -599,13 +613,23 @@
             ),
             
             // Add User Form Modal
-            showAddUser && h('div', { className: 'user-modal-overlay', onClick: (e) => {
-                if (e.target.className === 'user-modal-overlay') {
-                    setShowAddUser(false);
-                    setCreateError('');
+            showAddUser && h('div', { 
+                className: 'user-modal-overlay', 
+                onClick: (e) => {
+                    // Close modal if clicking directly on overlay (not on modal content)
+                    if (e.target.classList.contains('user-modal-overlay')) {
+                        setShowAddUser(false);
+                        setCreateError('');
+                    }
                 }
-            }},
-                h('div', { className: 'user-modal-content' },
+            },
+                h('div', { 
+                    className: 'user-modal-content',
+                    onClick: (e) => {
+                        // Prevent clicks on modal content from closing the modal
+                        e.stopPropagation();
+                    }
+                },
                     // Modal Header
                     h('div', { className: 'user-modal-header' },
                         h('h3', null, 'Add New User'),
