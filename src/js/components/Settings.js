@@ -252,29 +252,49 @@
             }
             
             const brandData = dynamicTargets[settingsYear]?.brands?.[brand];
-            if (brandData) {
-                // Filter channels to only those the user can edit
-                const filteredData = { ...brandData };
-                if (userRole === 'Manager') {
-                    ['annual', 'Q1', 'Q2', 'Q3', 'Q4'].forEach(period => {
-                        if (filteredData[period]) {
-                            const filtered = {};
-                            availableChannels.forEach(channel => {
-                                if (filteredData[period][channel] !== undefined) {
-                                    filtered[channel] = filteredData[period][channel];
-                                }
-                            });
-                            filteredData[period] = filtered;
+            
+            // Initialize empty targets if no data exists (allows setting targets for new brands)
+            let editingData = brandData || createEmptyTargets();
+            
+            // Filter channels to only those the user can edit
+            const filteredData = { ...editingData };
+            if (userRole === 'Manager') {
+                ['annual', 'Q1', 'Q2', 'Q3', 'Q4'].forEach(period => {
+                    if (filteredData[period]) {
+                        const filtered = {};
+                        availableChannels.forEach(channel => {
+                            if (filteredData[period][channel] !== undefined) {
+                                filtered[channel] = filteredData[period][channel];
+                            } else {
+                                filtered[channel] = 0; // Initialize to 0 if missing
+                            }
+                        });
+                        filteredData[period] = filtered;
+                    } else {
+                        // Initialize empty period if missing
+                        filteredData[period] = {};
+                        availableChannels.forEach(channel => {
+                            filteredData[period][channel] = 0;
+                        });
+                    }
+                });
+            } else {
+                // Admin: ensure all channels are initialized
+                ['annual', 'Q1', 'Q2', 'Q3', 'Q4'].forEach(period => {
+                    if (!filteredData[period]) {
+                        filteredData[period] = {};
+                    }
+                    availableChannels.forEach(channel => {
+                        if (filteredData[period][channel] === undefined) {
+                            filteredData[period][channel] = 0;
                         }
                     });
-                }
-                
-                setEditingBrand(brand);
-                setEditingValues(filteredData);
-                setError('');
-            } else {
-                setError(`No data found for ${brand} in ${settingsYear}`);
+                });
             }
+            
+            setEditingBrand(brand);
+            setEditingValues(filteredData);
+            setError('');
         };
         
         const removeBrandFromTargets = (targets, brandToRemove) => {
