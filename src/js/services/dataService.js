@@ -929,7 +929,7 @@
             return totalDeleted;
         }
         
-        async deleteBrand(brandName) {
+        async deleteBrand(brandName, reassignTo = null) {
             if (!brandName) {
                 throw new Error('Brand name is required for deletion');
             }
@@ -948,84 +948,174 @@
                     
                     const brandId = brandLookup.data?.id;
                     
-                    const cleanupActions = [
-                        async () => {
-                            // Delete sales_data by brand_id in batches
-                            if (brandId !== undefined && brandId !== null) {
-                                try {
-                                    await this.deleteInBatches('sales_data', (query) => {
-                                        return query.eq('brand_id', brandId);
-                                    });
-                                } catch (error) {
-                                    // If brand_id column doesn't exist, continue to brand name deletion
-                                    if (!error.message?.includes('column') && error.code !== '42703') {
+                    // If reassigning, update data instead of deleting
+                    if (reassignTo) {
+                        console.log(`🔄 Reassigning data from "${brandName}" to "${reassignTo}"...`);
+                        
+                        // Get target brand ID
+                        const targetBrandLookup = await this.supabase
+                            .from('brands')
+                            .select('id, name')
+                            .eq('name', reassignTo)
+                            .maybeSingle();
+                        
+                        if (targetBrandLookup.error || !targetBrandLookup.data) {
+                            throw new Error(`Target brand "${reassignTo}" not found`);
+                        }
+                        
+                        const targetBrandId = targetBrandLookup.data.id;
+                        
+                        // Reassign sales_data by brand_id
+                        if (brandId !== undefined && brandId !== null) {
+                            const { error: updateError } = await this.supabase
+                                .from('sales_data')
+                                .update({ brand_id: targetBrandId, brand: reassignTo })
+                                .eq('brand_id', brandId);
+                            
+                            if (updateError && !updateError.message?.includes('column') && updateError.code !== '42703') {
+                                throw updateError;
+                            }
+                        }
+                        
+                        // Reassign sales_data by brand name (case-insensitive)
+                        const { data: matchingRows } = await this.supabase
+                            .from('sales_data')
+                            .select('brand')
+                            .ilike('brand', brandName)
+                            .limit(1);
+                        
+                        if (matchingRows && matchingRows.length > 0) {
+                            const { data: allMatching } = await this.supabase
+                                .from('sales_data')
+                                .select('brand')
+                                .ilike('brand', brandName);
+                            
+                            const uniqueBrands = [...new Set((allMatching || []).map(r => r.brand))];
+                            
+                            for (const brandVariation of uniqueBrands) {
+                                const { error: updateError } = await this.supabase
+                                    .from('sales_data')
+                                    .update({ brand: reassignTo })
+                                    .eq('brand', brandVariation);
+                                
+                                if (updateError) {
+                                    throw updateError;
+                                }
+                            }
+                        }
+                        
+                        // Reassign KPI targets
+                        const tablesToReassign = [
+                            { table: 'kpi_targets', column: 'brand' },
+                            { table: 'kpi_targets_history', column: 'brand' },
+                            { table: 'user_brand_permissions', column: 'brand' }
+                        ];
+                        
+                        for (const { table, column } of tablesToReassign) {
+                            const { data: matchingRows } = await this.supabase
+                                .from(table)
+                                .select(column)
+                                .ilike(column, brandName);
+                            
+                            if (matchingRows && matchingRows.length > 0) {
+                                const uniqueValues = [...new Set(matchingRows.map(r => r[column]))];
+                                
+                                for (const value of uniqueValues) {
+                                    const { error: updateError } = await this.supabase
+                                        .from(table)
+                                        .update({ [column]: reassignTo })
+                                        .eq(column, value);
+                                    
+                                    if (updateError) {
+                                        throw updateError;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        console.log(`✅ Data reassigned successfully`);
+                    } else {
+                        // Delete data (original behavior)
+                        const cleanupActions = [
+                            async () => {
+                                // Delete sales_data by brand_id in batches
+                                if (brandId !== undefined && brandId !== null) {
+                                    try {
+                                        await this.deleteInBatches('sales_data', (query) => {
+                                            return query.eq('brand_id', brandId);
+                                        });
+                                    } catch (error) {
+                                        // If brand_id column doesn't exist, continue to brand name deletion
+                                        if (!error.message?.includes('column') && error.code !== '42703') {
+                                            throw error;
+                                        }
+                                    }
+                                }
+                            },
+                            async () => {
+                                // Delete sales_data by brand name in batches (case-insensitive)
+                                // Get unique brand name variations first
+                                const { data: matchingRows } = await this.supabase
+                                    .from('sales_data')
+                                    .select('brand')
+                                    .ilike('brand', brandName)
+                                    .limit(1); // Just check if any exist
+                                
+                                if (matchingRows && matchingRows.length > 0) {
+                                    // Get all unique brand name variations
+                                    const { data: allMatching } = await this.supabase
+                                        .from('sales_data')
+                                        .select('brand')
+                                        .ilike('brand', brandName);
+                                    
+                                    const uniqueBrands = [...new Set((allMatching || []).map(r => r.brand))];
+                                    
+                                    // Delete each variation in batches
+                                    for (const brandVariation of uniqueBrands) {
+                                        await this.deleteInBatches('sales_data', (query) => {
+                                            return query.eq('brand', brandVariation);
+                                        });
+                                    }
+                                }
+                            }
+                        ];
+                        
+                        const tablesToClean = [
+                            { table: 'kpi_targets', column: 'brand' },
+                            { table: 'kpi_targets_history', column: 'brand' },
+                            { table: 'user_brand_permissions', column: 'brand' }
+                        ];
+                        
+                        for (const step of cleanupActions) {
+                            await step();
+                        }
+                        
+                        // Case-insensitive deletion for other tables
+                        for (const { table, column } of tablesToClean) {
+                            // Get matching rows with case variations
+                            const { data: matchingRows } = await this.supabase
+                                .from(table)
+                                .select(column)
+                                .ilike(column, brandName);
+                            
+                            if (matchingRows && matchingRows.length > 0) {
+                                const uniqueValues = [...new Set(matchingRows.map(r => r[column]))];
+                                
+                                for (const value of uniqueValues) {
+                                    const { error } = await this.supabase
+                                        .from(table)
+                                        .delete()
+                                        .eq(column, value);
+                                    
+                                    if (error && !String(error.message || '').toLowerCase().includes('does not exist')) {
                                         throw error;
                                     }
                                 }
                             }
-                        },
-                        async () => {
-                            // Delete sales_data by brand name in batches (case-insensitive)
-                            // Get unique brand name variations first
-                            const { data: matchingRows } = await this.supabase
-                                .from('sales_data')
-                                .select('brand')
-                                .ilike('brand', brandName)
-                                .limit(1); // Just check if any exist
-                            
-                            if (matchingRows && matchingRows.length > 0) {
-                                // Get all unique brand name variations
-                                const { data: allMatching } = await this.supabase
-                                    .from('sales_data')
-                                    .select('brand')
-                                    .ilike('brand', brandName);
-                                
-                                const uniqueBrands = [...new Set((allMatching || []).map(r => r.brand))];
-                                
-                                // Delete each variation in batches
-                                for (const brandVariation of uniqueBrands) {
-                                    await this.deleteInBatches('sales_data', (query) => {
-                                        return query.eq('brand', brandVariation);
-                                    });
-                                }
-                            }
-                        }
-                    ];
-                    
-                    const tablesToClean = [
-                        { table: 'kpi_targets', column: 'brand' },
-                        { table: 'kpi_targets_history', column: 'brand' },
-                        { table: 'user_brand_permissions', column: 'brand' }
-                    ];
-                    
-                    for (const step of cleanupActions) {
-                        await step();
-                    }
-                    
-                    // Case-insensitive deletion for other tables
-                    for (const { table, column } of tablesToClean) {
-                        // Get matching rows with case variations
-                        const { data: matchingRows } = await this.supabase
-                            .from(table)
-                            .select(column)
-                            .ilike(column, brandName);
-                        
-                        if (matchingRows && matchingRows.length > 0) {
-                            const uniqueValues = [...new Set(matchingRows.map(r => r[column]))];
-                            
-                            for (const value of uniqueValues) {
-                                const { error } = await this.supabase
-                                    .from(table)
-                                    .delete()
-                                    .eq(column, value);
-                                
-                                if (error && !String(error.message || '').toLowerCase().includes('does not exist')) {
-                                    throw error;
-                                }
-                            }
                         }
                     }
                     
+                    // Delete the brand record itself (whether reassigning or deleting)
                     const { error: brandDeleteError } = await this.supabase
                         .from('brands')
                         .delete()
@@ -1039,15 +1129,20 @@
                         await this.supabase
                             .from('audit_logs')
                             .insert({
-                                action: 'brand_deleted',
+                                action: reassignTo ? 'brand_reassigned' : 'brand_deleted',
                                 user_id: null,
                                 user_email: null,
                                 user_role: 'system',
-                                action_details: { brand_name: brandName },
-                                reference_id: `BRAND_DELETE_${Date.now()}_${brandName}`
+                                action_details: { 
+                                    brand_name: brandName,
+                                    reassigned_to: reassignTo || null
+                                },
+                                reference_id: reassignTo 
+                                    ? `BRAND_REASSIGN_${Date.now()}_${brandName}_${reassignTo}`
+                                    : `BRAND_DELETE_${Date.now()}_${brandName}`
                             });
                     } catch (auditError) {
-                        console.warn('Unable to log brand deletion:', auditError);
+                        console.warn('Unable to log brand action:', auditError);
                     }
                     
                     this.clearCache();

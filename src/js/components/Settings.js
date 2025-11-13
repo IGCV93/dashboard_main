@@ -94,6 +94,10 @@
         const [error, setError] = useState('');
         const [success, setSuccess] = useState('');
         const [isProcessing, setIsProcessing] = useState(false);
+        const [showDeleteModal, setShowDeleteModal] = useState(false);
+        const [brandToDelete, setBrandToDelete] = useState(null);
+        const [deleteAction, setDeleteAction] = useState('delete'); // 'delete' or 'reassign'
+        const [reassignToBrand, setReassignToBrand] = useState('');
         
         // Update local state when props change
         useEffect(() => {
@@ -452,7 +456,7 @@
             }
         };
         
-        const handleDeleteBrand = async (brand) => {
+        const handleDeleteBrand = (brand) => {
             if (!brand) return;
             
             if (!canManageBrands) {
@@ -460,34 +464,53 @@
                 return;
             }
             
-            const confirmed = typeof window !== 'undefined' && window.confirm 
-                ? window.confirm(`Are you sure you want to delete the brand "${brand}"?\n\nThis will permanently delete:\n- All sales data for this brand\n- All KPI targets\n- All user permissions\n\nThis action cannot be undone. For brands with large amounts of data, deletion may take several minutes.`)
-                : true;
+            // Get available brands to reassign to (exclude the brand being deleted)
+            const availableReassignBrands = dynamicBrands.filter(b => b !== brand);
             
-            if (!confirmed) {
+            if (availableReassignBrands.length === 0) {
+                // No other brands to reassign to, just delete
+                setDeleteAction('delete');
+                setReassignToBrand('');
+            } else {
+                // Set default reassign target to first available brand
+                setReassignToBrand(availableReassignBrands[0]);
+            }
+            
+            setBrandToDelete(brand);
+            setShowDeleteModal(true);
+            setError('');
+        };
+        
+        const confirmDeleteBrand = async () => {
+            if (!brandToDelete) return;
+            
+            if (deleteAction === 'reassign' && !reassignToBrand) {
+                setError('Please select a brand to reassign data to.');
                 return;
             }
             
+            setShowDeleteModal(false);
             setError('');
             setSuccess('');
             setIsProcessing(true);
             
-            const updatedBrands = dynamicBrands.filter(b => b !== brand);
-            const updatedTargets = removeBrandFromTargets(dynamicTargets, brand);
+            const updatedBrands = dynamicBrands.filter(b => b !== brandToDelete);
+            const updatedTargets = removeBrandFromTargets(dynamicTargets, brandToDelete);
             
             try {
                 if (onDeleteBrand) {
                     await onDeleteBrand({
-                        brand,
+                        brand: brandToDelete,
                         brands: updatedBrands,
-                        targets: updatedTargets
+                        targets: updatedTargets,
+                        reassignTo: deleteAction === 'reassign' ? reassignToBrand : null
                     });
                 }
                 
                 setDynamicBrands(updatedBrands);
                 setDynamicTargets(updatedTargets);
                 
-                if (editingBrand === brand) {
+                if (editingBrand === brandToDelete) {
                     setEditingBrand(null);
                     setEditingValues({});
                 }
@@ -499,18 +522,24 @@
                     }));
                 }
                 
-                setSuccess(`Brand "${brand}" deleted successfully`);
+                const actionText = deleteAction === 'reassign' 
+                    ? `reassigned to "${reassignToBrand}"` 
+                    : 'deleted';
+                setSuccess(`Brand "${brandToDelete}" ${actionText} successfully`);
                 setTimeout(() => setSuccess(''), 3000);
             } catch (err) {
                 console.error('Failed to delete brand:', err);
                 const errorMessage = err?.message || err?.toString() || '';
                 if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
-                    setError(`Deletion timed out. The brand "${brand}" has a large amount of sales data. This may take several minutes. Please try again or contact support if the issue persists.`);
+                    setError(`Operation timed out. The brand "${brandToDelete}" has a large amount of sales data. This may take several minutes. Please try again or contact support if the issue persists.`);
                 } else {
-                    setError(`Failed to delete brand: ${errorMessage || 'Please try again.'}`);
+                    setError(`Failed to ${deleteAction === 'reassign' ? 'reassign' : 'delete'} brand: ${errorMessage || 'Please try again.'}`);
                 }
             } finally {
                 setIsProcessing(false);
+                setBrandToDelete(null);
+                setDeleteAction('delete');
+                setReassignToBrand('');
             }
         };
         
@@ -1169,6 +1198,173 @@
                     )
                 ),
                 document.body // Portal to body
+            ),
+            
+            // Delete Confirmation Modal
+            showDeleteModal && ReactDOM.createPortal(
+                h('div', {
+                    className: 'kpi-modal-overlay',
+                    onClick: (e) => {
+                        if (e.target.className === 'kpi-modal-overlay' && !isProcessing) {
+                            setShowDeleteModal(false);
+                            setBrandToDelete(null);
+                        }
+                    }
+                },
+                    h('div', { className: 'kpi-modal', style: { maxWidth: '500px' } },
+                        // Modal Header
+                        h('div', { className: 'kpi-modal-header' },
+                            h('h2', null, `Delete Brand: ${brandToDelete}`),
+                            h('button', {
+                                className: 'kpi-modal-close',
+                                onClick: () => {
+                                    if (!isProcessing) {
+                                        setShowDeleteModal(false);
+                                        setBrandToDelete(null);
+                                    }
+                                },
+                                disabled: isProcessing,
+                                'aria-label': 'Close modal'
+                            }, '×')
+                        ),
+                        
+                        // Modal Body
+                        h('div', { className: 'kpi-modal-body' },
+                            h('p', { style: { marginBottom: '20px', color: '#6B7280' } },
+                                `What would you like to do with the sales data for "${brandToDelete}"?`
+                            ),
+                            
+                            h('div', { style: { marginBottom: '20px' } },
+                                h('label', {
+                                    style: {
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        padding: '12px',
+                                        borderRadius: '8px',
+                                        border: deleteAction === 'reassign' ? '2px solid #667eea' : '2px solid #E5E7EB',
+                                        backgroundColor: deleteAction === 'reassign' ? '#F3F4F6' : 'white',
+                                        cursor: 'pointer',
+                                        marginBottom: '12px'
+                                    },
+                                    onClick: () => !isProcessing && setDeleteAction('reassign')
+                                },
+                                    h('input', {
+                                        type: 'radio',
+                                        checked: deleteAction === 'reassign',
+                                        onChange: () => setDeleteAction('reassign'),
+                                        disabled: isProcessing,
+                                        style: { marginRight: '12px' }
+                                    }),
+                                    h('div', { style: { flex: 1 } },
+                                        h('div', { style: { fontWeight: '600', marginBottom: '4px' } }, 'Move data to another brand'),
+                                        h('div', { style: { fontSize: '14px', color: '#6B7280' } },
+                                            'Reassign all sales data, KPI targets, and permissions to another brand'
+                                        )
+                                    )
+                                ),
+                                
+                                deleteAction === 'reassign' && dynamicBrands.filter(b => b !== brandToDelete).length > 0 && h('div', {
+                                    style: {
+                                        marginLeft: '40px',
+                                        marginTop: '12px',
+                                        marginBottom: '12px'
+                                    }
+                                },
+                                    h('label', {
+                                        style: {
+                                            display: 'block',
+                                            marginBottom: '8px',
+                                            fontWeight: '600',
+                                            fontSize: '14px'
+                                        }
+                                    }, 'Select brand:'),
+                                    h('select', {
+                                        value: reassignToBrand,
+                                        onChange: (e) => setReassignToBrand(e.target.value),
+                                        disabled: isProcessing,
+                                        style: {
+                                            width: '100%',
+                                            padding: '10px',
+                                            borderRadius: '8px',
+                                            border: '2px solid #E5E7EB',
+                                            fontSize: '14px'
+                                        }
+                                    },
+                                        dynamicBrands.filter(b => b !== brandToDelete).map(brand =>
+                                            h('option', { key: brand, value: brand }, brand)
+                                        )
+                                    )
+                                ),
+                                
+                                h('label', {
+                                    style: {
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        padding: '12px',
+                                        borderRadius: '8px',
+                                        border: deleteAction === 'delete' ? '2px solid #DC2626' : '2px solid #E5E7EB',
+                                        backgroundColor: deleteAction === 'delete' ? '#FEF2F2' : 'white',
+                                        cursor: 'pointer'
+                                    },
+                                    onClick: () => !isProcessing && setDeleteAction('delete')
+                                },
+                                    h('input', {
+                                        type: 'radio',
+                                        checked: deleteAction === 'delete',
+                                        onChange: () => setDeleteAction('delete'),
+                                        disabled: isProcessing,
+                                        style: { marginRight: '12px' }
+                                    }),
+                                    h('div', { style: { flex: 1 } },
+                                        h('div', { style: { fontWeight: '600', marginBottom: '4px', color: '#DC2626' } }, 'Delete all data permanently'),
+                                        h('div', { style: { fontSize: '14px', color: '#6B7280' } },
+                                            'Permanently delete all sales data, KPI targets, and permissions. This cannot be undone.'
+                                        )
+                                    )
+                                )
+                            ),
+                            
+                            h('div', {
+                                style: {
+                                    padding: '12px',
+                                    backgroundColor: '#FEF3C7',
+                                    borderRadius: '8px',
+                                    fontSize: '14px',
+                                    color: '#92400E'
+                                }
+                            },
+                                '⚠️ This action cannot be undone. For brands with large amounts of data, this may take several minutes.'
+                            )
+                        ),
+                        
+                        // Modal Footer
+                        h('div', { className: 'kpi-modal-footer' },
+                            h('button', {
+                                className: 'kpi-btn-secondary',
+                                onClick: () => {
+                                    if (!isProcessing) {
+                                        setShowDeleteModal(false);
+                                        setBrandToDelete(null);
+                                    }
+                                },
+                                disabled: isProcessing
+                            }, 'Cancel'),
+                            h('button', {
+                                className: deleteAction === 'delete' ? 'kpi-btn-danger' : 'kpi-btn-primary',
+                                onClick: confirmDeleteBrand,
+                                disabled: isProcessing || (deleteAction === 'reassign' && !reassignToBrand),
+                                style: {
+                                    backgroundColor: deleteAction === 'delete' ? '#DC2626' : '#667eea',
+                                    color: 'white'
+                                }
+                            }, isProcessing 
+                                ? (deleteAction === 'reassign' ? 'Reassigning…' : 'Deleting…')
+                                : (deleteAction === 'reassign' ? `Move to ${reassignToBrand}` : '🗑️ Delete Permanently')
+                            )
+                        )
+                    )
+                ),
+                document.body
             )
         );
     }

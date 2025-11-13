@@ -941,14 +941,14 @@
                 setSalesData(data);
             }
             
-            const handleDeleteBrand = async ({ brand, brands, targets }) => {
+            const handleDeleteBrand = async ({ brand, brands, targets, reassignTo }) => {
                 if (!brand) {
                     return;
                 }
                 
                 try {
                     if (APP_STATE.dataService?.deleteBrand) {
-                        await APP_STATE.dataService.deleteBrand(brand);
+                        await APP_STATE.dataService.deleteBrand(brand, reassignTo || null);
                     }
                     
                     // Reload brands from database after deletion
@@ -997,12 +997,16 @@
                     }
                     
                     if (window.showSuccessMessage) {
-                        window.showSuccessMessage(`Brand "${brand}" deleted successfully`);
+                        const actionText = reassignTo 
+                            ? `reassigned to "${reassignTo}"` 
+                            : 'deleted';
+                        window.showSuccessMessage(`Brand "${brand}" ${actionText} successfully`);
                     }
                 } catch (err) {
-                    console.error('Failed to delete brand:', err);
+                    console.error('Failed to process brand:', err);
                     if (window.showErrorMessage) {
-                        window.showErrorMessage('Failed to delete brand. Please try again.');
+                        const actionText = reassignTo ? 'reassign' : 'delete';
+                        window.showErrorMessage(`Failed to ${actionText} brand. Please try again.`);
                     }
                     throw err;
                 }

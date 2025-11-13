@@ -367,14 +367,14 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
             }
         };
 
-        const handleDeleteBrand = async ({ brand, brands, targets }) => {
+        const handleDeleteBrand = async ({ brand, brands, targets, reassignTo }) => {
             if (!brand) {
                 return;
             }
             
             try {
                 if (dataService?.deleteBrand) {
-                    await dataService.deleteBrand(brand);
+                    await dataService.deleteBrand(brand, reassignTo || null);
                 }
                 
                 if (Array.isArray(brands)) {
@@ -393,12 +393,16 @@ window.ChaiVision.initializeApp = function(config = window.ChaiVision.CONFIG) {
                 await loadInitialData();
                 
                 if (window.showSuccessMessage) {
-                    window.showSuccessMessage(`Brand "${brand}" deleted successfully`);
+                    const actionText = reassignTo 
+                        ? `reassigned to "${reassignTo}"` 
+                        : 'deleted';
+                    window.showSuccessMessage(`Brand "${brand}" ${actionText} successfully`);
                 }
             } catch (err) {
-                console.error('Failed to delete brand:', err);
+                console.error('Failed to process brand:', err);
                 if (window.showErrorMessage) {
-                    window.showErrorMessage('Failed to delete brand. Please try again.');
+                    const actionText = reassignTo ? 'reassign' : 'delete';
+                    window.showErrorMessage(`Failed to ${actionText} brand. Please try again.`);
                 }
                 throw err;
             }
