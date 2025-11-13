@@ -679,7 +679,7 @@
                     return;
                 }
 
-                if (selectedBrand === 'All Brands') {
+                if (selectedBrand === 'All Brands' || selectedBrand === 'All My Brands') {
                     return;
                 }
 
@@ -701,11 +701,19 @@
                     userPermissions?.brands?.includes('All Brands');
 
                 if (canAccessAllBrands) {
-                    if (selectedBrand !== 'All Brands') {
+                    if (selectedBrand !== 'All Brands' && selectedBrand !== 'All My Brands') {
                         setSelectedBrand('All Brands');
                     }
                     initialBrandSetRef.current = true;
                     return;
+                }
+                
+                // User doesn't have all brands access, set to "All My Brands" if not already set
+                if (selectedBrand !== 'All My Brands' && selectedBrand !== 'All Brands') {
+                    // Check if current selection is still valid
+                    if (!availableBrands.includes(selectedBrand)) {
+                        setSelectedBrand('All My Brands');
+                    }
                 }
 
                 if (userPermissions?.brands?.length > 0) {
@@ -988,12 +996,17 @@
                         } else if (Array.isArray(brands) && brands.length > 0) {
                             setSelectedBrand(brands[0]);
                         } else {
-                            setSelectedBrand('All Brands');
+                            // User doesn't have all brands access, use "All My Brands"
+                            const hasAllBrandsAccess = currentUser?.role === 'Admin' || 
+                                userPermissions?.brands?.includes('All Brands');
+                            setSelectedBrand(hasAllBrandsAccess ? 'All Brands' : 'All My Brands');
                         }
                     }
                     
                     if (APP_STATE.preferences?.last_selected_brand === brand) {
-                        APP_STATE.preferences.last_selected_brand = 'All Brands';
+                        const hasAllBrandsAccess = currentUser?.role === 'Admin' || 
+                            userPermissions?.brands?.includes('All Brands');
+                        APP_STATE.preferences.last_selected_brand = hasAllBrandsAccess ? 'All Brands' : 'All My Brands';
                     }
                     
                     if (window.showSuccessMessage) {
@@ -1169,6 +1182,7 @@
                 setShowProfileMenu,
                 onLogout: handleLogout,
                 userRole: currentUser?.role,
+                userPermissions,
                 setActiveSection,
                 ProfileMenu
             }) : null;

@@ -105,7 +105,7 @@
                     return cached.data;
                 }
                 
-                const normalizedBrand = (filters.brand && filters.brand !== 'All Brands' && filters.brand !== 'All Brands (Company Total)')
+                const normalizedBrand = (filters.brand && filters.brand !== 'All Brands' && filters.brand !== 'All Brands (Company Total)' && filters.brand !== 'All My Brands')
                     ? filters.brand
                     : null;
                 const normalizedChannel = (filters.channel && filters.channel !== 'All Channels')
@@ -198,7 +198,7 @@
                     // This is much faster than loading all records - queries database with GROUP BY
                     // For annual/quarterly views, we can use aggregated channel data
                     const shouldUseAggregation = filters.view === 'annual' || 
-                        (filters.view === 'quarterly' && filters.brand && filters.brand !== 'All Brands');
+                        (filters.view === 'quarterly' && filters.brand && filters.brand !== 'All Brands' && filters.brand !== 'All My Brands');
                     
                     if (shouldUseAggregation) {
                         console.log('📊 Using direct database aggregation (like SQL GROUP BY) for efficient loading');
@@ -231,7 +231,7 @@
                         console.log(`📊 RPC params: granularity=day, start=${filters.startDate}, end=${filters.endDate}, brand=${filters.brand}`);
                         // Normalize brand name for case-insensitive matching
                         let brandFilter = null;
-                        if (filters.brand && filters.brand !== 'All Brands' && filters.brand !== 'All Brands (Company Total)') {
+                        if (filters.brand && filters.brand !== 'All Brands' && filters.brand !== 'All Brands (Company Total)' && filters.brand !== 'All My Brands') {
                             brandFilter = filters.brand;
                         }
                         
@@ -357,7 +357,7 @@
             if (filters.endDate) {
                 query = query.lte('date', filters.endDate);
             }
-            if (filters.brand && filters.brand !== 'All Brands') {
+            if (filters.brand && filters.brand !== 'All Brands' && filters.brand !== 'All My Brands') {
                 // Use case-insensitive matching for brand names
                 query = query.ilike('brand', filters.brand);
             }
@@ -401,7 +401,7 @@
             }
             
             // Filter client-side for brand (case-insensitive)
-            if (data && data.length > 0 && filters.brand && filters.brand !== 'All Brands') {
+            if (data && data.length > 0 && filters.brand && filters.brand !== 'All Brands' && filters.brand !== 'All My Brands') {
                 const brandKey = filters.brand.toLowerCase();
                 data = data.filter(row => {
                     const rowBrand = String(row.brand || '').toLowerCase();
@@ -439,7 +439,7 @@
                 if (filters.endDate) {
                     query = query.lte('date', filters.endDate);
                 }
-                if (filters.brand && filters.brand !== 'All Brands') {
+                if (filters.brand && filters.brand !== 'All Brands' && filters.brand !== 'All My Brands') {
                     query = query.ilike('brand', filters.brand);
                 }
                 if (filters.channel && filters.channel !== 'All Channels') {
@@ -473,7 +473,7 @@
             console.log(`✅ Pagination complete: ${allData.length} records`);
             
             // Apply client-side brand filter if needed (case-insensitive)
-            if (allData.length > 0 && filters.brand && filters.brand !== 'All Brands') {
+            if (allData.length > 0 && filters.brand && filters.brand !== 'All Brands' && filters.brand !== 'All My Brands') {
                 const brandKey = filters.brand.toLowerCase();
                 const filtered = allData.filter(row => {
                     const rowBrand = String(row.brand || '').toLowerCase();
@@ -494,7 +494,7 @@
             let limit = 10000;
             
             // Reduce limit if we have specific filters
-            if (filters.brand && filters.brand !== 'All Brands') {
+            if (filters.brand && filters.brand !== 'All Brands' && filters.brand !== 'All My Brands') {
                 limit = Math.min(limit, 50000); // Brand-specific data
             }
             if (filters.channel && filters.channel !== 'All Channels') {
@@ -652,7 +652,7 @@
             return this.getCachedData(`filtered_${filterKey}`, () => {
                 let filtered = [...data];
                 
-                if (filters.brand && filters.brand !== 'All Brands') {
+                if (filters.brand && filters.brand !== 'All Brands' && filters.brand !== 'All My Brands') {
                     filtered = filtered.filter(d => d.brand === filters.brand);
                 }
                 

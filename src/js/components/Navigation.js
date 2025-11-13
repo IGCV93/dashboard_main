@@ -19,8 +19,25 @@
             setActiveSection,
             showProfileMenu, setShowProfileMenu,
             ProfileMenu,
-            salesData = [] // Add sales data for year detection
+            salesData = [], // Add sales data for year detection
+            userPermissions,
+            userRole
         } = props;
+        
+        // Determine if user has access to all brands
+        const hasAllBrandsAccess = userRole === 'Admin' || 
+            userPermissions?.brands?.includes('All Brands');
+        
+        // Determine the "all brands" label and value based on permissions
+        const allBrandsLabel = hasAllBrandsAccess 
+            ? '🏢 All Brands (Company Total)' 
+            : '🏢 All My Brands';
+        const allBrandsValue = hasAllBrandsAccess 
+            ? 'All Brands' 
+            : 'All My Brands';
+        
+        // Check if current selection is an "all brands" option
+        const isAllBrandsSelected = selectedBrand === 'All Brands' || selectedBrand === 'All My Brands';
         
         // Get year options dynamically based on actual data
         const { getYearOptions, getLatestYearFromData } = window.dateUtils || {};
@@ -135,19 +152,23 @@
                 activeSection !== 'settings' && h('div', { className: 'brand-selector' },
                     h('span', { className: 'brand-label' }, 'Brand:'),
                     h('select', {
-                        value: selectedBrand,
-                        onChange: (e) => setSelectedBrand && setSelectedBrand(e.target.value),
+                        value: isAllBrandsSelected ? allBrandsValue : selectedBrand,
+                        onChange: (e) => {
+                            if (setSelectedBrand) {
+                                setSelectedBrand(e.target.value);
+                            }
+                        },
                         style: { 
                             padding: '10px 16px', 
                             borderRadius: '8px', 
                             border: '2px solid #E5E7EB', 
                             fontWeight: '600',
-                            background: selectedBrand === 'All Brands' ? 
+                            background: isAllBrandsSelected ? 
                                 'linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1))' : 
                                 'white'
                         }
                     },
-                        h('option', { value: 'All Brands', style: { fontWeight: '700' } }, '🏢 All Brands (Company Total)'),
+                        h('option', { value: allBrandsValue, style: { fontWeight: '700' } }, allBrandsLabel),
                         ...(brands || []).map(brand => h('option', { key: brand, value: brand }, brand))
                     )
                 )

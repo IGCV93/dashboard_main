@@ -214,8 +214,8 @@
                 });
             }
             
-            // Filter by selected brand (from dropdown). Treat "All Brands (Company Total)" as company total as well.
-            if (selectedBrand !== 'All Brands' && selectedBrand !== 'All Brands (Company Total)') {
+            // Filter by selected brand (from dropdown). Treat "All Brands", "All Brands (Company Total)", and "All My Brands" as company total.
+            if (selectedBrand !== 'All Brands' && selectedBrand !== 'All Brands (Company Total)' && selectedBrand !== 'All My Brands') {
                 const selKey = normalizeKey(selectedBrand);
                 const beforeFilterCount = filteredData.length;
                 filteredData = filteredData.filter(d => d._brandKey === selKey);
@@ -415,7 +415,7 @@
             });
             
             // Calculate targets based on selection and permissions
-            const isCompanyTotal = selectedBrand === 'All Brands' || selectedBrand === 'All Brands (Company Total)';
+            const isCompanyTotal = selectedBrand === 'All Brands' || selectedBrand === 'All Brands (Company Total)' || selectedBrand === 'All My Brands';
             const brandsToCalculate = isCompanyTotal ? availableBrands : [selectedBrand];
             
             brandsToCalculate.forEach(brand => {
@@ -599,7 +599,7 @@
                 periodText = `${monthNames[selectedMonth]} ${selectedYear}`;
             }
             
-            const brandText = selectedBrand === 'All Brands' ? 'Company' : selectedBrand;
+            const brandText = (selectedBrand === 'All Brands' || selectedBrand === 'All My Brands') ? 'Company' : selectedBrand;
             return `${brandText} - ${periodText} Performance`;
         };
         
