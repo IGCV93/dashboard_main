@@ -116,6 +116,10 @@
 html {
     scroll-behavior: smooth;
     scroll-padding-top: var(--nav-height, 72px); /* Account for sticky nav */
+    /* Ensure html allows scrolling */
+    height: auto;
+    overflow-y: visible;
+    overflow-x: hidden;
 }
 
 body {
@@ -129,10 +133,18 @@ body {
     /* Enable natural page scroll */
     overflow-y: auto;
     overflow-x: hidden;
+    /* Ensure body height allows content to extend */
+    height: auto;
+    min-height: 100vh;
     /* Optimize for performance */
     text-rendering: optimizeSpeed;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure body can scroll when not in modal-open state */
+body:not(.modal-open) {
+    overflow-y: auto !important;
 }
 
 /* App Layout with sticky positioning */
@@ -140,6 +152,9 @@ body {
     background: var(--bg-secondary);
     min-height: 100vh;
     position: relative;
+    /* Ensure wrapper allows content to extend and scroll */
+    height: auto;
+    overflow: visible;
 }
 
 .app-container {
@@ -147,6 +162,8 @@ body {
     min-height: calc(100vh - var(--nav-height));
     position: relative;
     /* Enable natural page scroll - no overflow restrictions */
+    height: auto;
+    overflow: visible;
 }
 
 .main-content {
@@ -195,6 +212,10 @@ body {
 /* Reduce repaints for main content */
 .main-content {
     contain: layout style paint;
+    /* Ensure main content allows natural scrolling - no overflow restrictions */
+    overflow: visible;
+    height: auto;
+    min-height: calc(100vh - var(--nav-height) - 32px);
 }
 
 /* Loading states with optimized animations */

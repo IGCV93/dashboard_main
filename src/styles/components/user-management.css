@@ -6,6 +6,9 @@
     padding: 20px;
     max-width: 1600px;
     margin: 0 auto;
+    /* Ensure content can extend and page can scroll */
+    min-height: auto;
+    overflow: visible;
 }
 
 .user-management-header {
@@ -754,6 +757,88 @@ body.modal-open {
 .add-user-page-footer .btn-secondary:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+/* =========================================
+   EDIT USER MODAL - INLINE FORM
+   ========================================= */
+
+/* Edit User Modal - appears inline below table */
+.modal-overlay {
+    /* Not a fixed overlay - appears inline in document flow */
+    position: relative;
+    margin-top: 32px;
+    margin-bottom: 32px;
+    padding: 0;
+    background: transparent;
+    z-index: auto;
+    overflow: visible;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 2px solid #E5E7EB;
+    /* Ensure it's visible and scrollable */
+    position: relative;
+    overflow: visible;
+    min-height: auto;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 24px;
+    font-size: 24px;
+    font-weight: 700;
+    color: #1F2937;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #E5E7EB;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 2px solid #E5E7EB;
+}
+
+.modal-actions .btn {
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-actions .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.modal-actions .btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.modal-actions .btn-secondary {
+    background: white;
+    color: #374151;
+    border: 2px solid #E5E7EB;
+}
+
+.modal-actions .btn-secondary:hover:not(:disabled) {
+    background: #F9FAFB;
+    border-color: #D1D5DB;
 }
 
 .info-message {

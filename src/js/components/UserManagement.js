@@ -98,9 +98,9 @@
             loadUsers();
         }, []);
         
-        // Prevent body scroll when modal is open
+        // Prevent body scroll when modal is open (only for add user modal, not edit form)
         useEffect(() => {
-            if (showAddUser || editingUser) {
+            if (showAddUser) {
                 document.body.classList.add('modal-open');
             } else {
                 document.body.classList.remove('modal-open');
@@ -110,7 +110,27 @@
             return () => {
                 document.body.classList.remove('modal-open');
             };
-        }, [showAddUser, editingUser]);
+        }, [showAddUser]);
+        
+        // Scroll to edit form when it opens
+        useEffect(() => {
+            if (editingUser) {
+                // Small delay to ensure DOM is updated
+                setTimeout(() => {
+                    // Find the edit form modal within user-management container
+                    const userManagementContainer = document.querySelector('.user-management');
+                    const editForm = userManagementContainer?.querySelector('.modal-overlay');
+                    if (editForm) {
+                        // Scroll the form into view, ensuring it's visible
+                        editForm.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'start',
+                            inline: 'nearest'
+                        });
+                    }
+                }, 150);
+            }
+        }, [editingUser]);
         
         // Filter users based on search and filters
         const filteredUsers = users.filter(user => {
