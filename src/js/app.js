@@ -482,7 +482,18 @@
             const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
             const [selectedYear, setSelectedYear] = useState(APP_STATE.preferences.last_selected_year || getCurrentYear());
             const [selectedBrand, setSelectedBrand] = useState(APP_STATE.preferences.last_selected_brand || 'All Brands');
-            const [activeSection, setActiveSection] = useState('dashboard');
+            
+            // Initialize activeSection from URL if present
+            const getInitialSection = () => {
+                const routing = window.ChaiVision?.routing;
+                if (routing && routing.getSectionFromURL) {
+                    return routing.getSectionFromURL() || 'dashboard';
+                }
+                const url = new URL(window.location);
+                const section = url.searchParams.get('section');
+                return section || 'dashboard';
+            };
+            const [activeSection, setActiveSection] = useState(getInitialSection);
             const [salesData, setSalesData] = useState([]);
             const [loading, setLoading] = useState(true);
             const [error, setError] = useState(null);
@@ -505,6 +516,37 @@
                     last_selected_brand: selectedBrand
                 };
             }, [view, selectedPeriod, selectedYear, selectedBrand]);
+            
+            // Listen for URL changes and update activeSection
+            useEffect(() => {
+                const handleURLChange = () => {
+                    const routing = window.ChaiVision?.routing;
+                    const section = routing && routing.getSectionFromURL 
+                        ? routing.getSectionFromURL()
+                        : (() => {
+                            const url = new URL(window.location);
+                            return url.searchParams.get('section') || 'dashboard';
+                        })();
+                    
+                    if (section && section !== activeSection) {
+                        setActiveSection(section);
+                    }
+                };
+                
+                // Check initial URL
+                handleURLChange();
+                
+                // Listen for popstate (browser back/forward)
+                window.addEventListener('popstate', handleURLChange);
+                
+                // Listen for custom navigation events
+                window.addEventListener('hashchange', handleURLChange);
+                
+                return () => {
+                    window.removeEventListener('popstate', handleURLChange);
+                    window.removeEventListener('hashchange', handleURLChange);
+                };
+            }, [activeSection]);
             
             // Check for saved session with remember me
             useEffect(() => {
@@ -1112,6 +1154,7 @@
             const ProfileMenu = window.ProfileMenu || window.ChaiVision?.components?.ProfileMenu;
             const ProfileSettings = window.ProfileSettings || window.ChaiVision?.components?.ProfileSettings;
             const Preferences = window.Preferences || window.ChaiVision?.components?.Preferences;
+            const SKUPerformance = window.SKUPerformance || window.ChaiVision?.components?.SKUPerformance;
             
             // Component loading verified
             
@@ -1327,6 +1370,122 @@
                                 if (updatedPreferences.last_selected_brand) setSelectedBrand(updatedPreferences.last_selected_brand);
                             }
                         }) : h('div', null, 'Preferences component not found');
+                        
+                    case 'sku-performance':
+                        // Parse SKU performance route parameters
+                        const routing = window.ChaiVision?.routing;
+                        const skuParams = routing && routing.parseSKUPerformanceRoute 
+                            ? routing.parseSKUPerformanceRoute()
+                            : (() => {
+                                const url = new URL(window.location);
+                                return {
+                                    channel: url.searchParams.get('channel'),
+                                    brand: url.searchParams.get('brand') || null,
+                                    view: url.searchParams.get('view') || 'quarterly',
+                                    period: url.searchParams.get('period') || null,
+                                    year: url.searchParams.get('year') || new Date().getFullYear().toString(),
+                                    month: url.searchParams.get('month') ? parseInt(url.searchParams.get('month')) : null
+                                };
+                            })();
+                        
+                        // Validate required channel parameter
+                        if (!skuParams.channel) {
+                            return h('div', { className: 'error-container' },
+                                h('h2', null, 'Error'),
+                                h('p', null, 'Channel parameter is required for SKU performance view.'),
+                                h('button', {
+                                    className: 'btn btn-primary',
+                                    onClick: () => setActiveSection('dashboard')
+                                }, 'Back to Dashboard')
+                            );
+                        }
+                        
+                        // Handle navigation back - restore dashboard state
+                        const handleNavigateBack = () => {
+                            // Restore dashboard state from sessionStorage if available
+                            const savedState = sessionStorage.getItem('dashboard_state');
+                            if (savedState) {
+                                try {
+                                    const state = JSON.parse(savedState);
+                                    if (state.view) setView(state.view);
+                                    if (state.selectedPeriod) setSelectedPeriod(state.selectedPeriod);
+                                    if (state.selectedMonth) setSelectedMonth(state.selectedMonth);
+                                    if (state.selectedYear) setSelectedYear(state.selectedYear);
+                                    if (state.selectedBrand) setSelectedBrand(state.selectedBrand);
+                                } catch (e) {
+                                    console.error('Failed to restore dashboard state:', e);
+                                }
+                            }
+                            
+                            // Navigate back to dashboard
+                            setActiveSection('dashboard');
+                            
+                            // Update URL to remove sku-performance section
+                            const url = new URL(window.location);
+                            url.searchParams.delete('section');
+                            url.searchParams.delete('channel');
+                            url.searchParams.delete('brand');
+                            url.searchParams.delete('view');
+                            url.searchParams.delete('period');
+                            url.searchParams.delete('year');
+                            url.searchParams.delete('month');
+                            window.history.pushState({ section: 'dashboard' }, '', url);
+                        };
+                        
+                        // Calculate channel target for the selected period
+                        const calculateChannelTarget = () => {
+                            if (!dynamicTargets || !skuParams.channel) return 0;
+                            
+                            const isCompanyTotal = skuParams.brand === null || skuParams.brand === 'All Brands' || skuParams.brand === 'All My Brands';
+                            const brandsToCalculate = isCompanyTotal ? availableBrands : [skuParams.brand];
+                            const year = skuParams.year || new Date().getFullYear().toString();
+                            
+                            let channelTarget = 0;
+                            
+                            brandsToCalculate.forEach(brandName => {
+                                const brandData = dynamicTargets?.[year]?.brands?.[brandName];
+                                if (brandData) {
+                                    let periodData;
+                                    if (skuParams.view === 'annual') {
+                                        periodData = brandData.annual;
+                                    } else if (skuParams.view === 'quarterly') {
+                                        periodData = brandData[skuParams.period];
+                                    } else if (skuParams.view === 'monthly') {
+                                        const quarter = `Q${Math.ceil((skuParams.month || 1) / 3)}`;
+                                        periodData = brandData[quarter];
+                                        if (periodData) {
+                                            const { getDaysInMonth, getDaysInQuarter } = window.dateUtils || {};
+                                            const month = skuParams.month || 1;
+                                            const daysInMonth = getDaysInMonth ? getDaysInMonth(parseInt(year), month) : 30;
+                                            const daysInQuarter = getDaysInQuarter ? getDaysInQuarter(parseInt(year), quarter) : 90;
+                                            const dayRatio = daysInMonth / daysInQuarter;
+                                            channelTarget += (periodData[skuParams.channel] || 0) * dayRatio;
+                                            return;
+                                        }
+                                    }
+                                    if (periodData) {
+                                        channelTarget += periodData[skuParams.channel] || 0;
+                                    }
+                                }
+                            });
+                            
+                            return channelTarget * 0.85; // Return 85% target
+                        };
+                        
+                        const channelTarget85 = calculateChannelTarget();
+                        
+                        return SKUPerformance ? h(SKUPerformance, {
+                            channel: skuParams.channel,
+                            brand: skuParams.brand,
+                            view: skuParams.view,
+                            selectedPeriod: skuParams.period,
+                            selectedMonth: skuParams.month,
+                            selectedYear: skuParams.year,
+                            dataService: APP_STATE.dataService,
+                            userPermissions,
+                            channelTarget85,
+                            onNavigateBack: handleNavigateBack
+                        }) : h('div', null, 'SKU Performance component not found');
                         
                     default:
                         return h('div', null, 'Section not found');

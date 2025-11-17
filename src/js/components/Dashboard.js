@@ -691,7 +691,12 @@
                 kpis: {
                     ...kpis,
                     channels: availableChannels // Pass only available channels
-                }
+                },
+                view,
+                selectedPeriod,
+                selectedYear,
+                selectedMonth,
+                selectedBrand
             }),
             
             // Charts (filtered by permissions)

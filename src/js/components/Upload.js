@@ -75,6 +75,10 @@
         const [isDragging, setIsDragging] = useState(false);
         const [batchProgress, setBatchProgress] = useState(null); // New state for batch progress
         
+        // Upload type state
+        const [uploadType, setUploadType] = useState('auto'); // 'auto', 'channel', 'sku'
+        const [detectedType, setDetectedType] = useState(null); // 'channel' or 'sku'
+        
         const fileInputRef = useRef(null);
         const supabaseEnabled = config?.FEATURES?.ENABLE_SUPABASE || false;
         
@@ -106,6 +110,35 @@
             const timestamp = Date.now();
             const uniqueSuffix = index !== null ? `_${index}_${timestamp}` : `_${timestamp}`;
             return `${normalizeKey(dateVal)}|${normalizeKey(channelName)}|${normalizeKey(brandName)}${uniqueSuffix}`;
+        };
+        
+        const buildSKUSourceId = (dateVal, channelName, brandName, sku, index = null) => {
+            const timestamp = Date.now();
+            const uniqueSuffix = index !== null ? `_${index}_${timestamp}` : `_${timestamp}`;
+            return `${normalizeKey(dateVal)}|${normalizeKey(channelName)}|${normalizeKey(brandName)}|${normalizeKey(sku)}${uniqueSuffix}`;
+        };
+        
+        // Detect upload type based on file headers
+        const detectUploadType = (headers) => {
+            if (!headers || headers.length === 0) return 'channel';
+            
+            const normalizedHeaders = headers.map(h => String(h || '').toLowerCase().trim());
+            
+            // Check for SKU column (case-insensitive)
+            const hasSKU = normalizedHeaders.some(h => 
+                h === 'sku' || 
+                h === 'sku code' || 
+                h === 'product sku' ||
+                h.includes('sku')
+            );
+            
+            // If SKU column exists, it's SKU data
+            if (hasSKU) {
+                return 'sku';
+            }
+            
+            // Default to channel data
+            return 'channel';
         };
 
         // Fetch canonical brand/channel maps from Supabase
@@ -165,7 +198,7 @@
             }
         };
         
-        // Download template
+        // Download channel template
         const downloadTemplate = () => {
             const templateData = [
                 ['Date', 'Channel', 'Brand', 'Revenue'],
@@ -193,8 +226,79 @@
             window.URL.revokeObjectURL(url);
         };
         
+        // Download SKU template
+        const downloadSKUTemplate = () => {
+            const templateData = [
+                ['Date', 'Channel', 'Brand', 'SKU', 'Product Name', 'Units', 'Revenue'],
+                ['2025-01-01', allowedChannels[0] || 'Shopify', allowedBrands[0] || 'LifePro', 'SKU-001', 'Product Name Example', '10', '250.00'],
+                ['2025-01-01', allowedChannels[0] || 'Shopify', allowedBrands[0] || 'LifePro', 'SKU-002', 'Another Product', '5', '125.50'],
+                ['2025-01-02', allowedChannels[0] || 'Shopify', allowedBrands[0] || 'LifePro', 'SKU-001', 'Product Name Example', '15', '375.00'],
+                ['', '', '', '', '', '', ''],
+                ['Instructions:', '', '', '', '', '', ''],
+                ['1. Date format: YYYY-MM-DD', '', '', '', '', '', ''],
+                ['2. SKU: Stock Keeping Unit identifier (required)', '', '', '', '', '', ''],
+                ['3. Units: Number of units sold (required, must be non-negative integer)', '', '', '', '', '', ''],
+                ['4. Revenue: Total revenue for this SKU (required, must be non-negative number)', '', '', '', '', '', ''],
+                ['5. Product Name: Optional human-readable product name', '', '', '', '', '', ''],
+                [`6. Your allowed channels: ${allowedChannels.join(', ')}`, '', '', '', '', '', ''],
+                [`7. Your allowed brands: ${allowedBrands.join(', ')}`, '', '', '', '', '', ''],
+                ['8. Data outside your permissions will be rejected', '', '', '', '', '', '']
+            ];
+            
+            const csvContent = templateData.map(row => row.map(cell => {
+                // Escape commas and quotes in CSV
+                const cellStr = String(cell);
+                if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+                    return `"${cellStr.replace(/"/g, '""')}"`;
+                }
+                return cellStr;
+            }).join(',')).join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `sku_sales_data_template_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        };
+        
+        // Validate SKU data
+        const validateSKUData = (row, index) => {
+            const errors = [];
+            const rowNum = index + 2;
+            
+            // Required fields
+            if (!row.SKU && !row.sku && !row['SKU Code'] && !row['sku code']) {
+                errors.push('SKU is required');
+            }
+            
+            if (!row.Units && row.Units !== 0 && !row.units && row.units !== 0) {
+                errors.push('Units is required');
+            }
+            
+            if (!row.Revenue && row.Revenue !== 0 && !row.revenue && row.revenue !== 0) {
+                errors.push('Revenue is required');
+            }
+            
+            // Data type validation
+            const units = parseInt(row.Units || row.units || 0);
+            if (isNaN(units) || units < 0) {
+                errors.push('Units must be a non-negative integer');
+            }
+            
+            const revenue = parseFloat(row.Revenue || row.revenue || 0);
+            if (isNaN(revenue) || revenue < 0) {
+                errors.push('Revenue must be a non-negative number');
+            }
+            
+            return errors;
+        };
+        
         // Validate data with permissions
-        const validateDataWithPermissions = (data) => {
+        const validateDataWithPermissions = (data, isSKUData = false) => {
             const errors = [];
             const accepted = [];
             const rejected = [];
@@ -203,6 +307,20 @@
                 const brand = row.Brand || row.brand;
                 const channel = row.Channel || row.channel;
                 const rowNum = index + 2;
+                
+                // SKU-specific validation
+                if (isSKUData) {
+                    const skuErrors = validateSKUData(row, index);
+                    if (skuErrors.length > 0) {
+                        rejected.push({
+                            ...row,
+                            _rowNumber: rowNum,
+                            _rejectionReason: skuErrors.join('; ')
+                        });
+                        errors.push(`Row ${rowNum}: ${skuErrors.join('; ')}`);
+                        return;
+                    }
+                }
                 
                 // Check brand permission
                 const brandAllowed = userRole === 'Admin' || 
@@ -270,7 +388,28 @@
                         skipEmptyLines: true,
                         complete: (results) => {
                             setUploadProgress(60);
-                            setUploadedData(results.data);
+                            
+                            if (results.errors && results.errors.length > 0) {
+                                setUploadStatus('error');
+                                setValidationErrors(results.errors.map(e => `Row ${e.row}: ${e.message}`));
+                                setUploadProgress(0);
+                                return;
+                            }
+                            
+                            const data = results.data || [];
+                            if (data.length === 0) {
+                                setUploadStatus('error');
+                                setValidationErrors(['No data found in file']);
+                                setUploadProgress(0);
+                                return;
+                            }
+                            
+                            // Detect upload type
+                            const headers = results.meta.fields || Object.keys(data[0] || {});
+                            const detected = uploadType === 'auto' ? detectUploadType(headers) : uploadType;
+                            setDetectedType(detected);
+                            
+                            setUploadedData(data);
                             setUploadStatus('parsed');
                             setUploadProgress(80);
                         }
@@ -282,40 +421,40 @@
                     const sheet = workbook.Sheets[sheetName];
                     const rawData = XLSX.utils.sheet_to_json(sheet);
                     
+                    if (rawData.length === 0) {
+                        setUploadStatus('error');
+                        setValidationErrors(['No data found in file']);
+                        setUploadProgress(0);
+                        return;
+                    }
+                    
+                    // Detect upload type from headers
+                    const headers = Object.keys(rawData[0] || {});
+                    const detected = uploadType === 'auto' ? detectUploadType(headers) : uploadType;
+                    setDetectedType(detected);
+                    
                     // Filter out empty rows (rows where any required field is missing)
                     const data = rawData.filter(row => {
                         const hasDate = row.Date || row.date;
                         const hasChannel = row.Channel || row.channel;
                         const hasBrand = row.Brand || row.brand;
-                        const hasRevenue = row.Revenue !== undefined && row.Revenue !== null && row.Revenue !== '' || 
-                                          row.revenue !== undefined && row.revenue !== null && row.revenue !== '';
                         
-                        // All four fields must be present and not empty
-                        const isValid = hasDate && hasChannel && hasBrand && hasRevenue;
-                        
-                        if (!isValid) {
-                            // Filtering out invalid row
-                            const filterReason = {
-                                hasDate: !!hasDate,
-                                hasChannel: !!hasChannel,
-                                hasBrand: !!hasBrand,
-                                hasRevenue: !!hasRevenue,
-                                revenueValue: row.Revenue || row.revenue,
-                                row: row
-                            };
+                        // For SKU data, check for SKU and Units
+                        // For channel data, check for Revenue
+                        if (detected === 'sku') {
+                            const hasSKU = row.SKU || row.sku || row['SKU Code'] || row['sku code'];
+                            const hasUnits = row.Units !== undefined && row.Units !== null && row.Units !== '' || 
+                                           row.units !== undefined && row.units !== null && row.units !== '';
+                            const hasRevenue = row.Revenue !== undefined && row.Revenue !== null && row.Revenue !== '' || 
+                                            row.revenue !== undefined && row.revenue !== null && row.revenue !== '';
+                            return hasDate && hasChannel && hasBrand && hasSKU && hasUnits && hasRevenue;
+                        } else {
+                            const hasRevenue = row.Revenue !== undefined && row.Revenue !== null && row.Revenue !== '' || 
+                                            row.revenue !== undefined && row.revenue !== null && row.revenue !== '';
+                            return hasDate && hasChannel && hasBrand && hasRevenue;
                         }
-                        
-                        return isValid;
                     });
                     
-                    // Excel parsing: ${rawData.length} total rows, ${data.length} valid rows after filtering
-                    
-                    // Debug: Log the first row to see column headers
-                    if (data.length > 0) {
-                        // Excel column headers found and first row data processed
-                    }
-                    
-                    setUploadProgress(60);
                     setUploadedData(data);
                     setUploadStatus('parsed');
                     setUploadProgress(80);
@@ -333,6 +472,14 @@
             }
         };
         
+        // Determine final upload type (use detected if auto, otherwise use selected)
+        const getFinalUploadType = () => {
+            if (uploadType === 'auto') {
+                return detectedType || 'channel';
+            }
+            return uploadType;
+        };
+        
         // Upload to database/storage with chunked processing for large files
         const uploadToDatabase = async () => {
             if (!uploadedData || uploadedData.length === 0) return;
@@ -340,8 +487,12 @@
             setUploadStatus('validating');
             setUploadProgress(85);
             
+            // Determine upload type
+            const finalType = getFinalUploadType();
+            const isSKUData = finalType === 'sku';
+            
             // Validate permissions
-            const { accepted, rejected, errors } = validateDataWithPermissions(uploadedData);
+            const { accepted, rejected, errors } = validateDataWithPermissions(uploadedData, isSKUData);
             
             setFilteredData(accepted);
             setRejectedData(rejected);
@@ -404,9 +555,32 @@
                     } else if (typeof dateVal === 'string') {
                         finalDate = dateVal.trim();
                     } else if (!dateVal) {
-                        finalDate = null; // This will cause the error we're seeing
+                        finalDate = null;
                     }
 
+                    // Format SKU data
+                    if (isSKUData) {
+                        const sku = String(row.SKU || row.sku || row['SKU Code'] || row['sku code'] || '').trim();
+                        const units = parseInt(row.Units || row.units || 0);
+                        const revenue = parseFloat(row.Revenue || row.revenue || 0);
+                        const productName = row['Product Name'] || row['product name'] || row.ProductName || row.productName || null;
+                        
+                        return {
+                            date: finalDate,
+                            channel: channelName,
+                            brand: brandName,
+                            sku: sku,
+                            units: units,
+                            revenue: revenue,
+                            product_name: productName ? String(productName).trim() : null,
+                            source: 'manual',
+                            source_id: buildSKUSourceId(finalDate, channelName, brandName, sku, index),
+                            uploaded_by: currentUser?.id,
+                            upload_batch_id: batchId
+                        };
+                    }
+                    
+                    // Format channel data (existing logic)
                     return {
                         // canonical linkage
                         brand_id: brandEntry?.id || null,
@@ -438,39 +612,77 @@
                     const largeFileBatchSize = config?.SUPABASE?.PERFORMANCE?.LARGE_FILE_BATCH_SIZE || 2000;
                     const batchSize = accepted.length > 10000 ? largeFileBatchSize : configBatchSize;
                     
-                    result = await dataService.batchSaveSalesData(
-                        formattedData, 
-                        batchSize,
-                        (progressData) => {
-                            // Update progress with real-time data
-                            const uploadProgress = Math.round(90 + (progressData.progress * 0.1)); // 90-100%
-                            setUploadProgress(uploadProgress);
-                            setBatchProgress(progressData); // Store batch progress details
-                            
-                            // Update status message
-                            if (progressData.error) {
-                                console.warn(`Batch ${progressData.processedBatches} failed:`, progressData.error);
-                                setValidationErrors(prev => [...prev, `Batch ${progressData.processedBatches} had errors (continuing...)`]);
+                    // Route to correct batch save method based on upload type
+                    if (isSKUData) {
+                        result = await dataService.batchSaveSKUData(
+                            formattedData, 
+                            batchSize,
+                            (progressData) => {
+                                // Update progress with real-time data
+                                const uploadProgress = Math.round(90 + (progressData.progress * 0.1)); // 90-100%
+                                setUploadProgress(uploadProgress);
+                                setBatchProgress(progressData); // Store batch progress details
+                                
+                                // Update status message
+                                if (progressData.error) {
+                                    console.warn(`SKU Batch ${progressData.processedBatches} failed:`, progressData.error);
+                                    setValidationErrors(prev => [...prev, `Batch ${progressData.processedBatches} had errors (continuing...)`]);
+                                }
                             }
-                        }
-                    );
-                    
-                    // Verify actual records saved by querying the database
-                    actualSavedCount = result.successfulRows;
-                    try {
-                        const supabase = getSupabaseClient();
-                        if (supabase) {
-                            const { count, error } = await supabase
-                                .from('sales_data')
-                                .select('*', { count: 'exact', head: true });
-                            
-                            if (!error && count !== null) {
-                                actualSavedCount = count;
-                                console.log(`📊 Database verification: ${count} total records in sales_data table`);
+                        );
+                        
+                        // Verify actual records saved
+                        actualSavedCount = result.successfulRows;
+                        try {
+                            const supabase = getSupabaseClient();
+                            if (supabase) {
+                                const { count, error } = await supabase
+                                    .from('sku_sales_data')
+                                    .select('*', { count: 'exact', head: true });
+                                
+                                if (!error && count !== null) {
+                                    actualSavedCount = count;
+                                    console.log(`📊 Database verification: ${count} total records in sku_sales_data table`);
+                                }
                             }
+                        } catch (verifyError) {
+                            console.warn('Could not verify SKU database count:', verifyError);
                         }
-                    } catch (verifyError) {
-                        console.warn('Could not verify database count:', verifyError);
+                    } else {
+                        result = await dataService.batchSaveSalesData(
+                            formattedData, 
+                            batchSize,
+                            (progressData) => {
+                                // Update progress with real-time data
+                                const uploadProgress = Math.round(90 + (progressData.progress * 0.1)); // 90-100%
+                                setUploadProgress(uploadProgress);
+                                setBatchProgress(progressData); // Store batch progress details
+                                
+                                // Update status message
+                                if (progressData.error) {
+                                    console.warn(`Batch ${progressData.processedBatches} failed:`, progressData.error);
+                                    setValidationErrors(prev => [...prev, `Batch ${progressData.processedBatches} had errors (continuing...)`]);
+                                }
+                            }
+                        );
+                        
+                        // Verify actual records saved by querying the database
+                        actualSavedCount = result.successfulRows;
+                        try {
+                            const supabase = getSupabaseClient();
+                            if (supabase) {
+                                const { count, error } = await supabase
+                                    .from('sales_data')
+                                    .select('*', { count: 'exact', head: true });
+                                
+                                if (!error && count !== null) {
+                                    actualSavedCount = count;
+                                    console.log(`📊 Database verification: ${count} total records in sales_data table`);
+                                }
+                            }
+                        } catch (verifyError) {
+                            console.warn('Could not verify database count:', verifyError);
+                        }
                     }
 
                     if (!result.allSuccessful) {
@@ -481,9 +693,15 @@
                     }
                 } else {
                     // Fallback: Store in localStorage
-                    const existingData = JSON.parse(localStorage.getItem('chai_vision_sales_data') || '[]');
-                    const updatedData = [...existingData, ...formattedData];
-                    localStorage.setItem('chai_vision_sales_data', JSON.stringify(updatedData));
+                    if (isSKUData) {
+                        const existingData = JSON.parse(localStorage.getItem('chai_vision_sku_data') || '[]');
+                        const updatedData = [...existingData, ...formattedData];
+                        localStorage.setItem('chai_vision_sku_data', JSON.stringify(updatedData));
+                    } else {
+                        const existingData = JSON.parse(localStorage.getItem('chai_vision_sales_data') || '[]');
+                        const updatedData = [...existingData, ...formattedData];
+                        localStorage.setItem('chai_vision_sales_data', JSON.stringify(updatedData));
+                    }
                     
                     // Simulate upload delay
                     await new Promise(resolve => setTimeout(resolve, 500));
@@ -513,6 +731,7 @@
                     setUploadStatus(null);
                     setValidationErrors([]);
                     setBatchProgress(null); // Clear batch progress
+                    setDetectedType(null); // Reset detected type
                 }, 3000);
             } catch (error) {
                 // Error uploading data
@@ -559,6 +778,50 @@
                 h('h1', { className: 'upload-title' }, '📊 Upload Sales Data'),
                 h('p', { className: 'upload-subtitle' }, 'Import your sales data from CSV or Excel files to update the dashboard'),
                 
+                // Upload Type Selector
+                h('div', { className: 'upload-type-selector' },
+                    h('label', { className: 'upload-type-label' }, 'Upload Type:'),
+                    h('div', { className: 'upload-type-options' },
+                        h('label', { className: 'upload-type-option' },
+                            h('input', {
+                                type: 'radio',
+                                name: 'uploadType',
+                                value: 'auto',
+                                checked: uploadType === 'auto',
+                                onChange: (e) => {
+                                    setUploadType('auto');
+                                    setDetectedType(null);
+                                }
+                            }),
+                            h('span', null, 'Auto-Detect (Recommended)')
+                        ),
+                        h('label', { className: 'upload-type-option' },
+                            h('input', {
+                                type: 'radio',
+                                name: 'uploadType',
+                                value: 'channel',
+                                checked: uploadType === 'channel',
+                                onChange: (e) => setUploadType('channel')
+                            }),
+                            h('span', null, 'Channel Sales Data')
+                        ),
+                        h('label', { className: 'upload-type-option' },
+                            h('input', {
+                                type: 'radio',
+                                name: 'uploadType',
+                                value: 'sku',
+                                checked: uploadType === 'sku',
+                                onChange: (e) => setUploadType('sku')
+                            }),
+                            h('span', null, 'SKU-Level Data')
+                        )
+                    ),
+                    detectedType && uploadType === 'auto' && h('div', { className: 'detected-type-badge' },
+                        h('span', { className: 'badge-icon' }, '🔍'),
+                        h('span', null, `Detected: ${detectedType === 'sku' ? 'SKU-Level Data' : 'Channel Sales Data'}`)
+                    )
+                ),
+                
                 // Permission notice
                 userRole === 'Manager' && h('div', {
                     className: 'alert-banner warning',
@@ -581,18 +844,32 @@
             ),
             
             h('div', { className: 'upload-cards' },
-                // Template Download Card
+                // Channel Template Download Card
                 h('div', { className: 'upload-card' },
                     h('div', { className: 'upload-card-icon' }, '📄'),
-                    h('h3', { className: 'upload-card-title' }, 'Download Template'),
+                    h('h3', { className: 'upload-card-title' }, 'Channel Data Template'),
                     h('p', { className: 'upload-card-description' }, 
-                        'Download a pre-formatted template with your allowed brands and channels.'
+                        'Download template for channel-level sales data (Date, Channel, Brand, Revenue).'
                     ),
                     h('button', {
                         className: 'btn btn-primary',
                         onClick: downloadTemplate,
                         style: { width: '100%' }
-                    }, '⬇️ Download Custom Template')
+                    }, '⬇️ Download Channel Template')
+                ),
+                
+                // SKU Template Download Card
+                h('div', { className: 'upload-card' },
+                    h('div', { className: 'upload-card-icon' }, '📦'),
+                    h('h3', { className: 'upload-card-title' }, 'SKU Data Template'),
+                    h('p', { className: 'upload-card-description' }, 
+                        'Download template for SKU-level sales data (Date, Channel, Brand, SKU, Units, Revenue).'
+                    ),
+                    h('button', {
+                        className: 'btn btn-primary',
+                        onClick: downloadSKUTemplate,
+                        style: { width: '100%' }
+                    }, '⬇️ Download SKU Template')
                 ),
                 
                 // File Upload Card
@@ -632,6 +909,18 @@
                     uploadStatus === 'parsed' && h('div', null,
                         h('div', { className: 'validation-message success' },
                             `✅ File parsed: ${uploadedData.length} records found`
+                        ),
+                        detectedType && uploadType === 'auto' && h('div', { 
+                            className: 'validation-message info',
+                            style: { marginTop: '12px', background: '#EFF6FF', color: '#1E40AF', border: '1px solid #93C5FD' }
+                        },
+                            `📊 Detected Type: ${detectedType === 'sku' ? 'SKU-Level Data' : 'Channel Sales Data'}`
+                        ),
+                        uploadType !== 'auto' && h('div', { 
+                            className: 'validation-message info',
+                            style: { marginTop: '12px', background: '#EFF6FF', color: '#1E40AF', border: '1px solid #93C5FD' }
+                        },
+                            `📊 Selected Type: ${uploadType === 'sku' ? 'SKU-Level Data' : 'Channel Sales Data'}`
                         ),
                         h('button', {
                             className: 'btn btn-success',

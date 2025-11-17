@@ -673,6 +673,96 @@
         }
         
         /**
+         * Save SKU sales data to database
+         */
+        async saveSKUData(data) {
+            if (this.supabase && this.config.FEATURES.ENABLE_SUPABASE) {
+                try {
+                    // Check for existing records to avoid duplicates
+                    // Unique constraint: (date, channel, brand, sku, source_id)
+                    const sourceIds = Array.from(new Set((data || []).map(r => r.source_id).filter(Boolean)));
+                    
+                    if (sourceIds.length > 0) {
+                        // Check which records already exist
+                        const { data: existing, error: selectError } = await this.supabase
+                            .from('sku_sales_data')
+                            .select('source_id')
+                            .in('source_id', sourceIds);
+                        
+                        if (selectError) {
+                            console.warn('Could not check for existing SKU records:', selectError);
+                            // Continue with insert - database will handle duplicates
+                        }
+                        
+                        // Filter out existing records
+                        const existingSet = new Set((existing || []).map(r => r.source_id));
+                        const toInsert = data.filter(row => !existingSet.has(row.source_id));
+                        
+                        if (toInsert.length === 0) {
+                            // All records already exist
+                            this.cache.delete('sku_data');
+                            return true;
+                        }
+                        
+                        // Insert only new records
+                        const { error: insertError } = await this.supabase
+                            .from('sku_sales_data')
+                            .insert(toInsert);
+                        
+                        if (insertError) {
+                            // If error is due to duplicates (constraint violation), that's okay
+                            if (insertError.code === '23505' || insertError.message?.includes('duplicate')) {
+                                console.warn('Some SKU records were duplicates (skipped)');
+                                this.cache.delete('sku_data');
+                                return true;
+                            }
+                            console.error('Supabase SKU insert error:', insertError);
+                            throw insertError;
+                        }
+                    } else {
+                        // No source_ids, insert all
+                        const { error: insertError } = await this.supabase
+                            .from('sku_sales_data')
+                            .insert(data);
+                        
+                        if (insertError) {
+                            if (insertError.code === '23505' || insertError.message?.includes('duplicate')) {
+                                console.warn('Some SKU records were duplicates (skipped)');
+                                this.cache.delete('sku_data');
+                                return true;
+                            }
+                            console.error('Supabase SKU insert error:', insertError);
+                            throw insertError;
+                        }
+                    }
+
+                    this.cache.delete('sku_data');
+                    return true;
+                } catch (error) {
+                    console.error('Supabase SKU error:', error);
+                    throw error;
+                }
+            } else {
+                // Fallback: Store in localStorage
+                return this.saveLocalSKUData(data);
+            }
+        }
+        
+        saveLocalSKUData(data) {
+            try {
+                const existing = JSON.parse(localStorage.getItem('chai_vision_sku_data') || '[]');
+                const updated = [...existing, ...data];
+                localStorage.setItem('chai_vision_sku_data', JSON.stringify(updated));
+                
+                this.cache.delete('sku_data');
+                return true;
+            } catch (error) {
+                console.error('Failed to save local SKU data:', error);
+                return false;
+            }
+        }
+        
+        /**
          * Batch operations for better performance with progress tracking
          */
         async batchSaveSalesData(dataArray, batchSize = 1000, onProgress = null) {
@@ -745,6 +835,82 @@
                 failed: results.filter(r => r === false).length,
                 total: results.length,
                 allSuccessful: results.every(r => r === true),
+                successfulRows,
+                failedRows
+            };
+        }
+        
+        /**
+         * Batch save SKU sales data with progress tracking
+         */
+        async batchSaveSKUData(dataArray, batchSize = 1000, onProgress = null) {
+            const batches = [];
+            for (let i = 0; i < dataArray.length; i += batchSize) {
+                batches.push(dataArray.slice(i, i + batchSize));
+            }
+            
+            const results = [];
+            let processedBatches = 0;
+            let successfulRows = 0;
+            let failedRows = 0;
+            
+            for (const batch of batches) {
+                try {
+                    const result = await this.saveSKUData(batch);
+                    results.push(result);
+                    processedBatches++;
+                    successfulRows += batch.length;
+                    
+                    console.log(`SKU Batch ${processedBatches} completed: ${batch.length} rows processed`);
+                    
+                    // Report progress
+                    if (onProgress) {
+                        const progress = Math.round((processedBatches / batches.length) * 100);
+                        onProgress({
+                            processedBatches,
+                            totalBatches: batches.length,
+                            progress,
+                            processedRows: successfulRows,
+                            totalRows: dataArray.length,
+                            currentBatch: processedBatches,
+                            batchSize: batch.length
+                        });
+                    }
+                    
+                    // Add small delay between batches
+                    if (processedBatches < batches.length) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                } catch (error) {
+                    console.error(`SKU Batch ${processedBatches + 1} failed:`, error);
+                    results.push(false);
+                    processedBatches++;
+                    failedRows += batch.length;
+                    
+                    // Report error progress
+                    if (onProgress) {
+                        onProgress({
+                            processedBatches,
+                            totalBatches: batches.length,
+                            progress: Math.round((processedBatches / batches.length) * 100),
+                            processedRows: successfulRows,
+                            totalRows: dataArray.length,
+                            error: error.message,
+                            currentBatch: processedBatches,
+                            batchSize: batch.length
+                        });
+                    }
+                }
+            }
+            
+            const successfulBatches = results.filter(r => r === true).length;
+            const failed = results.filter(r => r === false).length;
+            
+            return {
+                allSuccessful: failed === 0,
+                total: batches.length,
+                success: successfulBatches,
+                failed,
                 successfulRows,
                 failedRows
             };
@@ -1294,6 +1460,177 @@
                 totalSize += JSON.stringify(value).length;
             }
             return totalSize;
+        }
+        
+        /**
+         * Load aggregated SKU sales data
+         * @param {Object} filters - Filter object
+         * @param {string} filters.startDate - Start date (YYYY-MM-DD)
+         * @param {string} filters.endDate - End date (YYYY-MM-DD)
+         * @param {string} filters.channel - Channel name (optional)
+         * @param {string} filters.brand - Brand name (optional)
+         * @param {string} filters.sku - SKU code (optional, for single SKU)
+         * @param {string} filters.groupBy - 'sku', 'date', 'month', 'quarter'
+         * @returns {Promise<Array>} Array of aggregated SKU data
+         */
+        async loadSKUData(filters = {}) {
+            if (!this.supabase || !this.config.FEATURES.ENABLE_SUPABASE) {
+                console.warn('SKU data loading requires Supabase');
+                return [];
+            }
+            
+            try {
+                const cacheKey = `sku_data_${this.createCacheKey(filters)}`;
+                const cached = this.cache.get(cacheKey);
+                if (cached && (Date.now() - cached.timestamp) < this.cacheTimeout) {
+                    console.log(`⚡ Cache hit for SKU data`);
+                    return cached.data;
+                }
+                
+                const {
+                    startDate,
+                    endDate,
+                    channel,
+                    brand,
+                    sku,
+                    groupBy = 'sku'
+                } = filters;
+                
+                // Normalize filters
+                const normalizedChannel = (channel && channel !== 'All Channels') ? channel : null;
+                const normalizedBrand = (brand && brand !== 'All Brands' && brand !== 'All Brands (Company Total)' && brand !== 'All My Brands') ? brand : null;
+                const normalizedSku = sku || null;
+                
+                console.log(`📊 Loading SKU data via RPC:`, {
+                    startDate,
+                    endDate,
+                    channel: normalizedChannel,
+                    brand: normalizedBrand,
+                    sku: normalizedSku,
+                    groupBy
+                });
+                
+                const { data, error } = await this.supabase.rpc('sku_sales_agg', {
+                    start_date: startDate,
+                    end_date: endDate,
+                    channel_filter: normalizedChannel,
+                    brand_filter: normalizedBrand,
+                    sku_filter: normalizedSku,
+                    group_by: groupBy
+                });
+                
+                if (error) {
+                    console.error('❌ SKU aggregation RPC error:', error);
+                    throw error;
+                }
+                
+                // Normalize the response
+                const normalized = (data || []).map(row => ({
+                    date: row.period_date,
+                    sku: row.sku,
+                    channel: row.channel,
+                    brand: row.brand,
+                    units: parseInt(row.total_units) || 0,
+                    revenue: parseFloat(row.total_revenue) || 0,
+                    recordCount: parseInt(row.record_count) || 0
+                }));
+                
+                // Cache the result
+                this.cache.set(cacheKey, {
+                    data: normalized,
+                    timestamp: Date.now()
+                });
+                
+                console.log(`✅ SKU data loaded: ${normalized.length} SKUs`);
+                return normalized;
+                
+            } catch (err) {
+                console.error('❌ Failed to load SKU data:', err);
+                throw err;
+            }
+        }
+        
+        /**
+         * Load SKU data for comparison (YOY, MOM, custom periods)
+         * @param {Object} currentFilters - Filters for current period
+         * @param {Object} comparisonFilters - Filters for comparison period
+         * @returns {Promise<Object>} Object with current and comparison data
+         */
+        async loadSKUComparison(currentFilters, comparisonFilters) {
+            try {
+                const [currentData, comparisonData] = await Promise.all([
+                    this.loadSKUData(currentFilters),
+                    this.loadSKUData(comparisonFilters)
+                ]);
+                
+                // Create a map for quick lookup
+                const comparisonMap = new Map();
+                comparisonData.forEach(item => {
+                    const key = `${item.sku}_${item.channel}_${item.brand}`;
+                    comparisonMap.set(key, item);
+                });
+                
+                // Merge comparison data with current data
+                const merged = currentData.map(current => {
+                    const key = `${current.sku}_${current.channel}_${current.brand}`;
+                    const comparison = comparisonMap.get(key);
+                    
+                    if (comparison) {
+                        const growthAmount = current.revenue - comparison.revenue;
+                        const growthPercent = comparison.revenue > 0 
+                            ? ((growthAmount / comparison.revenue) * 100) 
+                            : (current.revenue > 0 ? 100 : 0);
+                        
+                        return {
+                            ...current,
+                            comparison: {
+                                revenue: comparison.revenue,
+                                units: comparison.units,
+                                growthAmount,
+                                growthPercent
+                            }
+                        };
+                    }
+                    
+                    return {
+                        ...current,
+                        comparison: null
+                    };
+                });
+                
+                return {
+                    current: currentData,
+                    comparison: comparisonData,
+                    merged
+                };
+                
+            } catch (err) {
+                console.error('❌ Failed to load SKU comparison:', err);
+                throw err;
+            }
+        }
+        
+        /**
+         * Search SKUs by code or product name
+         * @param {string} query - Search query
+         * @param {Object} filters - Additional filters
+         * @returns {Promise<Array>} Filtered SKU data
+         */
+        async searchSKUs(query, filters = {}) {
+            if (!query || query.trim().length === 0) {
+                return this.loadSKUData(filters);
+            }
+            
+            const allData = await this.loadSKUData(filters);
+            const searchTerm = query.toLowerCase().trim();
+            
+            return allData.filter(item => {
+                const skuMatch = item.sku.toLowerCase().includes(searchTerm);
+                const productMatch = item.product_name 
+                    ? item.product_name.toLowerCase().includes(searchTerm)
+                    : false;
+                return skuMatch || productMatch;
+            });
         }
     }
     

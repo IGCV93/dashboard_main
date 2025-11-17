@@ -120,9 +120,9 @@ BEGIN
             WHEN group_by = 'quarter' THEN DATE_TRUNC('quarter', sd.date)::DATE
             ELSE sd.date  -- Default: group by SKU (aggregate all dates)
         END AS period_date,
-        sd.sku,
-        sd.channel,
-        sd.brand,
+        sd.sku::TEXT,
+        sd.channel::TEXT,
+        sd.brand::TEXT,
         SUM(sd.units)::BIGINT AS total_units,
         SUM(sd.revenue)::NUMERIC AS total_revenue,
         COUNT(*)::BIGINT AS record_count

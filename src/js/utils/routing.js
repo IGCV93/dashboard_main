@@ -7,7 +7,7 @@
     'use strict';
     
     // Valid sections that can be routed to
-    const VALID_SECTIONS = ['dashboard', 'upload', 'settings'];
+    const VALID_SECTIONS = ['dashboard', 'upload', 'settings', 'sku-performance'];
     
     /**
      * Initialize routing
@@ -112,6 +112,55 @@
         return getSectionFromURL() || 'dashboard';
     }
     
+    /**
+     * Build SKU performance route URL
+     * @param {Object} params - Route parameters
+     * @param {string} params.channel - Channel name (required)
+     * @param {string} params.brand - Brand name (optional)
+     * @param {string} params.view - 'annual'|'quarterly'|'monthly'
+     * @param {string} params.period - 'Q1'|'Q2'|'Q3'|'Q4' (for quarterly)
+     * @param {string} params.year - Year (YYYY)
+     * @param {number} params.month - Month (1-12, for monthly)
+     * @returns {string} Route URL
+     */
+    function buildSKUPerformanceRoute(params) {
+        const { channel, brand, view, period, year, month } = params;
+        
+        if (!channel) {
+            console.error('Channel is required for SKU performance route');
+            return '/';
+        }
+        
+        const url = new URL(window.location.origin);
+        url.pathname = '/';
+        url.searchParams.set('section', 'sku-performance');
+        url.searchParams.set('channel', channel);
+        
+        if (brand) url.searchParams.set('brand', brand);
+        if (view) url.searchParams.set('view', view);
+        if (period) url.searchParams.set('period', period);
+        if (year) url.searchParams.set('year', year);
+        if (month) url.searchParams.set('month', month.toString());
+        
+        return url.toString();
+    }
+    
+    /**
+     * Parse SKU performance route parameters from URL
+     * @returns {Object} Parsed parameters
+     */
+    function parseSKUPerformanceRoute() {
+        const url = new URL(window.location);
+        return {
+            channel: url.searchParams.get('channel'),
+            brand: url.searchParams.get('brand') || null,
+            view: url.searchParams.get('view') || 'quarterly',
+            period: url.searchParams.get('period') || null,
+            year: url.searchParams.get('year') || new Date().getFullYear().toString(),
+            month: url.searchParams.get('month') ? parseInt(url.searchParams.get('month')) : null
+        };
+    }
+    
     // Make routing functions available globally
     window.ChaiVision = window.ChaiVision || {};
     window.ChaiVision.routing = {
@@ -120,6 +169,8 @@
         getSectionFromURL,
         updateURL,
         getCurrentSection,
+        buildSKUPerformanceRoute,
+        parseSKUPerformanceRoute,
         VALID_SECTIONS
     };
 })();
