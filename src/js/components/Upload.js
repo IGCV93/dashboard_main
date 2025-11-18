@@ -118,8 +118,12 @@
             // This allows proper deduplication while still handling legitimate duplicate entries
             const baseId = `${normalizeKey(dateVal)}|${normalizeKey(channelName)}|${normalizeKey(brandName)}|${normalizeKey(sku)}`;
             if (units !== null && revenue !== null) {
+                // Normalize numbers to avoid floating point precision issues
+                // Convert to integers/decimals with fixed precision for consistency
+                const normalizedUnits = Math.round(parseFloat(units) || 0);
+                const normalizedRevenue = parseFloat(revenue || 0).toFixed(2); // 2 decimal places for currency
                 // Include units and revenue to create unique ID for each unique transaction
-                return `${baseId}|${units}|${revenue}`;
+                return `${baseId}|${normalizedUnits}|${normalizedRevenue}`;
             }
             return baseId;
         };
@@ -620,6 +624,7 @@
                     
                     // Route to correct batch save method based on upload type
                     if (isSKUData) {
+                        let uploadCompleted = false;
                         result = await dataService.batchSaveSKUData(
                             formattedData, 
                             batchSize,
@@ -636,19 +641,28 @@
                                 }
                                 
                                 // If all batches are complete, update status immediately
-                                if (progressData.progress >= 100) {
+                                if (progressData.progress >= 100 && !uploadCompleted) {
+                                    uploadCompleted = true;
                                     setUploadProgress(100);
                                     setUploadStatus('success');
+                                    console.log('✅ SKU upload completed successfully');
                                 }
                             }
                         );
                         
-                        // Ensure status is set to success after batch save completes
-                        setUploadProgress(100);
-                        setUploadStatus('success');
+                        // CRITICAL: Always ensure status is set to success after batch save completes
+                        // This handles cases where progress callback might not fire at exactly 100%
+                        if (!uploadCompleted) {
+                            setUploadProgress(100);
+                            setUploadStatus('success');
+                            console.log('✅ SKU upload completed (final status update)');
+                        }
+                        
+                        // Use actual inserted rows from result, not total rows
+                        actualSavedCount = result.successfulRows || 0;
+                        console.log(`📊 Upload result: ${result.successfulRows} inserted, ${result.skippedRows || 0} skipped, ${result.failedRows || 0} failed`);
                         
                         // Verify actual records saved (non-blocking, don't wait if it's slow)
-                        actualSavedCount = result.successfulRows;
                         // Run verification asynchronously without blocking
                         (async () => {
                             try {
@@ -666,7 +680,6 @@
                                     const response = await Promise.race([verifyPromise, timeoutPromise]).catch(() => null);
                                     
                                     if (response && !response.error && response.count !== null && response.count !== undefined) {
-                                        actualSavedCount = response.count;
                                         console.log(`📊 Database verification: ${response.count} total records in sku_sales_data table`);
                                     }
                                 }
@@ -676,6 +689,7 @@
                             }
                         })();
                     } else {
+                        let uploadCompleted = false;
                         result = await dataService.batchSaveSalesData(
                             formattedData, 
                             batchSize,
@@ -692,19 +706,28 @@
                                 }
                                 
                                 // If all batches are complete, update status immediately
-                                if (progressData.progress >= 100) {
+                                if (progressData.progress >= 100 && !uploadCompleted) {
+                                    uploadCompleted = true;
                                     setUploadProgress(100);
                                     setUploadStatus('success');
+                                    console.log('✅ Channel upload completed successfully');
                                 }
                             }
                         );
                         
-                        // Ensure status is set to success after batch save completes
-                        setUploadProgress(100);
-                        setUploadStatus('success');
+                        // CRITICAL: Always ensure status is set to success after batch save completes
+                        // This handles cases where progress callback might not fire at exactly 100%
+                        if (!uploadCompleted) {
+                            setUploadProgress(100);
+                            setUploadStatus('success');
+                            console.log('✅ Channel upload completed (final status update)');
+                        }
+                        
+                        // Use actual inserted rows from result
+                        actualSavedCount = result.successfulRows || 0;
+                        console.log(`📊 Upload result: ${result.successfulRows} inserted, ${result.failedRows || 0} failed`);
                         
                         // Verify actual records saved (non-blocking, don't wait if it's slow)
-                        actualSavedCount = result.successfulRows;
                         // Run verification asynchronously without blocking
                         (async () => {
                             try {
@@ -722,7 +745,6 @@
                                     const response = await Promise.race([verifyPromise, timeoutPromise]).catch(() => null);
                                     
                                     if (response && !response.error && response.count !== null && response.count !== undefined) {
-                                        actualSavedCount = response.count;
                                         console.log(`📊 Database verification: ${response.count} total records in sales_data table`);
                                     }
                                 }

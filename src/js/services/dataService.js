@@ -683,61 +683,78 @@
                     const sourceIds = Array.from(new Set((data || []).map(r => r.source_id).filter(Boolean)));
                     
                     if (sourceIds.length > 0) {
-                        // Check which records already exist
-                        const { data: existing, error: selectError } = await this.supabase
-                            .from('sku_sales_data')
-                            .select('source_id')
-                            .in('source_id', sourceIds);
+                        // Supabase .in() query has a limit (typically 1000 items)
+                        // Split into chunks to handle large batches
+                        const CHUNK_SIZE = 1000;
+                        const existingSet = new Set();
                         
-                        if (selectError) {
-                            console.warn('Could not check for existing SKU records:', selectError);
-                            // Continue with insert - database will handle duplicates
+                        for (let i = 0; i < sourceIds.length; i += CHUNK_SIZE) {
+                            const chunk = sourceIds.slice(i, i + CHUNK_SIZE);
+                            const { data: existing, error: selectError } = await this.supabase
+                                .from('sku_sales_data')
+                                .select('source_id')
+                                .in('source_id', chunk);
+                            
+                            if (selectError) {
+                                console.warn(`Could not check for existing SKU records (chunk ${i / CHUNK_SIZE + 1}):`, selectError);
+                                // Continue with insert - database will handle duplicates via constraint
+                            } else if (existing) {
+                                existing.forEach(r => existingSet.add(r.source_id));
+                            }
                         }
                         
                         // Filter out existing records
-                        const existingSet = new Set((existing || []).map(r => r.source_id));
                         const toInsert = data.filter(row => !existingSet.has(row.source_id));
                         
                         if (toInsert.length === 0) {
                             // All records already exist
                             this.cache.delete('sku_data');
-                            return true;
+                            return { success: true, inserted: 0, skipped: data.length };
                         }
                         
                         // Insert only new records
-                        const { error: insertError } = await this.supabase
+                        const { error: insertError, count } = await this.supabase
                             .from('sku_sales_data')
-                            .insert(toInsert);
+                            .insert(toInsert)
+                            .select('id', { count: 'exact', head: false });
                         
                         if (insertError) {
                             // If error is due to duplicates (constraint violation), that's okay
                             if (insertError.code === '23505' || insertError.message?.includes('duplicate')) {
                                 console.warn('Some SKU records were duplicates (skipped)');
                                 this.cache.delete('sku_data');
-                                return true;
+                                // Try to insert individually to get accurate count
+                                return await this.insertSKUDataIndividually(toInsert);
                             }
                             console.error('Supabase SKU insert error:', insertError);
                             throw insertError;
                         }
+                        
+                        const insertedCount = count || toInsert.length;
+                        this.cache.delete('sku_data');
+                        return { success: true, inserted: insertedCount, skipped: data.length - insertedCount };
                     } else {
                         // No source_ids, insert all
-                        const { error: insertError } = await this.supabase
+                        const { error: insertError, count } = await this.supabase
                             .from('sku_sales_data')
-                            .insert(data);
+                            .insert(data)
+                            .select('id', { count: 'exact', head: false });
                         
                         if (insertError) {
                             if (insertError.code === '23505' || insertError.message?.includes('duplicate')) {
                                 console.warn('Some SKU records were duplicates (skipped)');
                                 this.cache.delete('sku_data');
-                                return true;
+                                // Try to insert individually to get accurate count
+                                return await this.insertSKUDataIndividually(data);
                             }
                             console.error('Supabase SKU insert error:', insertError);
                             throw insertError;
                         }
+                        
+                        const insertedCount = count || data.length;
+                        this.cache.delete('sku_data');
+                        return { success: true, inserted: insertedCount, skipped: data.length - insertedCount };
                     }
-
-                    this.cache.delete('sku_data');
-                    return true;
                 } catch (error) {
                     console.error('Supabase SKU error:', error);
                     throw error;
@@ -746,6 +763,39 @@
                 // Fallback: Store in localStorage
                 return this.saveLocalSKUData(data);
             }
+        }
+        
+        /**
+         * Insert SKU rows individually to handle constraint violations and get accurate count
+         */
+        async insertSKUDataIndividually(data) {
+            let inserted = 0;
+            let skipped = 0;
+            
+            for (const row of data) {
+                try {
+                    const { error } = await this.supabase
+                        .from('sku_sales_data')
+                        .insert(row);
+                    
+                    if (error) {
+                        if (error.code === '23505' || error.message?.includes('duplicate')) {
+                            skipped++;
+                        } else {
+                            console.error('Error inserting SKU row:', error);
+                            skipped++;
+                        }
+                    } else {
+                        inserted++;
+                    }
+                } catch (err) {
+                    console.error('Exception inserting SKU row:', err);
+                    skipped++;
+                }
+            }
+            
+            this.cache.delete('sku_data');
+            return { success: true, inserted, skipped };
         }
         
         saveLocalSKUData(data) {
@@ -852,16 +902,26 @@
             const results = [];
             let processedBatches = 0;
             let successfulRows = 0;
+            let skippedRows = 0;
             let failedRows = 0;
             
             for (const batch of batches) {
                 try {
                     const result = await this.saveSKUData(batch);
-                    results.push(result);
+                    const isSuccess = result && (result.success === true || result === true);
+                    results.push(isSuccess ? result : false);
                     processedBatches++;
-                    successfulRows += batch.length;
                     
-                    console.log(`SKU Batch ${processedBatches} completed: ${batch.length} rows processed`);
+                    // Track actual inserted rows, not just batch length
+                    if (result && typeof result === 'object') {
+                        successfulRows += result.inserted || 0;
+                        skippedRows += result.skipped || 0;
+                    } else if (isSuccess) {
+                        // Fallback: if result is just true, assume all were inserted
+                        successfulRows += batch.length;
+                    }
+                    
+                    console.log(`SKU Batch ${processedBatches}/${batches.length} completed: ${batch.length} rows (inserted: ${result?.inserted || batch.length}, skipped: ${result?.skipped || 0})`);
                     
                     // Report progress
                     if (onProgress) {
@@ -870,8 +930,10 @@
                             processedBatches,
                             totalBatches: batches.length,
                             progress,
-                            processedRows: successfulRows,
+                            processedRows: successfulRows + skippedRows,
                             totalRows: dataArray.length,
+                            insertedRows: successfulRows,
+                            skippedRows: skippedRows,
                             currentBatch: processedBatches,
                             batchSize: batch.length
                         });
@@ -893,8 +955,10 @@
                             processedBatches,
                             totalBatches: batches.length,
                             progress: Math.round((processedBatches / batches.length) * 100),
-                            processedRows: successfulRows,
+                            processedRows: successfulRows + skippedRows,
                             totalRows: dataArray.length,
+                            insertedRows: successfulRows,
+                            skippedRows: skippedRows,
                             error: error.message,
                             currentBatch: processedBatches,
                             batchSize: batch.length
@@ -903,8 +967,23 @@
                 }
             }
             
-            const successfulBatches = results.filter(r => r === true).length;
+            const successfulBatches = results.filter(r => r !== false).length;
             const failed = results.filter(r => r === false).length;
+            
+            // Ensure progress callback is called one final time with 100%
+            if (onProgress) {
+                onProgress({
+                    processedBatches: batches.length,
+                    totalBatches: batches.length,
+                    progress: 100,
+                    processedRows: successfulRows + skippedRows,
+                    totalRows: dataArray.length,
+                    insertedRows: successfulRows,
+                    skippedRows: skippedRows,
+                    currentBatch: batches.length,
+                    batchSize: batches[batches.length - 1]?.length || 0
+                });
+            }
             
             return {
                 allSuccessful: failed === 0,
@@ -912,6 +991,7 @@
                 success: successfulBatches,
                 failed,
                 successfulRows,
+                skippedRows,
                 failedRows
             };
         }
