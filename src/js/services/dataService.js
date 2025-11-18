@@ -675,53 +675,101 @@
         /**
          * Save SKU sales data to database
          */
+        /**
+         * Helper function to wrap Supabase queries with timeout protection
+         */
+        async queryWithTimeout(queryPromise, timeoutMs = 30000, operationName = 'Query') {
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error(`${operationName} timeout after ${timeoutMs}ms`)), timeoutMs);
+            });
+            
+            try {
+                return await Promise.race([queryPromise, timeoutPromise]);
+            } catch (error) {
+                console.error(`${operationName} failed or timed out:`, error);
+                throw error;
+            }
+        }
+
         async saveSKUData(data) {
+            console.log(`🔍 DEBUG [saveSKUData] - START: Processing ${data?.length || 0} rows`);
+            
             if (this.supabase && this.config.FEATURES.ENABLE_SUPABASE) {
                 try {
                     // Check for existing records to avoid duplicates
                     // Unique constraint: (date, channel, brand, sku, source_id)
                     const sourceIds = Array.from(new Set((data || []).map(r => r.source_id).filter(Boolean)));
+                    console.log(`🔍 DEBUG [saveSKUData] - Extracted ${sourceIds.length} unique source_ids`);
                     
                     if (sourceIds.length > 0) {
                         // Supabase .in() query has a limit (typically 1000 items)
                         // Split into chunks to handle large batches
                         const CHUNK_SIZE = 1000;
                         const existingSet = new Set();
+                        const numChunks = Math.ceil(sourceIds.length / CHUNK_SIZE);
+                        console.log(`🔍 DEBUG [saveSKUData] - Checking existing records in ${numChunks} chunks`);
                         
                         for (let i = 0; i < sourceIds.length; i += CHUNK_SIZE) {
                             const chunk = sourceIds.slice(i, i + CHUNK_SIZE);
-                            const { data: existing, error: selectError } = await this.supabase
-                                .from('sku_sales_data')
-                                .select('source_id')
-                                .in('source_id', chunk);
+                            const chunkNum = Math.floor(i / CHUNK_SIZE) + 1;
+                            console.log(`🔍 DEBUG [saveSKUData] - Checking chunk ${chunkNum}/${numChunks} (${chunk.length} IDs)`);
                             
-                            if (selectError) {
-                                console.warn(`Could not check for existing SKU records (chunk ${i / CHUNK_SIZE + 1}):`, selectError);
-                                // Continue with insert - database will handle duplicates via constraint
-                            } else if (existing) {
-                                existing.forEach(r => existingSet.add(r.source_id));
+                            try {
+                                const selectQuery = this.supabase
+                                    .from('sku_sales_data')
+                                    .select('source_id')
+                                    .in('source_id', chunk);
+                                
+                                const { data: existing, error: selectError } = await this.queryWithTimeout(
+                                    selectQuery,
+                                    15000,
+                                    `Check existing chunk ${chunkNum}/${numChunks}`
+                                );
+                                
+                                if (selectError) {
+                                    console.warn(`Could not check for existing SKU records (chunk ${chunkNum}/${numChunks}):`, selectError);
+                                    // Continue with insert - database will handle duplicates via constraint
+                                } else if (existing) {
+                                    existing.forEach(r => existingSet.add(r.source_id));
+                                    console.log(`🔍 DEBUG [saveSKUData] - Chunk ${chunkNum}: Found ${existing.length} existing records`);
+                                }
+                            } catch (chunkError) {
+                                console.warn(`Chunk ${chunkNum} check failed (continuing):`, chunkError.message);
+                                // Continue - duplicates will be handled by database constraint
                             }
                         }
                         
+                        console.log(`🔍 DEBUG [saveSKUData] - Total existing records found: ${existingSet.size}`);
+                        
                         // Filter out existing records
                         const toInsert = data.filter(row => !existingSet.has(row.source_id));
+                        console.log(`🔍 DEBUG [saveSKUData] - After filtering: ${toInsert.length} to insert, ${data.length - toInsert.length} to skip`);
                         
                         if (toInsert.length === 0) {
                             // All records already exist
+                            console.log(`🔍 DEBUG [saveSKUData] - END: All records already exist`);
                             this.cache.delete('sku_data');
                             return { success: true, inserted: 0, skipped: data.length };
                         }
                         
                         // Insert only new records
-                        const { error: insertError, count } = await this.supabase
+                        console.log(`🔍 DEBUG [saveSKUData] - Starting INSERT of ${toInsert.length} rows`);
+                        const insertQuery = this.supabase
                             .from('sku_sales_data')
                             .insert(toInsert)
                             .select('id', { count: 'exact', head: false });
                         
+                        const { error: insertError, count } = await this.queryWithTimeout(
+                            insertQuery,
+                            30000,
+                            `Insert ${toInsert.length} rows`
+                        );
+                        
                         if (insertError) {
+                            console.log(`🔍 DEBUG [saveSKUData] - INSERT ERROR:`, insertError);
                             // If error is due to duplicates (constraint violation), that's okay
                             if (insertError.code === '23505' || insertError.message?.includes('duplicate')) {
-                                console.warn('Some SKU records were duplicates (skipped)');
+                                console.warn('Some SKU records were duplicates (skipped), trying individual insert');
                                 this.cache.delete('sku_data');
                                 // Try to insert individually to get accurate count
                                 return await this.insertSKUDataIndividually(toInsert);
@@ -731,18 +779,27 @@
                         }
                         
                         const insertedCount = count || toInsert.length;
+                        console.log(`🔍 DEBUG [saveSKUData] - END: Successfully inserted ${insertedCount} rows, skipped ${data.length - insertedCount}`);
                         this.cache.delete('sku_data');
                         return { success: true, inserted: insertedCount, skipped: data.length - insertedCount };
                     } else {
+                        console.log(`🔍 DEBUG [saveSKUData] - No source_ids, inserting all ${data.length} rows`);
                         // No source_ids, insert all
-                        const { error: insertError, count } = await this.supabase
+                        const insertQuery = this.supabase
                             .from('sku_sales_data')
                             .insert(data)
                             .select('id', { count: 'exact', head: false });
                         
+                        const { error: insertError, count } = await this.queryWithTimeout(
+                            insertQuery,
+                            30000,
+                            `Insert ${data.length} rows (no source_id check)`
+                        );
+                        
                         if (insertError) {
+                            console.log(`🔍 DEBUG [saveSKUData] - INSERT ERROR:`, insertError);
                             if (insertError.code === '23505' || insertError.message?.includes('duplicate')) {
-                                console.warn('Some SKU records were duplicates (skipped)');
+                                console.warn('Some SKU records were duplicates (skipped), trying individual insert');
                                 this.cache.delete('sku_data');
                                 // Try to insert individually to get accurate count
                                 return await this.insertSKUDataIndividually(data);
@@ -752,14 +809,16 @@
                         }
                         
                         const insertedCount = count || data.length;
+                        console.log(`🔍 DEBUG [saveSKUData] - END: Successfully inserted ${insertedCount} rows`);
                         this.cache.delete('sku_data');
                         return { success: true, inserted: insertedCount, skipped: data.length - insertedCount };
                     }
                 } catch (error) {
-                    console.error('Supabase SKU error:', error);
+                    console.error('🔍 DEBUG [saveSKUData] - EXCEPTION:', error);
                     throw error;
                 }
             } else {
+                console.log(`🔍 DEBUG [saveSKUData] - Using localStorage fallback`);
                 // Fallback: Store in localStorage
                 return this.saveLocalSKUData(data);
             }
@@ -917,7 +976,13 @@
                 try {
                     console.log(`🔍 DEBUG [dataService] - Processing batch ${processedBatches + 1}/${batches.length} (${batch.length} rows)`);
                     
-                    const result = await this.saveSKUData(batch);
+                    // Wrap saveSKUData with timeout (60 seconds max per batch)
+                    const savePromise = this.saveSKUData(batch);
+                    const timeoutPromise = new Promise((_, reject) => {
+                        setTimeout(() => reject(new Error(`Batch ${processedBatches + 1} timeout after 60s`)), 60000);
+                    });
+                    
+                    const result = await Promise.race([savePromise, timeoutPromise]);
                     const isSuccess = result && (result.success === true || result === true);
                     results.push(isSuccess ? result : false);
                     processedBatches++;
