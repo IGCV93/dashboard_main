@@ -637,6 +637,7 @@
                 
                 let result = null;
                 let actualSavedCount = formattedData.length;
+                let uploadSucceeded = false; // Track if upload completed successfully (for error handling)
                 
                 if (dataService) {
                     // Use batch processing for large files with progress tracking
@@ -701,6 +702,9 @@
                         } else {
                             console.log('🔍 DEBUG - Callback already set completion, no fallback needed');
                         }
+                        
+                        // Mark upload as succeeded (data is in database)
+                        uploadSucceeded = true;
                         
                         // Use actual inserted rows from result, not total rows
                         actualSavedCount = result.successfulRows || 0;
@@ -767,6 +771,9 @@
                             console.log('✅ Channel upload completed (final status update)');
                         }
                         
+                        // Mark upload as succeeded (data is in database)
+                        uploadSucceeded = true;
+                        
                         // Use actual inserted rows from result
                         actualSavedCount = result.successfulRows || 0;
                         console.log(`📊 Upload result: ${result.successfulRows} inserted, ${result.failedRows || 0} failed`);
@@ -821,17 +828,23 @@
                     await new Promise(resolve => setTimeout(resolve, 500));
                     setUploadProgress(100);
                     setUploadStatus('success');
+                    uploadSucceeded = true; // Mark upload as succeeded
                 }
                 
-                // Notify parent component with actual results
-                if (onUploadComplete) {
-                    onUploadComplete({
-                        originalData: formattedData,
-                        actualSaved: result?.successfulRows || formattedData.length,
-                        failedRows: result?.failedRows || 0,
-                        totalBatches: result?.total || 1,
-                        successfulBatches: result?.success || 1
-                    });
+                // Notify parent component with actual results (don't let this fail the upload)
+                try {
+                    if (onUploadComplete) {
+                        onUploadComplete({
+                            originalData: formattedData,
+                            actualSaved: result?.successfulRows || formattedData.length,
+                            failedRows: result?.failedRows || 0,
+                            totalBatches: result?.total || 1,
+                            successfulBatches: result?.success || 1
+                        });
+                    }
+                } catch (callbackError) {
+                    console.warn('Upload completed but callback failed:', callbackError);
+                    // Don't fail the upload if callback fails
                 }
                 
                 // Reset after 3 seconds
@@ -847,10 +860,20 @@
                     setDetectedType(null); // Reset detected type
                 }, 3000);
             } catch (error) {
-                // Error uploading data
-                setUploadStatus('error');
-                setValidationErrors([`Upload failed: ${error.message || 'Unknown error occurred'}`]);
-                setUploadProgress(0);
+                // Error uploading data - but only set error status if upload didn't already succeed
+                console.error('Upload error:', error);
+                
+                // Check if upload already completed successfully (uploadSucceeded flag was set)
+                // If so, don't override with error - the data is already in the database
+                if (!uploadSucceeded) {
+                    setUploadStatus('error');
+                    setValidationErrors([`Upload failed: ${error.message || 'Unknown error occurred'}`]);
+                    setUploadProgress(0);
+                } else {
+                    // Upload succeeded but post-processing failed - log but don't show error to user
+                    console.warn('Upload succeeded but post-processing had errors:', error.message);
+                    // Keep the success status and don't show error toast
+                }
             }
         };
         
