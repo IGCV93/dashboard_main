@@ -129,16 +129,15 @@
         }, []);
         
         // Get effective date range (custom or calculated)
-        const getEffectiveDateRange = useMemo(() => {
-            return () => {
-                if (useCustomDateRange && customStartDate && customEndDate) {
-                    return {
-                        start: customStartDate,
-                        end: customEndDate
-                    };
-                }
-                return calculateDateRange(view, selectedPeriod, selectedYear, selectedMonth);
-            };
+        // Use useCallback to get a stable function reference
+        const getEffectiveDateRange = React.useCallback(() => {
+            if (useCustomDateRange && customStartDate && customEndDate) {
+                return {
+                    start: customStartDate,
+                    end: customEndDate
+                };
+            }
+            return calculateDateRange(view, selectedPeriod, selectedYear, selectedMonth);
         }, [useCustomDateRange, customStartDate, customEndDate, view, selectedPeriod, selectedYear, selectedMonth, calculateDateRange]);
         
         // Load SKU data on mount
@@ -282,7 +281,7 @@
             };
             
             loadComparison();
-        }, [comparisonMode, channel, brand, dataService, getEffectiveDateRange, view, selectedPeriod, selectedYear, selectedMonth]);
+        }, [comparisonMode, channel, brand, dataService, getEffectiveDateRange, view, selectedPeriod, selectedYear, selectedMonth, customComparisonStartDate, customComparisonEndDate]);
         
         // Load trend data (grouped by date)
         useEffect(() => {
