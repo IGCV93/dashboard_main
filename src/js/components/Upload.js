@@ -112,10 +112,16 @@
             return `${normalizeKey(dateVal)}|${normalizeKey(channelName)}|${normalizeKey(brandName)}${uniqueSuffix}`;
         };
         
-        const buildSKUSourceId = (dateVal, channelName, brandName, sku, index = null) => {
-            const timestamp = Date.now();
-            const uniqueSuffix = index !== null ? `_${index}_${timestamp}` : `_${timestamp}`;
-            return `${normalizeKey(dateVal)}|${normalizeKey(channelName)}|${normalizeKey(brandName)}|${normalizeKey(sku)}${uniqueSuffix}`;
+        const buildSKUSourceId = (dateVal, channelName, brandName, sku, units = null, revenue = null) => {
+            // Deterministic source_id for deduplication - same data = same source_id
+            // Include units and revenue to differentiate rows with same date/channel/brand/SKU but different values
+            // This allows proper deduplication while still handling legitimate duplicate entries
+            const baseId = `${normalizeKey(dateVal)}|${normalizeKey(channelName)}|${normalizeKey(brandName)}|${normalizeKey(sku)}`;
+            if (units !== null && revenue !== null) {
+                // Include units and revenue to create unique ID for each unique transaction
+                return `${baseId}|${units}|${revenue}`;
+            }
+            return baseId;
         };
         
         // Detect upload type based on file headers
@@ -574,7 +580,7 @@
                             revenue: revenue,
                             product_name: productName ? String(productName).trim() : null,
                             source: 'manual',
-                            source_id: buildSKUSourceId(finalDate, channelName, brandName, sku, index),
+                            source_id: buildSKUSourceId(finalDate, channelName, brandName, sku, units, revenue),
                             uploaded_by: currentUser?.id,
                             upload_batch_id: batchId
                         };
@@ -628,26 +634,47 @@
                                     console.warn(`SKU Batch ${progressData.processedBatches} failed:`, progressData.error);
                                     setValidationErrors(prev => [...prev, `Batch ${progressData.processedBatches} had errors (continuing...)`]);
                                 }
+                                
+                                // If all batches are complete, update status immediately
+                                if (progressData.progress >= 100) {
+                                    setUploadProgress(100);
+                                    setUploadStatus('success');
+                                }
                             }
                         );
                         
-                        // Verify actual records saved
+                        // Ensure status is set to success after batch save completes
+                        setUploadProgress(100);
+                        setUploadStatus('success');
+                        
+                        // Verify actual records saved (non-blocking, don't wait if it's slow)
                         actualSavedCount = result.successfulRows;
-                        try {
-                            const supabase = getSupabaseClient();
-                            if (supabase) {
-                                const { count, error } = await supabase
-                                    .from('sku_sales_data')
-                                    .select('*', { count: 'exact', head: true });
-                                
-                                if (!error && count !== null) {
-                                    actualSavedCount = count;
-                                    console.log(`📊 Database verification: ${count} total records in sku_sales_data table`);
+                        // Run verification asynchronously without blocking
+                        (async () => {
+                            try {
+                                const supabase = getSupabaseClient();
+                                if (supabase) {
+                                    // Use a timeout to prevent hanging
+                                    const verifyPromise = supabase
+                                        .from('sku_sales_data')
+                                        .select('*', { count: 'exact', head: true });
+                                    
+                                    const timeoutPromise = new Promise((_, reject) => 
+                                        setTimeout(() => reject(new Error('Verification timeout')), 5000)
+                                    );
+                                    
+                                    const response = await Promise.race([verifyPromise, timeoutPromise]).catch(() => null);
+                                    
+                                    if (response && !response.error && response.count !== null && response.count !== undefined) {
+                                        actualSavedCount = response.count;
+                                        console.log(`📊 Database verification: ${response.count} total records in sku_sales_data table`);
+                                    }
                                 }
+                            } catch (verifyError) {
+                                console.warn('Could not verify SKU database count:', verifyError);
+                                // Don't block on verification - continue with success status
                             }
-                        } catch (verifyError) {
-                            console.warn('Could not verify SKU database count:', verifyError);
-                        }
+                        })();
                     } else {
                         result = await dataService.batchSaveSalesData(
                             formattedData, 
@@ -663,26 +690,47 @@
                                     console.warn(`Batch ${progressData.processedBatches} failed:`, progressData.error);
                                     setValidationErrors(prev => [...prev, `Batch ${progressData.processedBatches} had errors (continuing...)`]);
                                 }
+                                
+                                // If all batches are complete, update status immediately
+                                if (progressData.progress >= 100) {
+                                    setUploadProgress(100);
+                                    setUploadStatus('success');
+                                }
                             }
                         );
                         
-                        // Verify actual records saved by querying the database
+                        // Ensure status is set to success after batch save completes
+                        setUploadProgress(100);
+                        setUploadStatus('success');
+                        
+                        // Verify actual records saved (non-blocking, don't wait if it's slow)
                         actualSavedCount = result.successfulRows;
-                        try {
-                            const supabase = getSupabaseClient();
-                            if (supabase) {
-                                const { count, error } = await supabase
-                                    .from('sales_data')
-                                    .select('*', { count: 'exact', head: true });
-                                
-                                if (!error && count !== null) {
-                                    actualSavedCount = count;
-                                    console.log(`📊 Database verification: ${count} total records in sales_data table`);
+                        // Run verification asynchronously without blocking
+                        (async () => {
+                            try {
+                                const supabase = getSupabaseClient();
+                                if (supabase) {
+                                    // Use a timeout to prevent hanging
+                                    const verifyPromise = supabase
+                                        .from('sales_data')
+                                        .select('*', { count: 'exact', head: true });
+                                    
+                                    const timeoutPromise = new Promise((_, reject) => 
+                                        setTimeout(() => reject(new Error('Verification timeout')), 5000)
+                                    );
+                                    
+                                    const response = await Promise.race([verifyPromise, timeoutPromise]).catch(() => null);
+                                    
+                                    if (response && !response.error && response.count !== null && response.count !== undefined) {
+                                        actualSavedCount = response.count;
+                                        console.log(`📊 Database verification: ${response.count} total records in sales_data table`);
+                                    }
                                 }
+                            } catch (verifyError) {
+                                console.warn('Could not verify database count:', verifyError);
+                                // Don't block on verification - continue with success status
                             }
-                        } catch (verifyError) {
-                            console.warn('Could not verify database count:', verifyError);
-                        }
+                        })();
                     }
 
                     if (!result.allSuccessful) {
@@ -705,10 +753,9 @@
                     
                     // Simulate upload delay
                     await new Promise(resolve => setTimeout(resolve, 500));
+                    setUploadProgress(100);
+                    setUploadStatus('success');
                 }
-                
-                setUploadProgress(100);
-                setUploadStatus('success');
                 
                 // Notify parent component with actual results
                 if (onUploadComplete) {
