@@ -9,6 +9,16 @@
     function SKUPerformance(props) {
         const { useState, useEffect, useMemo, useRef, createElement: h } = React;
         
+        // Add debug logging
+        console.log('🎯 SKUPerformance component mounted with props:', {
+            channel: props.channel,
+            brand: props.brand,
+            view: props.view,
+            selectedYear: props.selectedYear,
+            hasDataService: !!props.dataService,
+            propsKeys: Object.keys(props)
+        });
+        
         const {
             channel,
             brand,
@@ -134,8 +144,12 @@
         // Load SKU data on mount
         useEffect(() => {
             const loadData = async () => {
+                console.log('🔄 SKUPerformance loadData starting...', { channel, brand, hasDataService: !!dataService });
+                
                 if (!dataService || !channel) {
-                    setError('Missing required data service or channel');
+                    const errorMsg = 'Missing required data service or channel';
+                    console.error('❌ SKUPerformance:', errorMsg, { dataService: !!dataService, channel });
+                    setError(errorMsg);
                     setLoading(false);
                     return;
                 }
@@ -143,11 +157,14 @@
                 try {
                     setLoading(true);
                     setError(null);
+                    console.log('📅 Getting effective date range...');
                     
                     // Get effective date range
                     const dateRange = getEffectiveDateRange();
+                    console.log('📅 Date range:', dateRange);
                     
                     if (!dateRange.start || !dateRange.end) {
+                        console.error('❌ Invalid date range:', dateRange);
                         setError('Invalid date range');
                         setLoading(false);
                         return;
@@ -161,19 +178,24 @@
                         groupBy: 'sku'
                     };
                     
+                    console.log('🔍 Loading SKU data with filters:', filters);
                     const data = await dataService.loadSKUData(filters);
+                    console.log('✅ SKU data loaded:', { rowCount: data.length, sample: data[0] });
+                    
                     setSkuData(data);
                     
                     // Calculate totals
                     const total = data.reduce((sum, item) => sum + (item.revenue || 0), 0);
                     const units = data.reduce((sum, item) => sum + (item.units || 0), 0);
+                    console.log('📊 Totals calculated:', { revenue: total, units: units });
                     setTotalRevenue(total);
                     setTotalUnits(units);
                     
                 } catch (err) {
-                    console.error('Failed to load SKU data:', err);
+                    console.error('❌ Failed to load SKU data:', err);
                     setError('Failed to load SKU data. Please try again.');
                 } finally {
+                    console.log('✅ Loading complete, setting loading=false');
                     setLoading(false);
                 }
             };
@@ -1171,8 +1193,12 @@
             };
         }, [chartData, loading, totalRevenue, formatCurrency, calculateSKUTargetContribution, trendData, selectedSKUsForTrend, view, comparisonMode, comparisonData]);
         
+        // Debug render state
+        console.log('🎨 Rendering SKUPerformance:', { loading, error, skuDataCount: skuData.length });
+        
         // Loading state
         if (loading) {
+            console.log('📦 Showing loading state');
             return h('div', { className: 'sku-performance-container' },
                 h('div', { className: 'loading-container' },
                     h('div', { className: 'loading-spinner' }),
@@ -1183,6 +1209,7 @@
         
         // Error state
         if (error) {
+            console.log('❌ Showing error state:', error);
             return h('div', { className: 'sku-performance-container' },
                 h('div', { className: 'error-container' },
                     h('h2', null, 'Error'),
@@ -1196,6 +1223,7 @@
         }
         
         // Main render
+        console.log('🎨 Rendering main SKU performance view with', skuData.length, 'SKUs');
         return h('div', { className: 'sku-performance-container' },
             // Header with breadcrumb
             h('div', { className: 'sku-performance-header' },
