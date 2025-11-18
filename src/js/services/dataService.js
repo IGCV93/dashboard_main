@@ -1635,6 +1635,56 @@
         }
         
         /**
+         * Map dashboard channel names to database channel names
+         * Dashboard channels may have prefixes (NPK, DTC, etc.) that don't exist in SKU data
+         */
+        mapChannelNameForSKU(dashboardChannelName) {
+            if (!dashboardChannelName) return null;
+            
+            // Channel name mapping: Dashboard -> Database
+            const channelMap = {
+                'NPK Shopify': 'Shopify',
+                'DTC-Shopify': 'Shopify',
+                'DTC Shopify': 'Shopify',
+                'Shopify': 'Shopify',
+                'Amazon': 'Amazon',
+                'TikTok': 'TikTok',
+                'Omnichannel': 'Omni Channel',
+                'Omni Channel': 'Omni Channel',
+                'Wholesale': 'Wholesale',
+                'Retail': 'Retail',
+                'CA International': 'CA International',
+                'UK International': 'UK International'
+            };
+            
+            // Try exact match first
+            if (channelMap[dashboardChannelName]) {
+                console.log(`📝 Mapped channel: "${dashboardChannelName}" -> "${channelMap[dashboardChannelName]}"`);
+                return channelMap[dashboardChannelName];
+            }
+            
+            // Try case-insensitive partial match (e.g., if channel contains "Shopify")
+            const lowerChannelName = dashboardChannelName.toLowerCase();
+            if (lowerChannelName.includes('shopify')) {
+                console.log(`📝 Mapped channel (partial): "${dashboardChannelName}" -> "Shopify"`);
+                return 'Shopify';
+            }
+            if (lowerChannelName.includes('amazon')) {
+                return 'Amazon';
+            }
+            if (lowerChannelName.includes('tiktok')) {
+                return 'TikTok';
+            }
+            if (lowerChannelName.includes('omni')) {
+                return 'Omni Channel';
+            }
+            
+            // Fallback: return original name
+            console.log(`📝 No mapping found for channel: "${dashboardChannelName}", using as-is`);
+            return dashboardChannelName;
+        }
+
+        /**
          * Load aggregated SKU sales data
          * @param {Object} filters - Filter object
          * @param {string} filters.startDate - Start date (YYYY-MM-DD)
@@ -1668,15 +1718,19 @@
                     groupBy = 'sku'
                 } = filters;
                 
+                // Map dashboard channel name to database channel name
+                const mappedChannel = channel ? this.mapChannelNameForSKU(channel) : null;
+                
                 // Normalize filters
-                const normalizedChannel = (channel && channel !== 'All Channels') ? channel : null;
+                const normalizedChannel = (mappedChannel && mappedChannel !== 'All Channels') ? mappedChannel : null;
                 const normalizedBrand = (brand && brand !== 'All Brands' && brand !== 'All Brands (Company Total)' && brand !== 'All My Brands') ? brand : null;
                 const normalizedSku = sku || null;
                 
                 console.log(`📊 Loading SKU data via RPC:`, {
                     startDate,
                     endDate,
-                    channel: normalizedChannel,
+                    channelOriginal: channel,
+                    channelMapped: normalizedChannel,
                     brand: normalizedBrand,
                     sku: normalizedSku,
                     groupBy
