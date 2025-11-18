@@ -1101,12 +1101,16 @@
                     const failedRows = uploadResult.failedRows || 0;
                     
                     // Refresh data from database instead of merging with cached data
-                    if (dataService) {
+                    // Access dataService from APP_STATE
+                    const dataServiceInstance = APP_STATE?.dataService;
+                    
+                    if (dataServiceInstance) {
                         console.log('🔄 Refreshing data from database after upload...');
                         // Clear cache to ensure fresh data
-                        dataService.clearCache('sales_data');
-                        dataService.clearCache('channels');
-                        const freshData = await dataService.loadSalesData();
+                        dataServiceInstance.clearCache('sales_data');
+                        dataServiceInstance.clearCache('sku_data'); // Also clear SKU cache
+                        dataServiceInstance.clearCache('channels');
+                        const freshData = await dataServiceInstance.loadSalesData();
                         setSalesData(freshData);
                         console.log(`📊 Loaded ${freshData.length} records from database`);
                     } else {
@@ -1124,9 +1128,8 @@
                     }
                 } catch (err) {
                     console.error('Failed to process upload:', err);
-                    if (window.showErrorMessage) {
-                        window.showErrorMessage('Failed to process upload');
-                    }
+                    // Don't show error toast - upload already succeeded, this is just cache refresh
+                    console.warn('Upload succeeded but cache refresh failed - data is in database');
                 }
             };
             
