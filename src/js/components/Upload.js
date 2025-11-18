@@ -427,9 +427,24 @@
                 } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
                     // Parse Excel
                     const workbook = XLSX.read(content, { type: 'binary' });
+                    
+                    // DEBUG: Log workbook info
+                    console.log('🔍 DEBUG - Workbook info:', {
+                        totalSheets: workbook.SheetNames.length,
+                        sheetNames: workbook.SheetNames
+                    });
+                    
                     const sheetName = workbook.SheetNames[0];
                     const sheet = workbook.Sheets[sheetName];
                     const rawData = XLSX.utils.sheet_to_json(sheet);
+                    
+                    // DEBUG: Log raw data count
+                    console.log('🔍 DEBUG - Excel parsing:', {
+                        selectedSheet: sheetName,
+                        rawRowCount: rawData.length,
+                        firstRow: rawData[0],
+                        lastRow: rawData[rawData.length - 1]
+                    });
                     
                     if (rawData.length === 0) {
                         setUploadStatus('error');
@@ -463,6 +478,13 @@
                                             row.revenue !== undefined && row.revenue !== null && row.revenue !== '';
                             return hasDate && hasChannel && hasBrand && hasRevenue;
                         }
+                    });
+                    
+                    // DEBUG: Log filtering results
+                    console.log('🔍 DEBUG - After filtering empty rows:', {
+                        beforeFilter: rawData.length,
+                        afterFilter: data.length,
+                        removedRows: rawData.length - data.length
                     });
                     
                     setUploadedData(data);
@@ -625,10 +647,23 @@
                     // Route to correct batch save method based on upload type
                     if (isSKUData) {
                         let uploadCompleted = false;
+                        
+                        // DEBUG: Log before batch upload
+                        console.log('🔍 DEBUG - Starting batch upload:', {
+                            totalRows: formattedData.length,
+                            batchSize: batchSize,
+                            expectedBatches: Math.ceil(formattedData.length / batchSize),
+                            firstRow: formattedData[0],
+                            sampleSourceIds: formattedData.slice(0, 5).map(r => r.source_id)
+                        });
+                        
                         result = await dataService.batchSaveSKUData(
                             formattedData, 
                             batchSize,
                             (progressData) => {
+                                // DEBUG: Log each progress callback
+                                console.log('🔍 DEBUG - Progress callback:', progressData);
+                                
                                 // Update progress with real-time data
                                 const uploadProgress = Math.round(90 + (progressData.progress * 0.1)); // 90-100%
                                 setUploadProgress(uploadProgress);
@@ -645,17 +680,26 @@
                                     uploadCompleted = true;
                                     setUploadProgress(100);
                                     setUploadStatus('success');
-                                    console.log('✅ SKU upload completed successfully');
+                                    console.log('✅ SKU upload completed successfully (from callback)');
                                 }
                             }
                         );
                         
+                        // DEBUG: Log after batch upload completes
+                        console.log('🔍 DEBUG - Batch upload completed:', {
+                            result: result,
+                            uploadCompletedFlag: uploadCompleted
+                        });
+                        
                         // CRITICAL: Always ensure status is set to success after batch save completes
                         // This handles cases where progress callback might not fire at exactly 100%
                         if (!uploadCompleted) {
+                            console.log('🔍 DEBUG - Fallback status update triggered (callback did not reach 100%)');
                             setUploadProgress(100);
                             setUploadStatus('success');
                             console.log('✅ SKU upload completed (final status update)');
+                        } else {
+                            console.log('🔍 DEBUG - Callback already set completion, no fallback needed');
                         }
                         
                         // Use actual inserted rows from result, not total rows

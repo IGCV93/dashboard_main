@@ -899,6 +899,14 @@
                 batches.push(dataArray.slice(i, i + batchSize));
             }
             
+            // DEBUG: Log batch setup
+            console.log('🔍 DEBUG [dataService] - batchSaveSKUData setup:', {
+                totalRows: dataArray.length,
+                batchSize: batchSize,
+                numberOfBatches: batches.length,
+                lastBatchSize: batches[batches.length - 1]?.length
+            });
+            
             const results = [];
             let processedBatches = 0;
             let successfulRows = 0;
@@ -907,6 +915,8 @@
             
             for (const batch of batches) {
                 try {
+                    console.log(`🔍 DEBUG [dataService] - Processing batch ${processedBatches + 1}/${batches.length} (${batch.length} rows)`);
+                    
                     const result = await this.saveSKUData(batch);
                     const isSuccess = result && (result.success === true || result === true);
                     results.push(isSuccess ? result : false);
@@ -921,12 +931,13 @@
                         successfulRows += batch.length;
                     }
                     
-                    console.log(`SKU Batch ${processedBatches}/${batches.length} completed: ${batch.length} rows (inserted: ${result?.inserted || batch.length}, skipped: ${result?.skipped || 0})`);
+                    console.log(`✅ SKU Batch ${processedBatches}/${batches.length} completed: ${batch.length} rows (inserted: ${result?.inserted || batch.length}, skipped: ${result?.skipped || 0})`);
+                    console.log(`🔍 DEBUG [dataService] - Running totals: inserted=${successfulRows}, skipped=${skippedRows}, failed=${failedRows}`);
                     
                     // Report progress
                     if (onProgress) {
                         const progress = Math.round((processedBatches / batches.length) * 100);
-                        onProgress({
+                        const progressObj = {
                             processedBatches,
                             totalBatches: batches.length,
                             progress,
@@ -936,7 +947,9 @@
                             skippedRows: skippedRows,
                             currentBatch: processedBatches,
                             batchSize: batch.length
-                        });
+                        };
+                        console.log(`🔍 DEBUG [dataService] - Calling onProgress for batch ${processedBatches}:`, progressObj);
+                        onProgress(progressObj);
                     }
                     
                     // Add small delay between batches
@@ -944,14 +957,14 @@
                         await new Promise(resolve => setTimeout(resolve, 100));
                     }
                 } catch (error) {
-                    console.error(`SKU Batch ${processedBatches + 1} failed:`, error);
+                    console.error(`❌ SKU Batch ${processedBatches + 1} failed:`, error);
                     results.push(false);
                     processedBatches++;
                     failedRows += batch.length;
                     
                     // Report error progress
                     if (onProgress) {
-                        onProgress({
+                        const errorProgressObj = {
                             processedBatches,
                             totalBatches: batches.length,
                             progress: Math.round((processedBatches / batches.length) * 100),
@@ -962,17 +975,23 @@
                             error: error.message,
                             currentBatch: processedBatches,
                             batchSize: batch.length
-                        });
+                        };
+                        console.log(`🔍 DEBUG [dataService] - Calling onProgress for FAILED batch ${processedBatches}:`, errorProgressObj);
+                        onProgress(errorProgressObj);
                     }
                 }
             }
             
+            console.log(`🔍 DEBUG [dataService] - Batch loop completed. Processed ${processedBatches}/${batches.length} batches`);
+            
             const successfulBatches = results.filter(r => r !== false).length;
             const failed = results.filter(r => r === false).length;
             
+            console.log(`🔍 DEBUG [dataService] - Final stats: successful=${successfulBatches}, failed=${failed}`);
+            
             // Ensure progress callback is called one final time with 100%
             if (onProgress) {
-                onProgress({
+                const finalProgressObj = {
                     processedBatches: batches.length,
                     totalBatches: batches.length,
                     progress: 100,
@@ -982,10 +1001,14 @@
                     skippedRows: skippedRows,
                     currentBatch: batches.length,
                     batchSize: batches[batches.length - 1]?.length || 0
-                });
+                };
+                console.log(`🔍 DEBUG [dataService] - Calling FINAL onProgress (100%):`, finalProgressObj);
+                onProgress(finalProgressObj);
+            } else {
+                console.log(`🔍 DEBUG [dataService] - No onProgress callback to call`);
             }
             
-            return {
+            const returnValue = {
                 allSuccessful: failed === 0,
                 total: batches.length,
                 success: successfulBatches,
@@ -994,6 +1017,10 @@
                 skippedRows,
                 failedRows
             };
+            
+            console.log(`🔍 DEBUG [dataService] - Returning:`, returnValue);
+            
+            return returnValue;
         }
         
         /**
