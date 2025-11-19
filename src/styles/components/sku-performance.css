@@ -1,18 +1,16 @@
-/* Main container - match dashboard structure */
+/* Main container - SIMPLE AND CLEAN */
 .sku-performance-container {
-    width: 100%;
-    height: 100%;
-    overflow-y: auto;
-    background: #f9fafb;
-    padding: 24px;
+    /* No background - let parent handle it */
+    /* No complex styling - just content flow */
 }
 
 .sku-performance-header {
-    display: flex;
+    display: flex !important;
     align-items: center;
     gap: 16px;
     margin-bottom: 24px;
-    background: transparent;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .btn-back {
@@ -45,6 +43,15 @@
 
 .page-header {
     margin-bottom: 24px;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.page-header h1,
+.page-subtitle {
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: #1f2937 !important;
 }
 
 .page-header h1 {
@@ -62,12 +69,16 @@
 
 /* Filters Section */
 .sku-filters {
-    background: white;
+    background: white !important;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     padding: 20px;
     margin-bottom: 24px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    min-height: 100px;
 }
 
 .filters-row {
@@ -734,10 +745,12 @@
 }
 
 .sku-summary {
-    display: grid;
+    display: grid !important;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 16px;
     margin-bottom: 24px;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .summary-card {
@@ -767,13 +780,17 @@
 }
 
 .sku-table-container {
-    background: white;
+    background: white !important;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     overflow: hidden;
     position: relative;
     margin-bottom: 24px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    min-height: 200px;
 }
 
 .sku-table-container.virtual-scroll-enabled {
