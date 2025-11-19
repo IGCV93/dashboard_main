@@ -1333,28 +1333,6 @@
                 userRole: currentUser?.role
             }) : null;
             
-            // Memoize SKU Performance element to prevent remounting
-            const skuPerformanceElement = useMemo(() => {
-                if (activeSection !== 'sku-performance' || !skuParams || !skuParams.channel || !SKUPerformance) {
-                    return null;
-                }
-                
-                const skuKey = `sku-${skuParams.channel}-${skuParams.brand || 'all'}-${skuParams.view}-${skuParams.year}`;
-                return h(SKUPerformance, {
-                    key: skuKey,
-                    channel: skuParams.channel,
-                    brand: skuParams.brand,
-                    view: skuParams.view,
-                    selectedPeriod: skuParams.period,
-                    selectedMonth: skuParams.month,
-                    selectedYear: skuParams.year,
-                    dataService: APP_STATE.dataService,
-                    userPermissions,
-                    channelTarget85,
-                    onNavigateBack: handleNavigateBack
-                });
-            }, [activeSection, skuParams, userPermissions, channelTarget85, handleNavigateBack]);
-            
             // Render main content based on active section and permissions
             const renderContent = () => {
                 if (loading) {
@@ -1490,7 +1468,7 @@
                         }) : h('div', null, 'Preferences component not found');
                         
                     case 'sku-performance':
-                        // Use memoized SKU Performance element
+                        // Validate required channel parameter
                         if (!skuParams || !skuParams.channel) {
                             return h('div', { className: 'error-container' },
                                 h('h2', null, 'Error'),
@@ -1502,7 +1480,18 @@
                             );
                         }
                         
-                        return skuPerformanceElement || h('div', null, 'SKU Performance component not found');
+                        return SKUPerformance ? h(SKUPerformance, {
+                            channel: skuParams.channel,
+                            brand: skuParams.brand,
+                            view: skuParams.view,
+                            selectedPeriod: skuParams.period,
+                            selectedMonth: skuParams.month,
+                            selectedYear: skuParams.year,
+                            dataService: APP_STATE.dataService,
+                            userPermissions,
+                            channelTarget85,
+                            onNavigateBack: handleNavigateBack
+                        }) : h('div', null, 'SKU Performance component not found');
                         
                     default:
                         return h('div', null, 'Section not found');
