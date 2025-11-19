@@ -1481,7 +1481,10 @@
                         }
                         
                         // Use memoized values from top level (skuParams, channelTarget85)
+                        // Add a unique key to help React properly track this component instance
+                        const skuKey = `sku-${skuParams.channel}-${skuParams.brand || 'all'}-${skuParams.view}-${skuParams.year}`;
                         return SKUPerformance ? h(SKUPerformance, {
+                            key: skuKey,
                             channel: skuParams.channel,
                             brand: skuParams.brand,
                             view: skuParams.view,
