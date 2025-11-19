@@ -1093,7 +1093,7 @@
             };
             
             // Handle upload complete
-            const handleUploadComplete = async (uploadResult) => {
+            const handleUploadComplete = React.useCallback(async (uploadResult) => {
                 try {
                     // Handle both old format (array) and new format (object)
                     const uploadedData = uploadResult.originalData || uploadResult;
@@ -1131,7 +1131,39 @@
                     // Don't show error toast - upload already succeeded, this is just cache refresh
                     console.warn('Upload succeeded but cache refresh failed - data is in database');
                 }
-            };
+            }, [salesData]);
+            
+            // Handle navigation back from SKU Performance page
+            const handleNavigateBack = React.useCallback(() => {
+                // Restore dashboard state from sessionStorage if available
+                const savedState = sessionStorage.getItem('dashboard_state');
+                if (savedState) {
+                    try {
+                        const state = JSON.parse(savedState);
+                        if (state.view) setView(state.view);
+                        if (state.selectedPeriod) setSelectedPeriod(state.selectedPeriod);
+                        if (state.selectedMonth) setSelectedMonth(state.selectedMonth);
+                        if (state.selectedYear) setSelectedYear(state.selectedYear);
+                        if (state.selectedBrand) setSelectedBrand(state.selectedBrand);
+                    } catch (e) {
+                        console.error('Failed to restore dashboard state:', e);
+                    }
+                }
+                
+                // Navigate back to dashboard
+                setActiveSection('dashboard');
+                
+                // Update URL to remove sku-performance section
+                const url = new URL(window.location);
+                url.searchParams.delete('section');
+                url.searchParams.delete('channel');
+                url.searchParams.delete('brand');
+                url.searchParams.delete('view');
+                url.searchParams.delete('period');
+                url.searchParams.delete('year');
+                url.searchParams.delete('month');
+                window.history.pushState({ section: 'dashboard' }, '', url);
+            }, []);
             
             // Click outside handler for profile menu
             useEffect(() => {
@@ -1375,21 +1407,23 @@
                         }) : h('div', null, 'Preferences component not found');
                         
                     case 'sku-performance':
-                        // Parse SKU performance route parameters
+                        // Parse SKU performance route parameters (memoized to prevent re-parsing)
                         const routing = window.ChaiVision?.routing;
-                        const skuParams = routing && routing.parseSKUPerformanceRoute 
-                            ? routing.parseSKUPerformanceRoute()
-                            : (() => {
-                                const url = new URL(window.location);
-                                return {
-                                    channel: url.searchParams.get('channel'),
-                                    brand: url.searchParams.get('brand') || null,
-                                    view: url.searchParams.get('view') || 'quarterly',
-                                    period: url.searchParams.get('period') || null,
-                                    year: url.searchParams.get('year') || new Date().getFullYear().toString(),
-                                    month: url.searchParams.get('month') ? parseInt(url.searchParams.get('month')) : null
-                                };
-                            })();
+                        const skuParams = React.useMemo(() => {
+                            return routing && routing.parseSKUPerformanceRoute 
+                                ? routing.parseSKUPerformanceRoute()
+                                : (() => {
+                                    const url = new URL(window.location);
+                                    return {
+                                        channel: url.searchParams.get('channel'),
+                                        brand: url.searchParams.get('brand') || null,
+                                        view: url.searchParams.get('view') || 'quarterly',
+                                        period: url.searchParams.get('period') || null,
+                                        year: url.searchParams.get('year') || new Date().getFullYear().toString(),
+                                        month: url.searchParams.get('month') ? parseInt(url.searchParams.get('month')) : null
+                                    };
+                                })();
+                        }, [activeSection]); // Only re-parse if activeSection changes
                         
                         // Validate required channel parameter
                         if (!skuParams.channel) {
@@ -1403,40 +1437,8 @@
                             );
                         }
                         
-                        // Handle navigation back - restore dashboard state
-                        const handleNavigateBack = () => {
-                            // Restore dashboard state from sessionStorage if available
-                            const savedState = sessionStorage.getItem('dashboard_state');
-                            if (savedState) {
-                                try {
-                                    const state = JSON.parse(savedState);
-                                    if (state.view) setView(state.view);
-                                    if (state.selectedPeriod) setSelectedPeriod(state.selectedPeriod);
-                                    if (state.selectedMonth) setSelectedMonth(state.selectedMonth);
-                                    if (state.selectedYear) setSelectedYear(state.selectedYear);
-                                    if (state.selectedBrand) setSelectedBrand(state.selectedBrand);
-                                } catch (e) {
-                                    console.error('Failed to restore dashboard state:', e);
-                                }
-                            }
-                            
-                            // Navigate back to dashboard
-                            setActiveSection('dashboard');
-                            
-                            // Update URL to remove sku-performance section
-                            const url = new URL(window.location);
-                            url.searchParams.delete('section');
-                            url.searchParams.delete('channel');
-                            url.searchParams.delete('brand');
-                            url.searchParams.delete('view');
-                            url.searchParams.delete('period');
-                            url.searchParams.delete('year');
-                            url.searchParams.delete('month');
-                            window.history.pushState({ section: 'dashboard' }, '', url);
-                        };
-                        
-                        // Calculate channel target for the selected period
-                        const calculateChannelTarget = () => {
+                        // Calculate channel target for the selected period (memoized)
+                        const channelTarget85 = React.useMemo(() => {
                             if (!dynamicTargets || !skuParams.channel) return 0;
                             
                             const isCompanyTotal = skuParams.brand === null || skuParams.brand === 'All Brands' || skuParams.brand === 'All My Brands';
@@ -1473,9 +1475,7 @@
                             });
                             
                             return channelTarget * 0.85; // Return 85% target
-                        };
-                        
-                        const channelTarget85 = calculateChannelTarget();
+                        }, [dynamicTargets, skuParams.channel, skuParams.brand, skuParams.view, skuParams.period, skuParams.year, skuParams.month, availableBrands]);
                         
                         return SKUPerformance ? h(SKUPerformance, {
                             channel: skuParams.channel,
