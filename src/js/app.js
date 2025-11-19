@@ -1177,6 +1177,67 @@
                 return () => document.removeEventListener('click', handleClickOutside);
             }, [showProfileMenu]);
             
+            // Parse SKU performance route parameters (memoized at top level)
+            const skuParams = React.useMemo(() => {
+                if (activeSection !== 'sku-performance') return null;
+                
+                const routing = window.ChaiVision?.routing;
+                return routing && routing.parseSKUPerformanceRoute 
+                    ? routing.parseSKUPerformanceRoute()
+                    : (() => {
+                        const url = new URL(window.location);
+                        return {
+                            channel: url.searchParams.get('channel'),
+                            brand: url.searchParams.get('brand') || null,
+                            view: url.searchParams.get('view') || 'quarterly',
+                            period: url.searchParams.get('period') || null,
+                            year: url.searchParams.get('year') || new Date().getFullYear().toString(),
+                            month: url.searchParams.get('month') ? parseInt(url.searchParams.get('month')) : null
+                        };
+                    })();
+            }, [activeSection]); // Only re-parse if activeSection changes
+            
+            // Calculate channel target for SKU performance (memoized at top level)
+            const channelTarget85 = React.useMemo(() => {
+                if (activeSection !== 'sku-performance' || !skuParams || !skuParams.channel) return 0;
+                if (!dynamicTargets) return 0;
+                
+                const isCompanyTotal = skuParams.brand === null || skuParams.brand === 'All Brands' || skuParams.brand === 'All My Brands';
+                const brandsToCalculate = isCompanyTotal ? availableBrands : [skuParams.brand];
+                const year = skuParams.year || new Date().getFullYear().toString();
+                
+                let channelTarget = 0;
+                
+                brandsToCalculate.forEach(brandName => {
+                    const brandData = dynamicTargets?.[year]?.brands?.[brandName];
+                    if (brandData) {
+                        let periodData;
+                        if (skuParams.view === 'annual') {
+                            periodData = brandData.annual;
+                        } else if (skuParams.view === 'quarterly') {
+                            periodData = brandData[skuParams.period];
+                        } else if (skuParams.view === 'monthly') {
+                            const quarter = `Q${Math.ceil((skuParams.month || 1) / 3)}`;
+                            periodData = brandData[quarter];
+                            if (periodData) {
+                                const { getDaysInMonth, getDaysInQuarter } = window.dateUtils || {};
+                                const month = skuParams.month || 1;
+                                const daysInMonth = getDaysInMonth ? getDaysInMonth(parseInt(year), month) : 30;
+                                const daysInQuarter = getDaysInQuarter ? getDaysInQuarter(parseInt(year), quarter) : 90;
+                                const dayRatio = daysInMonth / daysInQuarter;
+                                channelTarget += (periodData[skuParams.channel] || 0) * dayRatio;
+                                return;
+                            }
+                        }
+                        if (periodData) {
+                            channelTarget += periodData[skuParams.channel] || 0;
+                        }
+                    }
+                });
+                
+                return channelTarget * 0.85; // Return 85% target
+            }, [activeSection, skuParams, dynamicTargets, availableBrands]);
+            
             // Get components from window
             const Login = window.Login || window.ChaiVision?.components?.Login;
             const Navigation = window.Navigation || window.ChaiVision?.components?.Navigation;
@@ -1407,26 +1468,8 @@
                         }) : h('div', null, 'Preferences component not found');
                         
                     case 'sku-performance':
-                        // Parse SKU performance route parameters (memoized to prevent re-parsing)
-                        const routing = window.ChaiVision?.routing;
-                        const skuParams = React.useMemo(() => {
-                            return routing && routing.parseSKUPerformanceRoute 
-                                ? routing.parseSKUPerformanceRoute()
-                                : (() => {
-                                    const url = new URL(window.location);
-                                    return {
-                                        channel: url.searchParams.get('channel'),
-                                        brand: url.searchParams.get('brand') || null,
-                                        view: url.searchParams.get('view') || 'quarterly',
-                                        period: url.searchParams.get('period') || null,
-                                        year: url.searchParams.get('year') || new Date().getFullYear().toString(),
-                                        month: url.searchParams.get('month') ? parseInt(url.searchParams.get('month')) : null
-                                    };
-                                })();
-                        }, [activeSection]); // Only re-parse if activeSection changes
-                        
-                        // Validate required channel parameter
-                        if (!skuParams.channel) {
+                        // Validate required channel parameter (skuParams is memoized at top level)
+                        if (!skuParams || !skuParams.channel) {
                             return h('div', { className: 'error-container' },
                                 h('h2', null, 'Error'),
                                 h('p', null, 'Channel parameter is required for SKU performance view.'),
@@ -1437,46 +1480,7 @@
                             );
                         }
                         
-                        // Calculate channel target for the selected period (memoized)
-                        const channelTarget85 = React.useMemo(() => {
-                            if (!dynamicTargets || !skuParams.channel) return 0;
-                            
-                            const isCompanyTotal = skuParams.brand === null || skuParams.brand === 'All Brands' || skuParams.brand === 'All My Brands';
-                            const brandsToCalculate = isCompanyTotal ? availableBrands : [skuParams.brand];
-                            const year = skuParams.year || new Date().getFullYear().toString();
-                            
-                            let channelTarget = 0;
-                            
-                            brandsToCalculate.forEach(brandName => {
-                                const brandData = dynamicTargets?.[year]?.brands?.[brandName];
-                                if (brandData) {
-                                    let periodData;
-                                    if (skuParams.view === 'annual') {
-                                        periodData = brandData.annual;
-                                    } else if (skuParams.view === 'quarterly') {
-                                        periodData = brandData[skuParams.period];
-                                    } else if (skuParams.view === 'monthly') {
-                                        const quarter = `Q${Math.ceil((skuParams.month || 1) / 3)}`;
-                                        periodData = brandData[quarter];
-                                        if (periodData) {
-                                            const { getDaysInMonth, getDaysInQuarter } = window.dateUtils || {};
-                                            const month = skuParams.month || 1;
-                                            const daysInMonth = getDaysInMonth ? getDaysInMonth(parseInt(year), month) : 30;
-                                            const daysInQuarter = getDaysInQuarter ? getDaysInQuarter(parseInt(year), quarter) : 90;
-                                            const dayRatio = daysInMonth / daysInQuarter;
-                                            channelTarget += (periodData[skuParams.channel] || 0) * dayRatio;
-                                            return;
-                                        }
-                                    }
-                                    if (periodData) {
-                                        channelTarget += periodData[skuParams.channel] || 0;
-                                    }
-                                }
-                            });
-                            
-                            return channelTarget * 0.85; // Return 85% target
-                        }, [dynamicTargets, skuParams.channel, skuParams.brand, skuParams.view, skuParams.period, skuParams.year, skuParams.month, availableBrands]);
-                        
+                        // Use memoized values from top level (skuParams, channelTarget85)
                         return SKUPerformance ? h(SKUPerformance, {
                             channel: skuParams.channel,
                             brand: skuParams.brand,
