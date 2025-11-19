@@ -1333,6 +1333,28 @@
                 userRole: currentUser?.role
             }) : null;
             
+            // Memoize SKU Performance element to prevent remounting
+            const skuPerformanceElement = useMemo(() => {
+                if (activeSection !== 'sku-performance' || !skuParams || !skuParams.channel || !SKUPerformance) {
+                    return null;
+                }
+                
+                const skuKey = `sku-${skuParams.channel}-${skuParams.brand || 'all'}-${skuParams.view}-${skuParams.year}`;
+                return h(SKUPerformance, {
+                    key: skuKey,
+                    channel: skuParams.channel,
+                    brand: skuParams.brand,
+                    view: skuParams.view,
+                    selectedPeriod: skuParams.period,
+                    selectedMonth: skuParams.month,
+                    selectedYear: skuParams.year,
+                    dataService: APP_STATE.dataService,
+                    userPermissions,
+                    channelTarget85,
+                    onNavigateBack: handleNavigateBack
+                });
+            }, [activeSection, skuParams, userPermissions, channelTarget85, handleNavigateBack]);
+            
             // Render main content based on active section and permissions
             const renderContent = () => {
                 if (loading) {
@@ -1468,7 +1490,7 @@
                         }) : h('div', null, 'Preferences component not found');
                         
                     case 'sku-performance':
-                        // Validate required channel parameter (skuParams is memoized at top level)
+                        // Use memoized SKU Performance element
                         if (!skuParams || !skuParams.channel) {
                             return h('div', { className: 'error-container' },
                                 h('h2', null, 'Error'),
@@ -1480,22 +1502,7 @@
                             );
                         }
                         
-                        // Use memoized values from top level (skuParams, channelTarget85)
-                        // Add a unique key to help React properly track this component instance
-                        const skuKey = `sku-${skuParams.channel}-${skuParams.brand || 'all'}-${skuParams.view}-${skuParams.year}`;
-                        return SKUPerformance ? h(SKUPerformance, {
-                            key: skuKey,
-                            channel: skuParams.channel,
-                            brand: skuParams.brand,
-                            view: skuParams.view,
-                            selectedPeriod: skuParams.period,
-                            selectedMonth: skuParams.month,
-                            selectedYear: skuParams.year,
-                            dataService: APP_STATE.dataService,
-                            userPermissions,
-                            channelTarget85,
-                            onNavigateBack: handleNavigateBack
-                        }) : h('div', null, 'SKU Performance component not found');
+                        return skuPerformanceElement || h('div', null, 'SKU Performance component not found');
                         
                     default:
                         return h('div', null, 'Section not found');
