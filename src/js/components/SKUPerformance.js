@@ -352,16 +352,26 @@
         
         // Filter and sort SKU data
         const filteredAndSortedData = useMemo(() => {
+            console.log('🔍 Filtering SKU data:', {
+                skuDataLength: skuData.length,
+                selectedBrandFilter,
+                searchQuery,
+                firstItem: skuData[0]
+            });
+            
             let filtered = [...skuData];
             
             // Apply brand filter
             if (selectedBrandFilter && selectedBrandFilter !== 'All Brands') {
+                console.log(`🔍 Applying brand filter: "${selectedBrandFilter}"`);
                 filtered = filtered.filter(item => item.brand === selectedBrandFilter);
+                console.log(`🔍 After brand filter: ${filtered.length} items`);
             }
             
             // Apply search filter
             if (searchQuery.trim()) {
                 const query = searchQuery.toLowerCase().trim();
+                console.log(`🔍 Applying search filter: "${query}"`);
                 filtered = filtered.filter(item => {
                     const skuMatch = item.sku.toLowerCase().includes(query);
                     const productMatch = item.product_name 
@@ -369,6 +379,7 @@
                         : false;
                     return skuMatch || productMatch;
                 });
+                console.log(`🔍 After search filter: ${filtered.length} items`);
             }
             
             // Apply sorting
@@ -410,6 +421,7 @@
                 }
             });
             
+            console.log(`🔍 Final filtered data: ${filtered.length} items (sorted by ${sortBy} ${sortOrder})`);
             return filtered;
         }, [skuData, searchQuery, selectedBrandFilter, sortBy, sortOrder, totalRevenue]);
         
