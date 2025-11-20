@@ -5,20 +5,22 @@
 .upload-container {
     max-width: 1600px;
     margin: 0 auto;
+    width: 100%;
 }
 
 .upload-header {
-    background: var(--white);
-    border-radius: 16px;
+    background: var(--bg-primary);
+    border-radius: var(--border-radius-xl);
     padding: 28px;
     margin-bottom: 32px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
 }
 
 .upload-title {
     font-size: 28px;
     font-weight: 800;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--accent-gradient);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -26,7 +28,7 @@
 }
 
 .upload-subtitle {
-    color: var(--medium-gray);
+    color: var(--text-secondary);
     font-size: 15px;
     line-height: 1.6;
 }
@@ -35,14 +37,14 @@
 .upload-type-selector {
     margin-top: 24px;
     padding-top: 24px;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--border-color);
 }
 
 .upload-type-label {
     display: block;
     font-size: 14px;
     font-weight: 600;
-    color: #374151;
+    color: var(--text-primary);
     margin-bottom: 12px;
 }
 
@@ -58,21 +60,21 @@
     gap: 8px;
     cursor: pointer;
     font-size: 14px;
-    color: #374151;
+    color: var(--text-primary);
     padding: 8px 12px;
-    border-radius: 6px;
-    transition: background 0.2s;
+    border-radius: var(--border-radius);
+    transition: background var(--transition-fast);
 }
 
 .upload-type-option:hover {
-    background: #f9fafb;
+    background: var(--bg-secondary);
 }
 
 .upload-type-option input[type="radio"] {
     width: 18px;
     height: 18px;
     cursor: pointer;
-    accent-color: #667eea;
+    accent-color: var(--accent-primary);
 }
 
 .upload-type-option span {
@@ -82,14 +84,14 @@
 .detected-type-badge {
     margin-top: 12px;
     padding: 8px 12px;
-    background: #EFF6FF;
-    border: 1px solid #93C5FD;
-    border-radius: 6px;
+    background: var(--info-bg);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: var(--border-radius);
     display: inline-flex;
     align-items: center;
     gap: 8px;
     font-size: 13px;
-    color: #1E40AF;
+    color: var(--info-text);
     font-weight: 600;
 }
 
@@ -106,39 +108,41 @@
 }
 
 .upload-card {
-    background: var(--white);
-    border-radius: 16px;
+    background: var(--bg-primary);
+    border-radius: var(--border-radius-xl);
     padding: 28px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-fast);
+    border: 1px solid var(--border-color);
 }
 
 .upload-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-lg);
 }
 
 .upload-card-icon {
     width: 56px;
     height: 56px;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-    border-radius: 12px;
+    background: var(--accent-gradient-light);
+    border-radius: var(--border-radius-lg);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 28px;
     margin-bottom: 20px;
+    color: var(--accent-primary);
 }
 
 .upload-card-title {
     font-size: 20px;
     font-weight: 700;
-    color: var(--dark-gray);
+    color: var(--text-primary);
     margin-bottom: 12px;
 }
 
 .upload-card-description {
-    color: var(--medium-gray);
+    color: var(--text-secondary);
     font-size: 14px;
     margin-bottom: 20px;
     line-height: 1.6;
@@ -146,23 +150,23 @@
 
 /* Upload Zone */
 .upload-zone {
-    border: 2px dashed var(--light-gray);
-    border-radius: 12px;
+    border: 2px dashed var(--border-color);
+    border-radius: var(--border-radius-lg);
     padding: 32px;
     text-align: center;
-    transition: all 0.3s;
+    transition: all var(--transition-fast);
     cursor: pointer;
-    background: var(--bg-gray);
+    background: var(--bg-secondary);
 }
 
 .upload-zone:hover {
-    border-color: var(--primary-blue);
-    background: rgba(102, 126, 234, 0.05);
+    border-color: var(--accent-primary);
+    background: var(--accent-gradient-light);
 }
 
 .upload-zone.dragging {
-    border-color: var(--primary-blue);
-    background: rgba(102, 126, 234, 0.1);
+    border-color: var(--accent-primary);
+    background: var(--accent-gradient-light);
     transform: scale(1.02);
 }
 
@@ -174,13 +178,13 @@
 .upload-text {
     font-size: 16px;
     font-weight: 600;
-    color: var(--dark-gray);
+    color: var(--text-primary);
     margin-bottom: 8px;
 }
 
 .upload-hint {
     font-size: 13px;
-    color: var(--medium-gray);
+    color: var(--text-secondary);
     margin-bottom: 4px;
 }
 
@@ -190,8 +194,8 @@
 
 /* Template Section */
 .template-section {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
-    border-radius: 12px;
+    background: var(--accent-gradient-light);
+    border-radius: var(--border-radius-lg);
     padding: 20px;
     margin-bottom: 20px;
 }
@@ -206,12 +210,13 @@
 .template-icon {
     width: 48px;
     height: 48px;
-    background: var(--white);
-    border-radius: 12px;
+    background: var(--bg-primary);
+    border-radius: var(--border-radius);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 24px;
+    box-shadow: var(--shadow-sm);
 }
 
 .template-text {
@@ -221,22 +226,23 @@
 .template-title {
     font-size: 16px;
     font-weight: 700;
-    color: var(--dark-gray);
+    color: var(--text-primary);
     margin-bottom: 4px;
 }
 
 .template-description {
     font-size: 13px;
-    color: var(--medium-gray);
+    color: var(--text-secondary);
 }
 
 /* Data Preview */
 .data-preview {
-    background: var(--white);
-    border-radius: 16px;
+    background: var(--bg-primary);
+    border-radius: var(--border-radius-xl);
     padding: 24px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-sm);
     margin-bottom: 32px;
+    border: 1px solid var(--border-color);
 }
 
 .preview-header {
@@ -249,7 +255,7 @@
 .preview-title {
     font-size: 20px;
     font-weight: 700;
-    color: var(--dark-gray);
+    color: var(--text-primary);
 }
 
 .preview-stats {
@@ -267,12 +273,12 @@
 .preview-stat-value {
     font-size: 24px;
     font-weight: 700;
-    color: var(--primary-blue);
+    color: var(--accent-primary);
 }
 
 .preview-stat-label {
     font-size: 12px;
-    color: var(--medium-gray);
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -280,6 +286,8 @@
 .preview-table {
     overflow-x: auto;
     margin-top: 20px;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
 }
 
 .preview-table table {
@@ -288,24 +296,25 @@
 }
 
 .preview-table th {
-    background: var(--bg-gray);
-    padding: 12px;
+    background: var(--bg-secondary);
+    padding: 12px 16px;
     text-align: left;
     font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
-    color: var(--dark-gray);
-    border-bottom: 2px solid var(--light-gray);
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--border-color);
 }
 
 .preview-table td {
-    padding: 12px;
-    border-bottom: 1px solid var(--light-gray);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
     font-size: 13px;
+    color: var(--text-primary);
 }
 
 .preview-table tr:hover {
-    background: var(--bg-gray);
+    background: var(--bg-secondary);
 }
 
 /* Upload Progress */
@@ -323,19 +332,19 @@
 .progress-label {
     font-size: 14px;
     font-weight: 600;
-    color: var(--dark-gray);
+    color: var(--text-primary);
 }
 
 .progress-percentage {
     font-size: 14px;
     font-weight: 700;
-    color: var(--primary-blue);
+    color: var(--accent-primary);
 }
 
 /* Validation Messages */
 .validation-message {
     padding: 12px 16px;
-    border-radius: 8px;
+    border-radius: var(--border-radius);
     margin-top: 16px;
     font-size: 14px;
     display: flex;
@@ -345,18 +354,27 @@
 }
 
 .validation-message.success {
-    background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
-    color: #065F46;
+    background: var(--success-bg);
+    color: var(--success-text);
+    border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
 .validation-message.error {
-    background: linear-gradient(135deg, #FEE2E2, #FCA5A5);
-    color: #991B1B;
+    background: var(--error-bg);
+    color: var(--error-text);
+    border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .validation-message.warning {
-    background: linear-gradient(135deg, #FEF3C7, #FDE68A);
-    color: #92400E;
+    background: var(--warning-bg);
+    color: var(--warning-text);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.validation-message.info {
+    background: var(--info-bg);
+    color: var(--info-text);
+    border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 .validation-errors {
@@ -365,7 +383,7 @@
 }
 
 .validation-error-item {
-    color: #991B1B;
+    color: var(--error-text);
     font-size: 13px;
     margin-bottom: 4px;
     list-style: disc;

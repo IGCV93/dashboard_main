@@ -3,19 +3,19 @@
    ========================================= */
 
 .sidebar {
-    width: var(--sidebar-width, 280px);
-    background: var(--white);
-    border-right: 1px solid var(--light-gray);
+    width: var(--sidebar-width);
+    background: var(--bg-primary);
+    border-right: 1px solid var(--border-color);
     padding: 24px 16px;
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
-    transition: transform 0.3s ease;
+    transition: transform var(--transition-fast);
     
     /* Sticky positioning */
     position: sticky;
     position: -webkit-sticky; /* Safari support */
-    top: var(--nav-height, 72px); /* Start below nav */
+    top: var(--nav-height); /* Start below nav */
     align-self: flex-start; /* Critical for sticky in flexbox */
-    height: calc(100vh - var(--nav-height, 72px)); /* Full viewport minus nav */
+    height: calc(100vh - var(--nav-height)); /* Full viewport minus nav */
     overflow-y: auto; /* Internal scroll if sidebar content overflows */
     overflow-x: hidden; /* Prevent horizontal scroll */
     z-index: 50; /* Below nav but above content */
@@ -50,10 +50,10 @@
     gap: 12px;
     padding: 14px 18px;
     margin-bottom: 8px;
-    border-radius: 12px;
-    color: var(--medium-gray);
+    border-radius: var(--border-radius);
+    color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all var(--transition-fast);
     font-size: 15px;
     font-weight: 500;
     position: relative;
@@ -61,13 +61,13 @@
 }
 
 .sidebar-item:hover {
-    background: var(--bg-gray);
-    color: var(--dark-gray);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
     transform: translateX(4px);
 }
 
 .sidebar-item.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--accent-gradient);
     color: white;
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
@@ -80,6 +80,7 @@
     bottom: 0;
     width: 4px;
     background: white;
+    opacity: 0.5;
 }
 
 .sidebar-item span:first-child {
@@ -97,15 +98,15 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: var(--medium-gray);
+    color: var(--text-muted);
     margin-bottom: 12px;
     padding-left: 18px;
-    opacity: 0.7;
+    opacity: 0.8;
 }
 
 .sidebar-divider {
     height: 1px;
-    background: var(--light-gray);
+    background: var(--border-color);
     margin: 20px 0;
 }
 
@@ -123,13 +124,14 @@
     right: -40px;
     width: 40px;
     height: 40px;
-    background: var(--white);
-    border: 1px solid var(--light-gray);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
     border-radius: 0 8px 8px 0;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     z-index: 51;
+    box-shadow: var(--shadow-sm);
 }
 
 /* Mobile Sidebar */
@@ -137,11 +139,12 @@
     .sidebar {
         position: fixed;
         left: 0;
-        top: var(--nav-height, 72px);
+        top: var(--nav-height);
         bottom: 0;
         transform: translateX(-100%);
         z-index: 999;
-        height: calc(100vh - var(--nav-height, 72px)); /* Override sticky height on mobile */
+        height: calc(100vh - var(--nav-height)); /* Override sticky height on mobile */
+        box-shadow: var(--shadow-xl);
     }
     
     .sidebar.open {
@@ -161,6 +164,7 @@
         bottom: 0;
         background: rgba(0, 0, 0, 0.5);
         z-index: 998;
+        backdrop-filter: blur(2px);
     }
     
     .sidebar-overlay.visible {

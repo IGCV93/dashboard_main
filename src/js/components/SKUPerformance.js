@@ -1,6 +1,7 @@
 /**
  * SKU Performance Component
  * Shows SKU-level sales performance for a specific channel
+ * Updated with standard Dashboard styling and responsive layout
  */
 
 (function() {
@@ -8,16 +9,6 @@
     
     function SKUPerformance(props) {
         const { useState, useEffect, useMemo, useRef, createElement: h } = React;
-        
-        // Add debug logging
-        console.log('🎯 SKUPerformance component mounted with props:', {
-            channel: props.channel,
-            brand: props.brand,
-            view: props.view,
-            selectedYear: props.selectedYear,
-            hasDataService: !!props.dataService,
-            propsKeys: Object.keys(props)
-        });
         
         const {
             channel,
@@ -31,6 +22,19 @@
             channelTarget85 = 0,
             onNavigateBack
         } = props;
+        
+        // Theme colors from main.css
+        const THEME = {
+            primary: '#667eea',
+            secondary: '#764ba2',
+            success: '#10b981',
+            warning: '#f59e0b',
+            error: '#ef4444',
+            info: '#3b82f6',
+            textPrimary: '#1f2937',
+            textSecondary: '#6b7280',
+            gridLines: '#f3f4f6'
+        };
         
         // State
         const [loading, setLoading] = useState(true);
@@ -129,7 +133,6 @@
         }, []);
         
         // Get effective date range (custom or calculated)
-        // Use useCallback to get a stable function reference
         const getEffectiveDateRange = React.useCallback(() => {
             if (useCustomDateRange && customStartDate && customEndDate) {
                 return {
@@ -143,12 +146,8 @@
         // Load SKU data on mount
         useEffect(() => {
             const loadData = async () => {
-                console.log('🔄 SKUPerformance loadData starting...', { channel, brand, hasDataService: !!dataService });
-                
                 if (!dataService || !channel) {
-                    const errorMsg = 'Missing required data service or channel';
-                    console.error('❌ SKUPerformance:', errorMsg, { dataService: !!dataService, channel });
-                    setError(errorMsg);
+                    setError('Missing required data service or channel');
                     setLoading(false);
                     return;
                 }
@@ -156,14 +155,11 @@
                 try {
                     setLoading(true);
                     setError(null);
-                    console.log('📅 Getting effective date range...');
                     
                     // Get effective date range
                     const dateRange = getEffectiveDateRange();
-                    console.log('📅 Date range:', dateRange);
                     
                     if (!dateRange.start || !dateRange.end) {
-                        console.error('❌ Invalid date range:', dateRange);
                         setError('Invalid date range');
                         setLoading(false);
                         return;
@@ -177,24 +173,20 @@
                         groupBy: 'sku'
                     };
                     
-                    console.log('🔍 Loading SKU data with filters:', filters);
                     const data = await dataService.loadSKUData(filters);
-                    console.log('✅ SKU data loaded:', { rowCount: data.length, sample: data[0] });
                     
                     setSkuData(data);
                     
                     // Calculate totals
                     const total = data.reduce((sum, item) => sum + (item.revenue || 0), 0);
                     const units = data.reduce((sum, item) => sum + (item.units || 0), 0);
-                    console.log('📊 Totals calculated:', { revenue: total, units: units });
                     setTotalRevenue(total);
                     setTotalUnits(units);
                     
                 } catch (err) {
-                    console.error('❌ Failed to load SKU data:', err);
+                    console.error('Failed to load SKU data:', err);
                     setError('Failed to load SKU data. Please try again.');
                 } finally {
-                    console.log('✅ Loading complete, setting loading=false');
                     setLoading(false);
                 }
             };
@@ -413,18 +405,10 @@
             return filtered;
         }, [skuData, searchQuery, selectedBrandFilter, sortBy, sortOrder, totalRevenue]);
         
-        // Handle search input with debouncing
+        // Handle search input
         const handleSearchChange = (e) => {
             const value = e.target.value;
             setSearchQuery(value);
-            
-            // Clear existing timeout
-            if (searchTimeoutRef.current) {
-                clearTimeout(searchTimeoutRef.current);
-            }
-            
-            // Debounce search (optional - for very large datasets)
-            // For now, we'll filter immediately since it's client-side
         };
         
         // Handle sort change
@@ -498,7 +482,6 @@
             const csvContent = [
                 headers.join(','),
                 ...rows.map(row => row.map(cell => {
-                    // Escape commas and quotes in CSV
                     const cellStr = String(cell);
                     if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
                         return `"${cellStr.replace(/"/g, '""')}"`;
@@ -518,92 +501,6 @@
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
-        };
-        
-        const exportToExcel = () => {
-            if (dataWithComparison.length === 0) {
-                alert('No data to export');
-                return;
-            }
-            
-            // Check if XLSX is available
-            if (typeof XLSX === 'undefined') {
-                alert('Excel export requires XLSX library. Falling back to CSV.');
-                exportToCSV();
-                return;
-            }
-            
-            // Prepare headers
-            const headers = ['SKU', 'Product Name', 'Brand', 'Units', 'Revenue', 'Avg Price', 'Contribution %'];
-            if (comparisonMode && comparisonData) {
-                headers.push('Growth %', 'Growth Amount');
-            }
-            if (channelTarget85 > 0) {
-                headers.push('Target Status', 'Performance %');
-            }
-            
-            // Prepare data rows
-            const rows = dataWithComparison.map(item => {
-                const avgPrice = item.units > 0 ? item.revenue / item.units : 0;
-                const contributionPercent = totalRevenue > 0 
-                    ? ((item.revenue / totalRevenue) * 100).toFixed(2)
-                    : '0.00';
-                
-                const row = [
-                    item.sku,
-                    item.product_name || '',
-                    item.brand || '',
-                    item.units,
-                    item.revenue,
-                    avgPrice,
-                    parseFloat(contributionPercent)
-                ];
-                
-                if (comparisonMode && comparisonData) {
-                    const growth = item.comparison ? (item.comparison.growthPercent || 0) : null;
-                    const growthAmount = item.comparison ? (item.comparison.growthAmount || 0) : null;
-                    row.push(growth, growthAmount);
-                }
-                
-                if (channelTarget85 > 0) {
-                    const targetData = calculateSKUTargetContribution.get(item.sku);
-                    const status = targetData ? (targetData.performancePercent >= 100 ? 'Exceeding' : 
-                        targetData.performancePercent >= 85 ? 'On Track' : 'Behind') : '';
-                    const performance = targetData ? targetData.performancePercent : null;
-                    row.push(status, performance);
-                }
-                
-                return row;
-            });
-            
-            // Create workbook
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-            
-            // Set column widths
-            const colWidths = [
-                { wch: 15 }, // SKU
-                { wch: 25 }, // Product Name
-                { wch: 15 }, // Brand
-                { wch: 10 }, // Units
-                { wch: 15 }, // Revenue
-                { wch: 12 }, // Avg Price
-                { wch: 15 }, // Contribution %
-            ];
-            if (comparisonMode && comparisonData) {
-                colWidths.push({ wch: 12 }, { wch: 15 }); // Growth %, Growth Amount
-            }
-            if (channelTarget85 > 0) {
-                colWidths.push({ wch: 15 }, { wch: 15 }); // Target Status, Performance %
-            }
-            ws['!cols'] = colWidths;
-            
-            // Add worksheet to workbook
-            XLSX.utils.book_append_sheet(wb, ws, 'SKU Performance');
-            
-            // Download
-            const dateStr = new Date().toISOString().split('T')[0];
-            XLSX.writeFile(wb, `sku_performance_${channel}_${dateStr}.xlsx`);
         };
         
         // Quick date range selectors
@@ -702,10 +599,7 @@
         const virtualScrollData = useMemo(() => {
             if (!virtualScrollEnabled) return paginatedData;
             
-            const rowHeight = 50; // Estimated row height in pixels
-            const containerHeight = 600; // Table container height
-            const bufferRows = 5; // Extra rows to render above/below visible area
-            
+            const bufferRows = 5;
             const start = Math.max(0, visibleRange.start - bufferRows);
             const end = Math.min(dataWithComparison.length, visibleRange.end + bufferRows);
             
@@ -713,7 +607,7 @@
                 ...item,
                 virtualIndex: start + idx
             }));
-        }, [virtualScrollEnabled, dataWithComparison, visibleRange]);
+        }, [virtualScrollEnabled, dataWithComparison, visibleRange, paginatedData]);
         
         // Reset page when filters change
         useEffect(() => {
@@ -761,26 +655,20 @@
             }
         }, [currentPage, dataWithComparison.length, loadedDataCount, itemsPerPage, loadingMore]);
         
-        // Calculate target contribution for each SKU (based on historical average)
-        // For now, we'll use equal distribution as a placeholder
-        // In future, this can be enhanced with actual historical data
+        // Calculate target contribution for each SKU
         const calculateSKUTargetContribution = useMemo(() => {
             if (!channelTarget85 || channelTarget85 === 0 || skuData.length === 0) {
                 return new Map();
             }
             
-            // Calculate historical average % for each SKU
-            // For now, use equal distribution - in future, load historical data
             const avgContributionPercent = 100 / skuData.length;
             const targetMap = new Map();
             
             skuData.forEach(item => {
-                // Use current contribution % as proxy for historical average
                 const currentContribution = totalRevenue > 0 
                     ? (item.revenue / totalRevenue) * 100
                     : avgContributionPercent;
                 
-                // Use current contribution % or fallback to average
                 const historicalAvgPercent = currentContribution || avgContributionPercent;
                 const skuTarget = (channelTarget85 * historicalAvgPercent) / 100;
                 
@@ -799,13 +687,11 @@
         const chartData = useMemo(() => {
             if (filteredAndSortedData.length === 0) return null;
             
-            // Top SKUs for bar chart (top 20)
             const topSKUs = filteredAndSortedData
                 .slice()
                 .sort((a, b) => (b.revenue || 0) - (a.revenue || 0))
                 .slice(0, 20);
             
-            // SKU contribution for pie chart (top 10 + others)
             const top10 = filteredAndSortedData
                 .slice()
                 .sort((a, b) => (b.revenue || 0) - (a.revenue || 0))
@@ -827,7 +713,6 @@
         useEffect(() => {
             if (!chartData || loading) return;
             
-            // Check if Chart.js is available
             const ChartLib = window.Chart || (typeof Chart !== 'undefined' ? Chart : null);
             if (!ChartLib) {
                 console.warn('Chart.js not available, skipping chart rendering');
@@ -863,26 +748,26 @@
                         datasets: [{
                             label: 'Revenue',
                             data: chartData.topSKUs.map(item => item.revenue),
-                            backgroundColor: chartData.topSKUs.map((item, idx) => {
-                                // Color based on performance if target data available
+                            backgroundColor: chartData.topSKUs.map((item) => {
                                 const targetData = calculateSKUTargetContribution.get(item.sku);
                                 if (targetData) {
-                                    if (targetData.performancePercent >= 100) return 'rgba(5, 150, 105, 0.7)';
-                                    if (targetData.performancePercent >= 85) return 'rgba(217, 119, 6, 0.7)';
-                                    return 'rgba(220, 38, 38, 0.7)';
+                                    if (targetData.performancePercent >= 100) return THEME.success + 'B3'; // 70% opacity
+                                    if (targetData.performancePercent >= 85) return THEME.warning + 'B3';
+                                    return THEME.error + 'B3';
                                 }
-                                return 'rgba(102, 126, 234, 0.7)';
+                                return THEME.primary + 'B3';
                             }),
-                            borderColor: chartData.topSKUs.map((item, idx) => {
+                            borderColor: chartData.topSKUs.map((item) => {
                                 const targetData = calculateSKUTargetContribution.get(item.sku);
                                 if (targetData) {
-                                    if (targetData.performancePercent >= 100) return 'rgb(5, 150, 105)';
-                                    if (targetData.performancePercent >= 85) return 'rgb(217, 119, 6)';
-                                    return 'rgb(220, 38, 38)';
+                                    if (targetData.performancePercent >= 100) return THEME.success;
+                                    if (targetData.performancePercent >= 85) return THEME.warning;
+                                    return THEME.error;
                                 }
-                                return 'rgb(102, 126, 234)';
+                                return THEME.primary;
                             }),
-                            borderWidth: 2
+                            borderWidth: 1,
+                            borderRadius: 4
                         }]
                     },
                     options: {
@@ -908,11 +793,17 @@
                         scales: {
                             x: {
                                 beginAtZero: true,
+                                grid: { color: THEME.gridLines },
                                 ticks: {
                                     callback: function(value) {
                                         return formatCurrency ? formatCurrency(value) : `$${value.toLocaleString()}`;
-                                    }
+                                    },
+                                    font: { size: 10 }
                                 }
+                            },
+                            y: {
+                                grid: { display: false },
+                                ticks: { font: { size: 10 } }
                             }
                         }
                     }
@@ -926,8 +817,8 @@
                 const pieLabels = [...chartData.top10.map(item => item.sku)];
                 const pieData = [...chartData.top10.map(item => item.revenue)];
                 const pieColors = [
-                    '#667eea', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6',
-                    '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1'
+                    THEME.primary, THEME.warning, THEME.success, THEME.error, THEME.secondary,
+                    THEME.info, '#ec4899', '#84cc16', '#f97316', '#6366f1'
                 ];
                 
                 if (chartData.othersRevenue > 0) {
@@ -956,9 +847,7 @@
                                 labels: {
                                     usePointStyle: true,
                                     padding: 15,
-                                    font: {
-                                        size: 11
-                                    }
+                                    font: { size: 11 }
                                 }
                             },
                             tooltip: {
@@ -980,28 +869,19 @@
             if (trendChartRef.current && trendData && trendData.length > 0) {
                 const ctx = trendChartRef.current.getContext('2d');
                 
-                // Get top SKUs for trend (if none selected, use top 5)
                 const skusToShow = selectedSKUsForTrend.length > 0 
                     ? selectedSKUsForTrend 
                     : chartData?.topSKUs?.slice(0, 5).map(item => item.sku) || [];
                 
                 if (skusToShow.length > 0) {
-                    // Prepare labels (dates)
                     const labels = trendData.map(item => {
                         const date = new Date(item.date);
-                        if (view === 'annual') {
-                            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                        } else if (view === 'monthly') {
-                            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                        } else {
-                            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                        }
+                        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                     });
                     
-                    // Prepare datasets for each SKU
                     const colors = [
-                        '#667eea', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6',
-                        '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1'
+                        THEME.primary, THEME.warning, THEME.success, THEME.error, THEME.secondary,
+                        THEME.info, '#ec4899', '#84cc16', '#f97316', '#6366f1'
                     ];
                     
                     const datasets = skusToShow.map((sku, idx) => {
@@ -1017,16 +897,14 @@
                             backgroundColor: colors[idx % colors.length] + '20',
                             borderWidth: 2,
                             fill: false,
-                            tension: 0.4
+                            tension: 0.4,
+                            pointRadius: 2
                         };
                     });
                     
                     trendChartInstance.current = new ChartLib(ctx, {
                         type: 'line',
-                        data: {
-                            labels: labels,
-                            datasets: datasets
-                        },
+                        data: { labels, datasets },
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
@@ -1037,13 +915,7 @@
                             plugins: {
                                 legend: {
                                     position: 'top',
-                                    labels: {
-                                        usePointStyle: true,
-                                        padding: 15,
-                                        font: {
-                                            size: 11
-                                        }
-                                    }
+                                    labels: { usePointStyle: true, padding: 15, font: { size: 11 } }
                                 },
                                 tooltip: {
                                     callbacks: {
@@ -1057,21 +929,17 @@
                             scales: {
                                 x: {
                                     display: true,
-                                    title: {
-                                        display: true,
-                                        text: 'Date'
-                                    }
+                                    grid: { display: false },
+                                    ticks: { font: { size: 10 } }
                                 },
                                 y: {
                                     beginAtZero: true,
-                                    title: {
-                                        display: true,
-                                        text: 'Revenue'
-                                    },
+                                    grid: { color: THEME.gridLines },
                                     ticks: {
                                         callback: function(value) {
                                             return formatCurrency ? formatCurrency(value) : `$${value.toLocaleString()}`;
-                                        }
+                                        },
+                                        font: { size: 10 }
                                     }
                                 }
                             }
@@ -1080,11 +948,10 @@
                 }
             }
             
-            // Create Comparison Chart (side-by-side bars)
+            // Create Comparison Chart
             if (comparisonChartRef.current && comparisonMode && comparisonData && comparisonData.merged && comparisonData.merged.length > 0) {
                 const ctx = comparisonChartRef.current.getContext('2d');
                 
-                // Get top 10 SKUs for comparison
                 const topSKUsForComparison = comparisonData.merged
                     .slice()
                     .sort((a, b) => (b.revenue || 0) - (a.revenue || 0))
@@ -1105,16 +972,16 @@
                                 {
                                     label: 'Current Period',
                                     data: currentData,
-                                    backgroundColor: 'rgba(102, 126, 234, 0.7)',
-                                    borderColor: 'rgb(102, 126, 234)',
-                                    borderWidth: 2
+                                    backgroundColor: THEME.primary + 'B3',
+                                    borderColor: THEME.primary,
+                                    borderWidth: 1
                                 },
                                 {
                                     label: 'Comparison Period',
                                     data: comparisonDataValues,
-                                    backgroundColor: 'rgba(156, 163, 175, 0.7)',
-                                    borderColor: 'rgb(156, 163, 175)',
-                                    borderWidth: 2
+                                    backgroundColor: '#9ca3afB3',
+                                    borderColor: '#9ca3af',
+                                    borderWidth: 1
                                 }
                             ]
                         },
@@ -1122,16 +989,7 @@
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: {
-                                legend: {
-                                    position: 'top',
-                                    labels: {
-                                        usePointStyle: true,
-                                        padding: 15,
-                                        font: {
-                                            size: 11
-                                        }
-                                    }
-                                },
+                                legend: { position: 'top' },
                                 tooltip: {
                                     callbacks: {
                                         label: function(context) {
@@ -1151,19 +1009,9 @@
                                 }
                             },
                             scales: {
-                                x: {
-                                    display: true,
-                                    title: {
-                                        display: true,
-                                        text: 'SKU'
-                                    }
-                                },
                                 y: {
                                     beginAtZero: true,
-                                    title: {
-                                        display: true,
-                                        text: 'Revenue'
-                                    },
+                                    grid: { color: THEME.gridLines },
                                     ticks: {
                                         callback: function(value) {
                                             return formatCurrency ? formatCurrency(value) : `$${value.toLocaleString()}`;
@@ -1177,27 +1025,15 @@
             }
             
             return () => {
-                if (topSKUsChartInstance.current) {
-                    topSKUsChartInstance.current.destroy();
-                }
-                if (contributionChartInstance.current) {
-                    contributionChartInstance.current.destroy();
-                }
-                if (trendChartInstance.current) {
-                    trendChartInstance.current.destroy();
-                }
-                if (comparisonChartInstance.current) {
-                    comparisonChartInstance.current.destroy();
-                }
+                if (topSKUsChartInstance.current) topSKUsChartInstance.current.destroy();
+                if (contributionChartInstance.current) contributionChartInstance.current.destroy();
+                if (trendChartInstance.current) trendChartInstance.current.destroy();
+                if (comparisonChartInstance.current) comparisonChartInstance.current.destroy();
             };
         }, [chartData, loading, totalRevenue, formatCurrency, calculateSKUTargetContribution, trendData, selectedSKUsForTrend, view, comparisonMode, comparisonData]);
         
-        // Debug render state
-        console.log('🎨 Rendering SKUPerformance:', { loading, error, skuDataCount: skuData.length });
-        
         // Loading state
         if (loading) {
-            console.log('📦 Showing loading state');
             return h('div', { className: 'sku-performance-container' },
                 h('div', { className: 'loading-container' },
                     h('div', { className: 'loading-spinner' }),
@@ -1208,13 +1044,12 @@
         
         // Error state
         if (error) {
-            console.log('❌ Showing error state:', error);
             return h('div', { className: 'sku-performance-container' },
                 h('div', { className: 'error-container' },
                     h('h2', null, 'Error'),
                     h('p', null, error),
                     h('button', {
-                        className: 'btn btn-primary',
+                        className: 'btn-back',
                         onClick: () => window.location.reload()
                     }, 'Retry')
                 )
@@ -1222,24 +1057,23 @@
         }
         
         // Main render
-        console.log('🎨 Rendering main SKU performance view with', skuData.length, 'SKUs');
         return h('div', { className: 'sku-performance-container' },
-            // Header with breadcrumb
+            // Header
             h('div', { className: 'sku-performance-header' },
                 h('button', {
                     className: 'btn-back',
                     onClick: onNavigateBack || (() => window.history.back())
-                }, '← Back'),
+                }, '← Back to Dashboard'),
                 h('div', { className: 'breadcrumb' },
                     h('span', null, 'Dashboard'),
-                    h('span', null, '→'),
+                    h('span', null, '›'),
                     h('span', null, channel),
-                    h('span', null, '→'),
+                    h('span', null, '›'),
                     h('span', { className: 'current' }, 'SKU Performance')
                 )
             ),
             
-            // Page title
+            // Page Title - Styled like Dashboard
             h('div', { className: 'page-header' },
                 h('h1', null, `SKU Performance: ${channel}`),
                 h('p', { className: 'page-subtitle' }, 
@@ -1247,21 +1081,21 @@
                 )
             ),
             
-            // Filters section
+            // Filters
             h('div', { className: 'sku-filters' },
                 h('div', { className: 'filters-row' },
                     h('div', { className: 'filter-group' },
-                        h('label', { className: 'filter-label' }, 'Search SKU:'),
+                        h('label', { className: 'filter-label' }, 'Search SKU'),
                         h('input', {
                             type: 'text',
                             className: 'search-input',
-                            placeholder: 'Search by SKU code or product name...',
+                            placeholder: 'SKU or Product Name...',
                             value: searchQuery,
                             onChange: handleSearchChange
                         })
                     ),
                     availableBrands.length > 1 && h('div', { className: 'filter-group' },
-                        h('label', { className: 'filter-label' }, 'Brand:'),
+                        h('label', { className: 'filter-label' }, 'Brand Filter'),
                         h('select', {
                             className: 'sort-select',
                             value: selectedBrandFilter,
@@ -1274,7 +1108,7 @@
                         )
                     ),
                     h('div', { className: 'filter-group' },
-                        h('label', { className: 'filter-label' }, 'Sort by:'),
+                        h('label', { className: 'filter-label' }, 'Sort Order'),
                         h('div', { style: { display: 'flex', gap: '8px' } },
                             h('select', {
                                 className: 'sort-select',
@@ -1294,7 +1128,7 @@
                         )
                     ),
                     h('div', { className: 'filter-group' },
-                        h('label', { className: 'filter-label' }, 'Compare:'),
+                        h('label', { className: 'filter-label' }, 'Comparisons'),
                         h('div', { className: 'comparison-buttons' },
                             h('button', {
                                 className: `comparison-btn ${comparisonMode === 'yoy' ? 'active' : ''}`,
@@ -1305,48 +1139,23 @@
                                 className: `comparison-btn ${comparisonMode === 'mom' ? 'active' : ''}`,
                                 onClick: () => setComparisonMode(comparisonMode === 'mom' ? null : 'mom'),
                                 disabled: loadingComparison || view !== 'monthly'
-                            }, 'MOM'),
-                            h('button', {
-                                className: `comparison-btn ${comparisonMode === 'custom' ? 'active' : ''}`,
-                                onClick: () => {
-                                    if (comparisonMode === 'custom') {
-                                        setComparisonMode(null);
-                                    } else {
-                                        setComparisonMode('custom');
-                                        // Set default custom comparison dates (same period, previous year)
-                                        const currentRange = getEffectiveDateRange();
-                                        if (currentRange.start && currentRange.end) {
-                                            const startDate = new Date(currentRange.start);
-                                            const endDate = new Date(currentRange.end);
-                                            startDate.setFullYear(startDate.getFullYear() - 1);
-                                            endDate.setFullYear(endDate.getFullYear() - 1);
-                                            setCustomComparisonStartDate(startDate.toISOString().split('T')[0]);
-                                            setCustomComparisonEndDate(endDate.toISOString().split('T')[0]);
-                                        }
-                                    }
-                                },
-                                title: 'Compare with custom period'
-                            }, 'Custom')
+                            }, 'MOM')
                         )
                     ),
                     h('div', { className: 'filter-group' },
-                        h('label', { className: 'filter-label' }, 'Export:'),
+                        h('label', { className: 'filter-label' }, 'Export Data'),
                         h('div', { className: 'export-buttons' },
                             h('button', {
                                 className: 'export-btn export-csv',
                                 onClick: exportToCSV,
                                 disabled: dataWithComparison.length === 0,
                                 title: 'Export to CSV'
-                            }, '📥 CSV'),
-                            h('button', {
-                                className: 'export-btn export-excel',
-                                onClick: exportToExcel,
-                                disabled: dataWithComparison.length === 0,
-                                title: 'Export to Excel'
-                            }, '📊 Excel')
+                            }, 'Download CSV')
                         )
                     )
                 ),
+                
+                // Date Range Toggle
                 h('div', { className: 'date-range-section' },
                     h('div', { className: 'date-range-toggle' },
                         h('label', { className: 'toggle-label' },
@@ -1366,30 +1175,17 @@
                     ),
                     useCustomDateRange && h('div', { className: 'date-range-controls' },
                         h('div', { className: 'quick-selectors' },
-                            h('button', {
-                                className: 'quick-date-btn',
-                                onClick: () => handleQuickDateRange('last7')
-                            }, 'Last 7 Days'),
-                            h('button', {
-                                className: 'quick-date-btn',
-                                onClick: () => handleQuickDateRange('last30')
-                            }, 'Last 30 Days'),
-                            h('button', {
-                                className: 'quick-date-btn',
-                                onClick: () => handleQuickDateRange('last90')
-                            }, 'Last 90 Days'),
-                            h('button', {
-                                className: 'quick-date-btn',
-                                onClick: () => handleQuickDateRange('thisMonth')
-                            }, 'This Month'),
-                            h('button', {
-                                className: 'quick-date-btn',
-                                onClick: () => handleQuickDateRange('lastMonth')
-                            }, 'Last Month')
+                            ['last7', 'last30', 'last90', 'thisMonth', 'lastMonth'].map(range => 
+                                h('button', {
+                                    key: range,
+                                    className: 'quick-date-btn',
+                                    onClick: () => handleQuickDateRange(range)
+                                }, range.replace(/([A-Z])/g, ' $1').trim())
+                            )
                         ),
                         h('div', { className: 'custom-date-inputs' },
                             h('div', { className: 'date-input-group' },
-                                h('label', { className: 'date-label' }, 'Start Date:'),
+                                h('label', { className: 'date-label' }, 'Start Date'),
                                 h('input', {
                                     type: 'date',
                                     className: 'date-input',
@@ -1399,7 +1195,7 @@
                                 })
                             ),
                             h('div', { className: 'date-input-group' },
-                                h('label', { className: 'date-label' }, 'End Date:'),
+                                h('label', { className: 'date-label' }, 'End Date'),
                                 h('input', {
                                     type: 'date',
                                     className: 'date-input',
@@ -1414,36 +1210,11 @@
                 ),
                 comparisonMode && getComparisonLabel() && h('div', { className: 'comparison-label' },
                     h('span', { className: 'comparison-badge' }, getComparisonLabel()),
-                    loadingComparison && h('span', { className: 'loading-indicator' }, 'Loading...')
-                ),
-                comparisonMode === 'custom' && h('div', { className: 'custom-comparison-dates' },
-                    h('div', { className: 'custom-date-inputs' },
-                        h('div', { className: 'date-input-group' },
-                            h('label', { className: 'date-label' }, 'Comparison Start:'),
-                            h('input', {
-                                type: 'date',
-                                className: 'date-input',
-                                value: customComparisonStartDate,
-                                onChange: (e) => setCustomComparisonStartDate(e.target.value),
-                                max: customComparisonEndDate || new Date().toISOString().split('T')[0]
-                            })
-                        ),
-                        h('div', { className: 'date-input-group' },
-                            h('label', { className: 'date-label' }, 'Comparison End:'),
-                            h('input', {
-                                type: 'date',
-                                className: 'date-input',
-                                value: customComparisonEndDate,
-                                onChange: (e) => setCustomComparisonEndDate(e.target.value),
-                                min: customComparisonStartDate,
-                                max: new Date().toISOString().split('T')[0]
-                            })
-                        )
-                    )
+                    loadingComparison && h('span', { className: 'loading-indicator' }, 'Loading comparison...')
                 )
             ),
             
-            // Summary section - Basic Stats
+            // Summary Cards
             h('div', { className: 'sku-summary' },
                 h('div', { className: 'summary-card' },
                     h('div', { className: 'summary-label' }, 'Total SKUs'),
@@ -1459,7 +1230,7 @@
                     h('div', { className: 'summary-value' }, 
                         formatCurrency 
                             ? formatCurrency(totalRevenue)
-                            : `$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            : `$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
                     )
                 ),
                 h('div', { className: 'summary-card' },
@@ -1478,202 +1249,60 @@
                 )
             ),
             
-            // Enhanced Summary Cards - Insights
-            filteredAndSortedData.length > 0 && h('div', { className: 'sku-insights' },
-                // Top Performers
-                h('div', { className: 'insight-card' },
-                    h('div', { className: 'insight-header' },
-                        h('h3', { className: 'insight-title' }, '🏆 Top Performers'),
-                        h('span', { className: 'insight-subtitle' }, 'Top 5 by Revenue')
-                    ),
-                    h('div', { className: 'insight-list' },
-                        skuData
-                            .slice()
-                            .sort((a, b) => (b.revenue || 0) - (a.revenue || 0))
-                            .slice(0, 5)
-                            .map((item, idx) => {
-                                const contribution = totalRevenue > 0 
-                                    ? ((item.revenue / totalRevenue) * 100).toFixed(1)
-                                    : '0.0';
-                                return h('div', { key: idx, className: 'insight-item' },
-                                    h('div', { className: 'insight-rank' }, `#${idx + 1}`),
-                                    h('div', { className: 'insight-content' },
-                                        h('div', { className: 'insight-name' }, item.sku),
-                                        h('div', { className: 'insight-meta' }, 
-                                            formatCurrency 
-                                                ? formatCurrency(item.revenue)
-                                                : `$${item.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-                                            h('span', { className: 'insight-contribution' }, ` • ${contribution}%`)
-                                        )
-                                    )
-                                );
-                            })
-                    )
-                ),
-                
-                // Growth Leaders (only if comparison data available)
-                comparisonMode && comparisonData && comparisonData.merged && comparisonData.merged.length > 0 && h('div', { className: 'insight-card' },
-                    h('div', { className: 'insight-header' },
-                        h('h3', { className: 'insight-title' }, '📈 Growth Leaders'),
-                        h('span', { className: 'insight-subtitle' }, 'Top 5 by Growth %')
-                    ),
-                    h('div', { className: 'insight-list' },
-                        comparisonData.merged
-                            .filter(item => item.comparison && item.comparison.growthPercent > 0)
-                            .sort((a, b) => (b.comparison.growthPercent || 0) - (a.comparison.growthPercent || 0))
-                            .slice(0, 5)
-                            .map((item, idx) => {
-                                const growthPercent = item.comparison.growthPercent || 0;
-                                return h('div', { key: idx, className: 'insight-item' },
-                                    h('div', { className: 'insight-rank' }, `#${idx + 1}`),
-                                    h('div', { className: 'insight-content' },
-                                        h('div', { className: 'insight-name' }, item.sku),
-                                        h('div', { className: 'insight-meta' }, 
-                                            h('span', { className: 'insight-growth', style: { color: '#059669', fontWeight: 600 } }, `+${growthPercent.toFixed(1)}%`),
-                                            h('span', { style: { color: '#6b7280', marginLeft: '8px' } }, 
-                                                formatCurrency 
-                                                    ? formatCurrency(item.revenue)
-                                                    : `$${item.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                            )
-                                        )
-                                    )
-                                );
-                            })
-                    )
-                ),
-                
-                // Underperformers (only if target data available)
-                channelTarget85 > 0 && calculateSKUTargetContribution.size > 0 && h('div', { className: 'insight-card' },
-                    h('div', { className: 'insight-header' },
-                        h('h3', { className: 'insight-title' }, '⚠️ Underperformers'),
-                        h('span', { className: 'insight-subtitle' }, 'SKUs Below Target')
-                    ),
-                    h('div', { className: 'insight-list' },
-                        skuData
-                            .map(item => {
-                                const targetData = calculateSKUTargetContribution.get(item.sku);
-                                return targetData ? { ...item, targetData } : null;
-                            })
-                            .filter(item => item && item.targetData.performancePercent < 85)
-                            .sort((a, b) => (a.targetData.performancePercent || 0) - (b.targetData.performancePercent || 0))
-                            .slice(0, 5)
-                            .map((item, idx) => {
-                                const performance = item.targetData.performancePercent;
-                                const gap = item.targetData.gap;
-                                return h('div', { key: idx, className: 'insight-item' },
-                                    h('div', { className: 'insight-rank', style: { color: '#dc2626' } }, `#${idx + 1}`),
-                                    h('div', { className: 'insight-content' },
-                                        h('div', { className: 'insight-name' }, item.sku),
-                                        h('div', { className: 'insight-meta' }, 
-                                            h('span', { style: { color: '#dc2626', fontWeight: 600 } }, `${performance.toFixed(0)}% of target`),
-                                            gap > 0 && h('span', { style: { color: '#6b7280', marginLeft: '8px' } }, 
-                                                `Need: ${formatCurrency ? formatCurrency(gap) : `$${gap.toLocaleString()}`}`
-                                            )
-                                        )
-                                    )
-                                );
-                            })
-                    )
-                ),
-                
-                // Channel Summary
-                h('div', { className: 'insight-card' },
-                    h('div', { className: 'insight-header' },
-                        h('h3', { className: 'insight-title' }, '📊 Channel Summary')
-                    ),
-                    h('div', { className: 'insight-stats' },
-                        h('div', { className: 'insight-stat' },
-                            h('div', { className: 'insight-stat-label' }, 'Top SKU Contribution'),
-                            h('div', { className: 'insight-stat-value' }, 
-                                filteredAndSortedData.length > 0 
-                                    ? `${((Math.max(...filteredAndSortedData.map(s => s.revenue || 0)) / totalRevenue) * 100).toFixed(1)}%`
-                                    : '0%'
-                            )
-                        ),
-                        h('div', { className: 'insight-stat' },
-                            h('div', { className: 'insight-stat-label' }, 'Avg Revenue per SKU'),
-                            h('div', { className: 'insight-stat-value' }, 
-                                filteredAndSortedData.length > 0
-                                    ? formatCurrency
-                                        ? formatCurrency(totalRevenue / filteredAndSortedData.length)
-                                        : `$${(totalRevenue / filteredAndSortedData.length).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                    : '$0.00'
-                            )
-                        ),
-                        h('div', { className: 'insight-stat' },
-                            h('div', { className: 'insight-stat-label' }, 'Avg Units per SKU'),
-                            h('div', { className: 'insight-stat-value' }, 
-                                filteredAndSortedData.length > 0
-                                    ? Math.round(totalUnits / filteredAndSortedData.length).toLocaleString()
-                                    : '0'
-                            )
-                        )
-                    )
-                )
-            ),
-            
-            // Charts section
+            // Charts Section
             filteredAndSortedData.length > 0 && h('div', { className: 'sku-charts-section' },
                 h('div', { className: 'chart-card' },
                     h('div', { className: 'chart-header' },
-                        h('h3', { className: 'chart-title' }, '📊 Top SKUs by Revenue'),
-                        h('p', { className: 'chart-subtitle' }, 'Top 20 performing SKUs')
+                        h('div', null,
+                            h('h3', { className: 'chart-title' }, 'Top Revenue SKUs'),
+                            h('p', { className: 'chart-subtitle' }, 'Top 20 performing items')
+                        )
                     ),
-                    h('div', { className: 'chart-container', style: { height: '400px' } },
+                    h('div', { className: 'chart-container' },
                         h('canvas', { ref: topSKUsChartRef })
                     )
                 ),
                 h('div', { className: 'chart-card' },
                     h('div', { className: 'chart-header' },
-                        h('h3', { className: 'chart-title' }, '🥧 SKU Contribution'),
-                        h('p', { className: 'chart-subtitle' }, 'Revenue distribution across SKUs')
+                        h('div', null,
+                            h('h3', { className: 'chart-title' }, 'Revenue Distribution'),
+                            h('p', { className: 'chart-subtitle' }, 'Top 10 SKUs vs Others')
+                        )
                     ),
-                    h('div', { className: 'chart-container', style: { height: '400px' } },
+                    h('div', { className: 'chart-container' },
                         h('canvas', { ref: contributionChartRef })
                     )
                 ),
                 trendData && trendData.length > 0 && h('div', { className: 'chart-card', style: { gridColumn: '1 / -1' } },
                     h('div', { className: 'chart-header' },
-                        h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' } },
-                            h('div', null,
-                                h('h3', { className: 'chart-title' }, '📈 Revenue Trend'),
-                                h('p', { className: 'chart-subtitle' }, 'Revenue trends over time (Top 5 SKUs)')
-                            ),
-                            h('div', { className: 'trend-sku-selector' },
-                                h('select', {
-                                    className: 'sku-select-multi',
-                                    multiple: true,
-                                    value: selectedSKUsForTrend,
-                                    onChange: (e) => {
-                                        const selected = Array.from(e.target.selectedOptions, option => option.value);
-                                        setSelectedSKUsForTrend(selected);
-                                    },
-                                    style: { minWidth: '200px', fontSize: '12px', padding: '4px' }
-                                },
-                                    chartData?.topSKUs?.slice(0, 10).map(item => 
-                                        h('option', { key: item.sku, value: item.sku }, item.sku)
-                                    )
+                        h('div', null,
+                            h('h3', { className: 'chart-title' }, 'Revenue Trend'),
+                            h('p', { className: 'chart-subtitle' }, 'Performance over time')
+                        ),
+                        h('div', { className: 'trend-sku-selector' },
+                            h('select', {
+                                className: 'sku-select-multi',
+                                multiple: true,
+                                value: selectedSKUsForTrend,
+                                onChange: (e) => {
+                                    const selected = Array.from(e.target.selectedOptions, option => option.value);
+                                    setSelectedSKUsForTrend(selected);
+                                }
+                            },
+                                chartData?.topSKUs?.slice(0, 10).map(item => 
+                                    h('option', { key: item.sku, value: item.sku }, item.sku)
                                 )
                             )
                         )
                     ),
-                    h('div', { className: 'chart-container', style: { height: '400px' } },
-                        loadingTrend ? h('div', { style: { textAlign: 'center', padding: '40px', color: '#6b7280' } }, 'Loading trend data...') :
+                    h('div', { className: 'chart-container' },
+                        loadingTrend ? h('div', { className: 'loading-spinner' }) :
                         h('canvas', { ref: trendChartRef })
-                    )
-                ),
-                comparisonMode && comparisonData && comparisonData.merged && comparisonData.merged.length > 0 && h('div', { className: 'chart-card', style: { gridColumn: '1 / -1' } },
-                    h('div', { className: 'chart-header' },
-                        h('h3', { className: 'chart-title' }, '📊 Period Comparison'),
-                        h('p', { className: 'chart-subtitle' }, `Current vs ${getComparisonLabel() || 'Comparison Period'} - Top 10 SKUs`)
-                    ),
-                    h('div', { className: 'chart-container', style: { height: '400px' } },
-                        h('canvas', { ref: comparisonChartRef })
                     )
                 )
             ),
             
-            // Data table
+            // Data Table
             h('div', { 
                 className: `sku-table-container ${virtualScrollEnabled ? 'virtual-scroll-enabled' : ''}`,
                 ref: tableContainerRef
@@ -1687,150 +1316,114 @@
                     )
                 ) : (
                     h('table', { 
-                        className: `sku-table ${virtualScrollEnabled ? 'virtual-scroll-table' : ''}`,
+                        className: 'sku-table',
                         style: virtualScrollEnabled ? {
                             height: `${dataWithComparison.length * 50}px`,
-                            position: 'relative'
+                            position: 'relative',
+                            display: 'block'
                         } : {}
                     },
-                        h('thead', { style: virtualScrollEnabled ? { position: 'sticky', top: 0, zIndex: 10, background: 'white' } : {} },
+                        h('thead', null,
                             h('tr', null,
-                                h('th', { 
-                                    className: 'sortable-header',
-                                    onClick: () => handleSortChange('sku'),
-                                    style: { cursor: 'pointer' }
-                                }, `SKU${getSortIndicator('sku')}`),
+                                h('th', { onClick: () => handleSortChange('sku'), style: { cursor: 'pointer' } }, `SKU${getSortIndicator('sku')}`),
                                 h('th', null, 'Product Name'),
-                                h('th', { 
-                                    className: 'sortable-header',
-                                    onClick: () => handleSortChange('units'),
-                                    style: { cursor: 'pointer' }
-                                }, `Units${getSortIndicator('units')}`),
-                                h('th', { 
-                                    className: 'sortable-header',
-                                    onClick: () => handleSortChange('revenue'),
-                                    style: { cursor: 'pointer' }
-                                }, `Revenue${getSortIndicator('revenue')}`),
+                                h('th', { onClick: () => handleSortChange('units'), style: { cursor: 'pointer' } }, `Units${getSortIndicator('units')}`),
+                                h('th', { onClick: () => handleSortChange('revenue'), style: { cursor: 'pointer' } }, `Revenue${getSortIndicator('revenue')}`),
                                 comparisonMode && comparisonData && h('th', null, getComparisonLabel() || 'Growth'),
                                 h('th', null, 'Avg Price'),
-                                h('th', { 
-                                    className: 'sortable-header',
-                                    onClick: () => handleSortChange('contribution'),
-                                    style: { cursor: 'pointer' }
-                                }, `Contribution %${getSortIndicator('contribution')}`),
+                                h('th', { onClick: () => handleSortChange('contribution'), style: { cursor: 'pointer' } }, `Contribution${getSortIndicator('contribution')}`),
                                 channelTarget85 > 0 && h('th', null, 'Target Status')
                             )
                         ),
-                        h('tbody', { 
-                            style: virtualScrollEnabled ? { 
-                                position: 'relative',
-                                height: `${dataWithComparison.length * 50}px`
-                            } : {}
-                        },
+                        h('tbody', null,
                             (virtualScrollEnabled ? virtualScrollData : paginatedData).map((item, index) => {
-                                const actualIndex = virtualScrollEnabled ? item.virtualIndex : startIndex + index;
                                 const avgPrice = item.units > 0 ? item.revenue / item.units : 0;
                                 const contributionPercent = totalRevenue > 0 
                                     ? ((item.revenue / totalRevenue) * 100).toFixed(2)
                                     : '0.00';
                                 
-                                // Calculate growth if comparison data exists
+                                // Growth
                                 const growthDisplay = item.comparison ? (() => {
                                     const growthPercent = item.comparison.growthPercent || 0;
-                                    const growthAmount = item.comparison.growthAmount || 0;
                                     const isPositive = growthPercent >= 0;
                                     return h('div', { 
-                                        className: `growth-cell ${isPositive ? 'positive' : 'negative'}`,
-                                        title: `${isPositive ? '+' : ''}${growthPercent.toFixed(1)}% (${formatCurrency ? formatCurrency(Math.abs(growthAmount)) : `$${Math.abs(growthAmount).toLocaleString()}`})`
+                                        className: `growth-cell ${isPositive ? 'positive' : 'negative'}`
                                     },
-                                        h('span', { className: 'growth-arrow' }, isPositive ? '↑' : '↓'),
-                                        h('span', null, `${Math.abs(growthPercent).toFixed(1)}%`)
+                                        h('span', null, `${isPositive ? '+' : ''}${growthPercent.toFixed(1)}%`)
                                     );
                                 })() : null;
                                 
-                                // Get target contribution data
+                                // Target Status
                                 const targetData = calculateSKUTargetContribution.get(item.sku);
                                 const targetStatusDisplay = targetData ? (() => {
                                     const performance = targetData.performancePercent;
                                     let statusClass = 'target-status';
                                     let statusText = '';
-                                    let statusColor = '#6b7280';
                                     
                                     if (performance >= 100) {
                                         statusClass += ' exceeding';
-                                        statusText = '✓ Exceeding';
-                                        statusColor = '#059669';
+                                        statusText = 'Exceeding';
                                     } else if (performance >= 85) {
                                         statusClass += ' on-track';
-                                        statusText = '✓ On Track';
-                                        statusColor = '#d97706';
+                                        statusText = 'On Track';
                                     } else {
                                         statusClass += ' underperforming';
-                                        statusText = '⚠ Behind';
-                                        statusColor = '#dc2626';
+                                        statusText = 'Behind';
                                     }
                                     
-                                    return h('div', { 
-                                        className: statusClass,
-                                        style: { color: statusColor, fontWeight: 600, fontSize: '12px' },
-                                        title: `Target: ${formatCurrency ? formatCurrency(targetData.target) : `$${targetData.target.toLocaleString()}`}, Performance: ${performance.toFixed(1)}%`
-                                    }, statusText);
+                                    return h('span', { className: statusClass }, statusText);
                                 })() : null;
                                 
                                 const rowStyle = virtualScrollEnabled ? {
                                     position: 'absolute',
                                     top: `${item.virtualIndex * 50}px`,
                                     height: '50px',
-                                    width: '100%'
+                                    width: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center'
                                 } : {};
                                 
-                                return h('tr', { key: virtualScrollEnabled ? item.virtualIndex : index, style: rowStyle },
+                                return h('tr', { key: item.sku, style: rowStyle },
                                     h('td', { className: 'sku-code' }, item.sku),
                                     h('td', { className: 'product-name' }, item.product_name || '—'),
                                     h('td', null, item.units.toLocaleString()),
                                     h('td', { className: 'revenue-cell' }, 
                                         formatCurrency
                                             ? formatCurrency(item.revenue)
-                                            : `$${item.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                            : `$${item.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
                                     ),
-                                    comparisonMode && comparisonData && h('td', null, growthDisplay || h('span', { style: { color: '#9ca3af' } }, '—')),
+                                    comparisonMode && comparisonData && h('td', null, growthDisplay || '—'),
                                     h('td', null,
                                         formatCurrency
                                             ? formatCurrency(avgPrice)
                                             : `$${avgPrice.toFixed(2)}`
                                     ),
                                     h('td', null, `${contributionPercent}%`),
-                                    channelTarget85 > 0 && h('td', null, targetStatusDisplay || h('span', { style: { color: '#9ca3af' } }, '—'))
+                                    channelTarget85 > 0 && h('td', null, targetStatusDisplay || '—')
                                 );
                             })
                         )
                     )
                 ),
                 
-                // Pagination Controls
+                // Pagination
                 filteredAndSortedData.length > itemsPerPage && h('div', { className: 'pagination-controls' },
                     h('div', { className: 'pagination-info' },
-                        h('span', null, `Showing ${startIndex + 1}-${Math.min(endIndex, dataWithComparison.length)} of ${dataWithComparison.length} SKUs`)
+                        `Showing ${startIndex + 1}-${Math.min(endIndex, dataWithComparison.length)} of ${dataWithComparison.length} SKUs`
                     ),
                     h('div', { className: 'pagination-buttons' },
                         h('button', {
                             className: 'pagination-btn',
                             onClick: () => setCurrentPage(prev => Math.max(1, prev - 1)),
-                            disabled: currentPage === 1,
-                            title: 'Previous page'
-                        }, '← Prev'),
-                        h('div', { className: 'page-numbers' },
+                            disabled: currentPage === 1
+                        }, 'Previous'),
+                        h('div', { style: { display: 'flex', gap: '4px' } },
                             Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                                 let pageNum;
-                                if (totalPages <= 5) {
-                                    pageNum = i + 1;
-                                } else if (currentPage <= 3) {
-                                    pageNum = i + 1;
-                                } else if (currentPage >= totalPages - 2) {
-                                    pageNum = totalPages - 4 + i;
-                                } else {
-                                    pageNum = currentPage - 2 + i;
-                                }
+                                if (totalPages <= 5) pageNum = i + 1;
+                                else if (currentPage <= 3) pageNum = i + 1;
+                                else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                                else pageNum = currentPage - 2 + i;
                                 
                                 return h('button', {
                                     key: pageNum,
@@ -1842,62 +1435,34 @@
                         h('button', {
                             className: 'pagination-btn',
                             onClick: () => setCurrentPage(prev => Math.min(totalPages, prev + 1)),
-                            disabled: currentPage === totalPages,
-                            title: 'Next page'
-                        }, 'Next →'),
-                        totalPages > 5 && h('div', { className: 'page-jump' },
-                            h('span', null, 'Go to:'),
-                            h('input', {
-                                type: 'number',
-                                className: 'page-input',
-                                min: 1,
-                                max: totalPages,
-                                value: currentPage,
-                                onChange: (e) => {
-                                    const page = parseInt(e.target.value);
-                                    if (page >= 1 && page <= totalPages) {
-                                        setCurrentPage(page);
-                                    }
-                                }
-                            }),
-                            h('span', null, `of ${totalPages}`)
-                        )
+                            disabled: currentPage === totalPages
+                        }, 'Next')
                     ),
                     h('div', { className: 'pagination-settings' },
-                        h('label', { className: 'items-per-page-label' }, 'Items per page:'),
-                        h('select', {
-                            className: 'items-per-page-select',
-                            value: itemsPerPage,
-                            onChange: (e) => {
-                                setItemsPerPage(parseInt(e.target.value));
-                                setCurrentPage(1);
-                            }
-                        },
-                            h('option', { value: 25 }, '25'),
-                            h('option', { value: 50 }, '50'),
-                            h('option', { value: 100 }, '100'),
-                            h('option', { value: 200 }, '200')
+                        h('label', { className: 'items-per-page-label' },
+                            'Show',
+                            h('select', {
+                                className: 'items-per-page-select',
+                                value: itemsPerPage,
+                                onChange: (e) => {
+                                    setItemsPerPage(parseInt(e.target.value));
+                                    setCurrentPage(1);
+                                }
+                            },
+                                h('option', { value: 25 }, '25'),
+                                h('option', { value: 50 }, '50'),
+                                h('option', { value: 100 }, '100')
+                            )
                         ),
-                        h('label', { className: 'virtual-scroll-label', style: { marginLeft: '16px' } },
+                        h('label', { className: 'virtual-scroll-label' },
                             h('input', {
                                 type: 'checkbox',
                                 checked: virtualScrollEnabled,
-                                onChange: (e) => {
-                                    setVirtualScrollEnabled(e.target.checked);
-                                    if (e.target.checked) {
-                                        setVisibleRange({ start: 0, end: Math.ceil(600 / 50) });
-                                    }
-                                }
+                                onChange: (e) => setVirtualScrollEnabled(e.target.checked)
                             }),
-                            h('span', { style: { marginLeft: '6px' } }, 'Virtual Scrolling')
+                            'Virtual Scroll'
                         )
                     )
-                ),
-                
-                // Loading more indicator
-                loadingMore && h('div', { className: 'loading-more' },
-                    h('div', { className: 'loading-spinner', style: { width: '20px', height: '20px' } }),
-                    h('span', null, 'Loading more data...')
                 )
             )
         );
@@ -1909,4 +1474,3 @@
     window.ChaiVision.components = window.ChaiVision.components || {};
     window.ChaiVision.components.SKUPerformance = SKUPerformance;
 })();
-

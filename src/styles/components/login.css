@@ -7,18 +7,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 20px;
+    background: var(--accent-gradient);
+    padding: var(--spacing-lg);
 }
 
 .login-card {
-    background: white;
+    background: var(--bg-primary);
     border-radius: 20px;
     padding: 48px;
     width: 100%;
     max-width: 440px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    animation: slideUp 0.5s ease-out;
+    animation: slideUp var(--transition-slow);
 }
 
 @keyframes slideUp {
@@ -40,7 +40,7 @@
 .logo-icon {
     width: 80px;
     height: 80px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--accent-gradient);
     border-radius: 20px;
     display: inline-flex;
     align-items: center;
@@ -48,23 +48,23 @@
     color: white;
     font-size: 32px;
     font-weight: bold;
-    margin-bottom: 20px;
+    margin-bottom: var(--spacing-lg);
     box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
 }
 
 .login-logo h1 {
     font-size: 32px;
     font-weight: 800;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--accent-gradient);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 8px;
+    margin-bottom: var(--spacing-sm);
 }
 
 .login-subtitle {
-    color: #6B7280;
-    font-size: 14px;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
 }
 
 .login-form {
@@ -79,20 +79,22 @@
     width: 100%;
     padding: 14px 16px;
     font-size: 15px;
-    border: 2px solid #E5E7EB;
+    border: 2px solid var(--border-color);
     border-radius: 10px;
-    transition: all 0.3s;
+    transition: all var(--transition-fast);
     font-family: inherit;
+    background: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 .login-input:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px var(--accent-gradient-light);
 }
 
 .login-input:disabled {
-    background: #F9FAFB;
+    background: var(--bg-secondary);
     cursor: not-allowed;
 }
 
@@ -110,7 +112,8 @@
     cursor: pointer;
     font-size: 20px;
     opacity: 0.6;
-    transition: opacity 0.3s;
+    transition: opacity var(--transition-fast);
+    color: var(--text-secondary);
 }
 
 .password-toggle:hover {
@@ -128,41 +131,58 @@
     display: flex;
     align-items: center;
     cursor: pointer;
-    font-size: 14px;
-    color: #4B5563;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
 }
 
 .checkbox-label input {
-    margin-right: 8px;
+    margin-right: var(--spacing-sm);
     cursor: pointer;
 }
 
 .forgot-password {
-    font-size: 14px;
-    color: #667eea;
+    font-size: var(--font-size-sm);
+    color: var(--accent-primary);
     text-decoration: none;
-    transition: color 0.3s;
+    transition: color var(--transition-fast);
 }
 
 .forgot-password:hover {
-    color: #764ba2;
+    color: var(--accent-secondary);
 }
 
 .btn-login {
     width: 100%;
     padding: 14px;
-    font-size: 16px;
+    font-size: var(--font-size-base);
     font-weight: 600;
+    background: var(--accent-gradient);
+    border: none;
+    border-radius: var(--border-radius);
+    color: white;
+    cursor: pointer;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.btn-login:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-login:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
 }
 
 .login-error {
-    background: linear-gradient(135deg, #FEE2E2, #FCA5A5);
-    color: #991B1B;
+    background: var(--error-bg);
+    color: var(--error-text);
     padding: 12px;
-    border-radius: 8px;
+    border-radius: var(--border-radius);
     margin-bottom: 20px;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     animation: shake 0.5s;
+    border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 @keyframes shake {
@@ -174,13 +194,13 @@
 .demo-credentials {
     margin-top: 32px;
     padding-top: 32px;
-    border-top: 1px solid #E5E7EB;
+    border-top: 1px solid var(--border-color);
 }
 
 .demo-title {
     text-align: center;
     font-size: 13px;
-    color: #6B7280;
+    color: var(--text-secondary);
     margin-bottom: 16px;
     font-weight: 600;
     text-transform: uppercase;
@@ -195,11 +215,11 @@
 
 .demo-btn {
     padding: 12px;
-    background: #F9FAFB;
-    border: 2px solid #E5E7EB;
-    border-radius: 8px;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all var(--transition-fast);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -207,16 +227,16 @@
 }
 
 .demo-btn:hover {
-    background: white;
-    border-color: #667eea;
+    background: var(--bg-primary);
+    border-color: var(--accent-primary);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-sm);
 }
 
 .demo-role {
     font-size: 12px;
     font-weight: 600;
-    color: #374151;
+    color: var(--text-primary);
 }
 
 .demo-icon {
@@ -229,8 +249,8 @@
 }
 
 .reset-instructions {
-    color: #6B7280;
-    font-size: 14px;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
     margin-bottom: 24px;
     line-height: 1.6;
 }
@@ -246,27 +266,30 @@
 }
 
 .reset-success h3 {
-    color: #1F2937;
+    color: var(--text-primary);
     margin-bottom: 12px;
+    font-size: 1.25rem;
+    font-weight: 700;
 }
 
 .reset-success p {
-    color: #6B7280;
+    color: var(--text-secondary);
     margin-bottom: 24px;
 }
 
 .btn-link {
     background: none;
-    color: #667eea;
+    color: var(--accent-primary);
     border: none;
     cursor: pointer;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     margin-top: 16px;
     text-decoration: underline;
+    padding: 0;
 }
 
 .btn-link:hover {
-    color: #764ba2;
+    color: var(--accent-secondary);
 }
 
 /* Responsive */
