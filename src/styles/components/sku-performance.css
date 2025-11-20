@@ -54,13 +54,11 @@
 }
 
 /* Page Header - Matching Dashboard */
-.page-header {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 24px;
-}
+/* Page Header - Matching Dashboard */
+/* .page-header style removed to use global dashboard style */
 
 .page-header h1 {
+    /* Keeping gradient for now as it matches dashboard theme, but ensuring alignment is controlled by parent */
     font-size: 28px;
     font-weight: 800;
     background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
@@ -414,7 +412,8 @@ input:focus {
 
 .insight-content {
     flex: 1;
-    min-width: 0; /* Ensure text truncation works */
+    min-width: 0;
+    /* Ensure text truncation works */
 }
 
 .insight-name {
@@ -754,7 +753,9 @@ input:focus {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .loading-text {
@@ -778,34 +779,35 @@ input:focus {
     .sku-performance-container {
         gap: 16px;
     }
-    
+
     .sku-filters {
         padding: 16px;
     }
-    
+
     .filters-row {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .filter-group {
         min-width: 100%;
     }
-    
+
     .sku-summary {
         grid-template-columns: 1fr 1fr;
     }
-    
+
     .sku-insights {
         grid-template-columns: 1fr;
     }
-    
+
     .sku-table-container {
         overflow-x: auto;
         border-radius: var(--border-radius);
     }
-    
+
     .sku-table {
-        min-width: 800px; /* Ensure horizontal scroll */
+        min-width: 800px;
+        /* Ensure horizontal scroll */
     }
 }
