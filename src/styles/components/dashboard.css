@@ -4,9 +4,17 @@
 
 .page-header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    justify-content: flex-start;
+    align-items: flex-start;
     margin-bottom: 32px;
+    flex-direction: column;
+}
+
+.page-title {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
 }
 
 .page-title h1 {
