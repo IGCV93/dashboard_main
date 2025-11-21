@@ -29,6 +29,8 @@
         const [searchQuery, setSearchQuery] = useState('');
         const [sortBy, setSortBy] = useState('revenue');
         const [sortOrder, setSortOrder] = useState('desc');
+        const [currentPage, setCurrentPage] = useState(1);
+        const [itemsPerPage] = useState(20);
 
         // Chart refs
         const topSKUsChartRef = useRef(null);
@@ -144,6 +146,17 @@
 
             return filtered;
         }, [skuData, searchQuery, sortBy, sortOrder]);
+
+        // Pagination calculations
+        const totalPages = Math.ceil(filteredAndSortedData.length / itemsPerPage);
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const paginatedData = filteredAndSortedData.slice(startIndex, endIndex);
+
+        // Reset to page 1 when filters change
+        useEffect(() => {
+            setCurrentPage(1);
+        }, [searchQuery, sortBy, sortOrder]);
 
         // Calculate summary metrics
         const totalRevenue = useMemo(() => {
@@ -428,7 +441,7 @@
                         )
                     ),
                     h('tbody', null,
-                        filteredAndSortedData.slice(0, 50).map((item, index) => {
+                        paginatedData.map((item, index) => {
                             const contribution = totalRevenue > 0 ? ((item.revenue / totalRevenue) * 100).toFixed(1) : '0.0';
                             return h('tr', { key: item.sku || index },
                                 h('td', { className: 'sku-code' }, item.sku || '—'),
@@ -440,8 +453,37 @@
                         })
                     )
                 ),
-                filteredAndSortedData.length > 50 && h('div', { className: 'table-footer' },
-                    `Showing 50 of ${filteredAndSortedData.length} SKUs`
+
+                // Pagination Controls
+                filteredAndSortedData.length > itemsPerPage && h('div', { className: 'pagination-controls' },
+                    h('div', { className: 'pagination-info' },
+                        `Showing ${startIndex + 1}-${Math.min(endIndex, filteredAndSortedData.length)} of ${filteredAndSortedData.length} SKUs`
+                    ),
+                    h('div', { className: 'pagination-buttons' },
+                        h('button', {
+                            className: 'pagination-btn',
+                            onClick: () => setCurrentPage(1),
+                            disabled: currentPage === 1
+                        }, '« First'),
+                        h('button', {
+                            className: 'pagination-btn',
+                            onClick: () => setCurrentPage(prev => Math.max(1, prev - 1)),
+                            disabled: currentPage === 1
+                        }, '‹ Prev'),
+                        h('span', { className: 'pagination-page-info' },
+                            `Page ${currentPage} of ${totalPages}`
+                        ),
+                        h('button', {
+                            className: 'pagination-btn',
+                            onClick: () => setCurrentPage(prev => Math.min(totalPages, prev + 1)),
+                            disabled: currentPage === totalPages
+                        }, 'Next ›'),
+                        h('button', {
+                            className: 'pagination-btn',
+                            onClick: () => setCurrentPage(totalPages),
+                            disabled: currentPage === totalPages
+                        }, 'Last »')
+                    )
                 )
             )
         );
