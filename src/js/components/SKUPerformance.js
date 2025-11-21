@@ -1096,8 +1096,8 @@
                 ),
                 h('div', { className: 'filter-group sort-box' },
                     h('select', {
-                        value: sortConfig.key,
-                        onChange: (e) => handleSortChange(e.target.value),
+                        value: sortBy,
+                        onChange: (e) => setSortBy(e.target.value),
                         className: 'sort-select'
                     },
                         h('option', { value: 'revenue' }, 'Revenue'),
@@ -1107,37 +1107,38 @@
                     ),
                     h('button', {
                         className: 'sort-order-btn',
-                        onClick: () => setSortConfig(prev => ({ ...prev, direction: prev.direction === 'asc' ? 'desc' : 'asc' })),
-                        title: sortConfig.direction === 'asc' ? 'Ascending' : 'Descending'
-                    }, sortConfig.direction === 'asc' ? '↑' : '↓')
+                        onClick: () => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc'),
+                        title: sortOrder === 'asc' ? 'Ascending' : 'Descending'
+                    }, sortOrder === 'asc' ? '↑' : '↓')
                 ),
 
-                // Date Range
-                h('div', { className: 'date-range-selector' },
-                    h('div', { className: 'quick-selectors' },
-                        ['7d', '30d', '90d', 'YTD'].map(range =>
-                            h('button', {
-                                key: range,
-                                className: `quick-date-btn ${dateRange.period === range ? 'active' : ''}`,
-                                onClick: () => setDateRange(prev => ({ ...prev, period: range }))
-                            }, range)
-                        )
-                    ),
-                    h('div', { className: 'custom-date-inputs' },
+                // Custom Date Range Toggle
+                h('div', { className: 'date-range-toggle' },
+                    h('label', { className: 'toggle-label' },
                         h('input', {
-                            type: 'date',
-                            value: dateRange.startDate,
-                            onChange: (e) => setDateRange(prev => ({ ...prev, startDate: e.target.value, period: 'custom' })),
-                            className: 'date-input'
+                            type: 'checkbox',
+                            checked: useCustomDateRange,
+                            onChange: (e) => setUseCustomDateRange(e.target.checked)
                         }),
-                        h('span', null, 'to'),
-                        h('input', {
-                            type: 'date',
-                            value: dateRange.endDate,
-                            onChange: (e) => setDateRange(prev => ({ ...prev, endDate: e.target.value, period: 'custom' })),
-                            className: 'date-input'
-                        })
+                        'Custom Date Range'
                     )
+                ),
+
+                // Custom Date Inputs (shown when toggle is on)
+                useCustomDateRange && h('div', { className: 'custom-date-inputs' },
+                    h('input', {
+                        type: 'date',
+                        value: customStartDate,
+                        onChange: (e) => setCustomStartDate(e.target.value),
+                        className: 'date-input'
+                    }),
+                    h('span', null, 'to'),
+                    h('input', {
+                        type: 'date',
+                        value: customEndDate,
+                        onChange: (e) => setCustomEndDate(e.target.value),
+                        className: 'date-input'
+                    })
                 ),
 
                 // Comparison Toggle
