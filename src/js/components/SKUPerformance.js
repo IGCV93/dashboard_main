@@ -1074,7 +1074,6 @@
             ),
 
             // Page Title - Styled like Dashboard
-            // Page Title - Styled like Dashboard
             h('div', { className: 'page-header' },
                 h('div', { className: 'page-title' },
                     h('h1', null, `SKU Performance: ${channel}`),
@@ -1084,176 +1083,143 @@
                 )
             ),
 
-            // Filters
-            h('div', { className: 'sku-filters' },
-                h('div', { className: 'filters-row' },
-                    h('div', { className: 'filter-group' },
-                        h('label', { className: 'filter-label' }, 'Search SKU'),
+            // Filters Section
+            h('div', { className: 'filter-controls' },
+                h('div', { className: 'filter-group search-box' },
+                    h('input', {
+                        type: 'text',
+                        placeholder: 'Search SKUs...',
+                        value: searchQuery,
+                        onChange: (e) => setSearchQuery(e.target.value),
+                        className: 'search-input'
+                    })
+                ),
+                h('div', { className: 'filter-group sort-box' },
+                    h('select', {
+                        value: sortConfig.key,
+                        onChange: (e) => handleSortChange(e.target.value),
+                        className: 'sort-select'
+                    },
+                        h('option', { value: 'revenue' }, 'Revenue'),
+                        h('option', { value: 'units' }, 'Units'),
+                        h('option', { value: 'contribution' }, 'Contribution'),
+                        h('option', { value: 'sku' }, 'SKU Name')
+                    ),
+                    h('button', {
+                        className: 'sort-order-btn',
+                        onClick: () => setSortConfig(prev => ({ ...prev, direction: prev.direction === 'asc' ? 'desc' : 'asc' })),
+                        title: sortConfig.direction === 'asc' ? 'Ascending' : 'Descending'
+                    }, sortConfig.direction === 'asc' ? '↑' : '↓')
+                ),
+
+                // Date Range
+                h('div', { className: 'date-range-selector' },
+                    h('div', { className: 'quick-selectors' },
+                        ['7d', '30d', '90d', 'YTD'].map(range =>
+                            h('button', {
+                                key: range,
+                                className: `quick-date-btn ${dateRange.period === range ? 'active' : ''}`,
+                                onClick: () => setDateRange(prev => ({ ...prev, period: range }))
+                            }, range)
+                        )
+                    ),
+                    h('div', { className: 'custom-date-inputs' },
                         h('input', {
-                            type: 'text',
-                            className: 'search-input',
-                            placeholder: 'SKU or Product Name...',
-                            value: searchQuery,
-                            onChange: handleSearchChange
+                            type: 'date',
+                            value: dateRange.startDate,
+                            onChange: (e) => setDateRange(prev => ({ ...prev, startDate: e.target.value, period: 'custom' })),
+                            className: 'date-input'
+                        }),
+                        h('span', null, 'to'),
+                        h('input', {
+                            type: 'date',
+                            value: dateRange.endDate,
+                            onChange: (e) => setDateRange(prev => ({ ...prev, endDate: e.target.value, period: 'custom' })),
+                            className: 'date-input'
                         })
-                    ),
-                    availableBrands.length > 1 && h('div', { className: 'filter-group' },
-                        h('label', { className: 'filter-label' }, 'Brand Filter'),
-                        h('select', {
-                            className: 'sort-select',
-                            value: selectedBrandFilter,
-                            onChange: (e) => setSelectedBrandFilter(e.target.value)
-                        },
-                            h('option', { value: 'All Brands' }, 'All Brands'),
-                            availableBrands.map(brandName =>
-                                h('option', { key: brandName, value: brandName }, brandName)
-                            )
-                        )
-                    ),
-                    h('div', { className: 'filter-group' },
-                        h('label', { className: 'filter-label' }, 'Sort Order'),
-                        h('div', { style: { display: 'flex', gap: '8px' } },
-                            h('select', {
-                                className: 'sort-select',
-                                value: sortBy,
-                                onChange: (e) => handleSortChange(e.target.value)
-                            },
-                                h('option', { value: 'revenue' }, `Revenue${getSortIndicator('revenue')}`),
-                                h('option', { value: 'units' }, `Units${getSortIndicator('units')}`),
-                                h('option', { value: 'contribution' }, `Contribution %${getSortIndicator('contribution')}`),
-                                h('option', { value: 'sku' }, `SKU Code${getSortIndicator('sku')}`)
-                            ),
-                            h('button', {
-                                className: 'sort-order-btn',
-                                onClick: () => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'),
-                                title: `Sort ${sortOrder === 'asc' ? 'Descending' : 'Ascending'}`
-                            }, sortOrder === 'asc' ? '↑' : '↓')
-                        )
-                    ),
-                    h('div', { className: 'filter-group' },
-                        h('label', { className: 'filter-label' }, 'Comparisons'),
-                        h('div', { className: 'comparison-buttons' },
-                            h('button', {
-                                className: `comparison-btn ${comparisonMode === 'yoy' ? 'active' : ''}`,
-                                onClick: () => setComparisonMode(comparisonMode === 'yoy' ? null : 'yoy'),
-                                disabled: loadingComparison
-                            }, 'YOY'),
-                            h('button', {
-                                className: `comparison-btn ${comparisonMode === 'mom' ? 'active' : ''}`,
-                                onClick: () => setComparisonMode(comparisonMode === 'mom' ? null : 'mom'),
-                                disabled: loadingComparison || view !== 'monthly'
-                            }, 'MOM')
-                        )
-                    ),
-                    h('div', { className: 'filter-group' },
-                        h('label', { className: 'filter-label' }, 'Export Data'),
-                        h('div', { className: 'export-buttons' },
-                            h('button', {
-                                className: 'export-btn export-csv',
-                                onClick: exportToCSV,
-                                disabled: dataWithComparison.length === 0,
-                                title: 'Export to CSV'
-                            }, 'Download CSV')
-                        )
                     )
                 ),
 
-                // Date Range Toggle
-                h('div', { className: 'date-range-section' },
-                    h('div', { className: 'date-range-toggle' },
-                        h('label', { className: 'toggle-label' },
-                            h('input', {
-                                type: 'checkbox',
-                                checked: useCustomDateRange,
-                                onChange: (e) => {
-                                    setUseCustomDateRange(e.target.checked);
-                                    if (!e.target.checked) {
-                                        setCustomStartDate('');
-                                        setCustomEndDate('');
-                                    }
-                                }
-                            }),
-                            h('span', null, 'Use Custom Date Range')
-                        )
-                    ),
-                    useCustomDateRange && h('div', { className: 'date-range-controls' },
-                        h('div', { className: 'quick-selectors' },
-                            ['last7', 'last30', 'last90', 'thisMonth', 'lastMonth'].map(range =>
-                                h('button', {
-                                    key: range,
-                                    className: 'quick-date-btn',
-                                    onClick: () => handleQuickDateRange(range)
-                                }, range.replace(/([A-Z])/g, ' $1').trim())
-                            )
-                        ),
-                        h('div', { className: 'custom-date-inputs' },
-                            h('div', { className: 'date-input-group' },
-                                h('label', { className: 'date-label' }, 'Start Date'),
-                                h('input', {
-                                    type: 'date',
-                                    className: 'date-input',
-                                    value: customStartDate,
-                                    onChange: (e) => setCustomStartDate(e.target.value),
-                                    max: customEndDate || new Date().toISOString().split('T')[0]
-                                })
-                            ),
-                            h('div', { className: 'date-input-group' },
-                                h('label', { className: 'date-label' }, 'End Date'),
-                                h('input', {
-                                    type: 'date',
-                                    className: 'date-input',
-                                    value: customEndDate,
-                                    onChange: (e) => setCustomEndDate(e.target.value),
-                                    min: customStartDate,
-                                    max: new Date().toISOString().split('T')[0]
-                                })
-                            )
-                        )
+                // Comparison Toggle
+                h('div', { className: 'comparison-controls' },
+                    h('label', { className: 'toggle-label' },
+                        h('input', {
+                            type: 'checkbox',
+                            checked: comparisonMode,
+                            onChange: (e) => setComparisonMode(e.target.checked)
+                        }),
+                        'Compare Period'
                     )
                 ),
-                comparisonMode && getComparisonLabel() && h('div', { className: 'comparison-label' },
-                    h('span', { className: 'comparison-badge' }, getComparisonLabel()),
-                    loadingComparison && h('span', { className: 'loading-indicator' }, 'Loading comparison...')
+
+                // Export Buttons
+                h('div', { className: 'export-buttons' },
+                    h('button', {
+                        className: 'export-btn export-csv',
+                        onClick: () => exportData('csv'),
+                        disabled: filteredAndSortedData.length === 0
+                    }, 'Export CSV'),
+                    h('button', {
+                        className: 'export-btn export-excel',
+                        onClick: () => exportData('excel'),
+                        disabled: filteredAndSortedData.length === 0
+                    }, 'Export Excel')
                 )
             ),
 
             // Summary Cards
             h('div', { className: 'sku-summary' },
-                h('div', { className: 'summary-card' },
-                    h('div', { className: 'summary-label' }, 'Total SKUs'),
-                    h('div', { className: 'summary-value' },
-                        searchQuery ? filteredAndSortedData.length : skuData.length
-                    ),
-                    searchQuery && h('div', { className: 'summary-subtitle' },
-                        `Showing ${filteredAndSortedData.length} of ${skuData.length}`
-                    )
-                ),
+                // Total Revenue
                 h('div', { className: 'summary-card' },
                     h('div', { className: 'summary-label' }, 'Total Revenue'),
                     h('div', { className: 'summary-value' },
-                        formatCurrency
-                            ? formatCurrency(totalRevenue)
-                            : `$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                        formatCurrency ? formatCurrency(totalRevenue) : `$${totalRevenue.toLocaleString()}`
+                    ),
+                    comparisonMode && comparisonData && h('div', { className: 'summary-subtitle' },
+                        (() => {
+                            const growth = comparisonData.summary ? comparisonData.summary.revenueGrowth : 0;
+                            const isPos = growth >= 0;
+                            return h('span', { style: { color: isPos ? 'var(--success-color)' : 'var(--error-color)' } },
+                                `${isPos ? '+' : ''}${growth.toFixed(1)}% vs previous`
+                            );
+                        })()
                     )
                 ),
+                // Total Units
                 h('div', { className: 'summary-card' },
                     h('div', { className: 'summary-label' }, 'Total Units'),
-                    h('div', { className: 'summary-value' }, totalUnits.toLocaleString())
+                    h('div', { className: 'summary-value' }, totalUnits.toLocaleString()),
+                    comparisonMode && comparisonData && h('div', { className: 'summary-subtitle' },
+                        (() => {
+                            const growth = comparisonData.summary ? comparisonData.summary.unitsGrowth : 0;
+                            const isPos = growth >= 0;
+                            return h('span', { style: { color: isPos ? 'var(--success-color)' : 'var(--error-color)' } },
+                                `${isPos ? '+' : ''}${growth.toFixed(1)}% vs previous`
+                            );
+                        })()
+                    )
                 ),
+                // Avg Price
                 h('div', { className: 'summary-card' },
                     h('div', { className: 'summary-label' }, 'Avg Price'),
                     h('div', { className: 'summary-value' },
-                        totalUnits > 0
-                            ? formatCurrency
-                                ? formatCurrency(totalRevenue / totalUnits)
-                                : `$${(totalRevenue / totalUnits).toFixed(2)}`
-                            : '$0.00'
+                        formatCurrency ? formatCurrency(avgPrice) : `$${avgPrice.toFixed(2)}`
+                    )
+                ),
+                // Top Performer
+                h('div', { className: 'summary-card' },
+                    h('div', { className: 'summary-label' }, 'Top Performer'),
+                    h('div', { className: 'summary-value', style: { fontSize: '18px' } },
+                        topPerformer ? topPerformer.product_name || topPerformer.sku : '—'
+                    ),
+                    topPerformer && h('div', { className: 'summary-subtitle' },
+                        formatCurrency ? formatCurrency(topPerformer.revenue) : `$${topPerformer.revenue.toLocaleString()}`
                     )
                 )
             ),
 
             // Charts Section
-            filteredAndSortedData.length > 0 && h('div', { className: 'sku-charts-section' },
+            filteredAndSortedData.length > 0 && h('div', { className: 'charts-grid' },
                 h('div', { className: 'chart-card' },
                     h('div', { className: 'chart-header' },
                         h('div', null,

@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+        // Environment variables injected at build time
+        window.__ENV__ = {};
+        console.log('🔧 Environment variables loaded:', Object.keys(window.__ENV__));
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chai Vision Sales Dashboard - Full Channel Management</title>
