@@ -430,7 +430,7 @@
 
             // Data Table
             h('div', { className: 'data-table-container' },
-                h('table', { className: 'data-table' },
+                h('table', { className: 'sku-table' },
                     h('thead', null,
                         h('tr', null,
                             h('th', null, 'SKU'),
