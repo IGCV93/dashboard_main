@@ -709,20 +709,6 @@
             };
         }, [filteredAndSortedData]);
 
-        // Calculate average price
-        const avgPrice = useMemo(() => {
-            if (totalUnits === 0 || totalRevenue === 0) return 0;
-            return totalRevenue / totalUnits;
-        }, [totalRevenue, totalUnits]);
-
-        // Get top performer
-        const topPerformer = useMemo(() => {
-            if (filteredAndSortedData.length === 0) return null;
-            return filteredAndSortedData
-                .slice()
-                .sort((a, b) => (b.revenue || 0) - (a.revenue || 0))[0];
-        }, [filteredAndSortedData]);
-
         // Create charts
         useEffect(() => {
             if (!chartData || loading) return;
@@ -1110,8 +1096,8 @@
                 ),
                 h('div', { className: 'filter-group sort-box' },
                     h('select', {
-                        value: sortBy,
-                        onChange: (e) => setSortBy(e.target.value),
+                        value: sortConfig.key,
+                        onChange: (e) => handleSortChange(e.target.value),
                         className: 'sort-select'
                     },
                         h('option', { value: 'revenue' }, 'Revenue'),
@@ -1121,38 +1107,37 @@
                     ),
                     h('button', {
                         className: 'sort-order-btn',
-                        onClick: () => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc'),
-                        title: sortOrder === 'asc' ? 'Ascending' : 'Descending'
-                    }, sortOrder === 'asc' ? '↑' : '↓')
+                        onClick: () => setSortConfig(prev => ({ ...prev, direction: prev.direction === 'asc' ? 'desc' : 'asc' })),
+                        title: sortConfig.direction === 'asc' ? 'Ascending' : 'Descending'
+                    }, sortConfig.direction === 'asc' ? '↑' : '↓')
                 ),
 
-                // Custom Date Range Toggle
-                h('div', { className: 'date-range-toggle' },
-                    h('label', { className: 'toggle-label' },
+                // Date Range
+                h('div', { className: 'date-range-selector' },
+                    h('div', { className: 'quick-selectors' },
+                        ['7d', '30d', '90d', 'YTD'].map(range =>
+                            h('button', {
+                                key: range,
+                                className: `quick-date-btn ${dateRange.period === range ? 'active' : ''}`,
+                                onClick: () => setDateRange(prev => ({ ...prev, period: range }))
+                            }, range)
+                        )
+                    ),
+                    h('div', { className: 'custom-date-inputs' },
                         h('input', {
-                            type: 'checkbox',
-                            checked: useCustomDateRange,
-                            onChange: (e) => setUseCustomDateRange(e.target.checked)
+                            type: 'date',
+                            value: dateRange.startDate,
+                            onChange: (e) => setDateRange(prev => ({ ...prev, startDate: e.target.value, period: 'custom' })),
+                            className: 'date-input'
                         }),
-                        'Custom Date Range'
+                        h('span', null, 'to'),
+                        h('input', {
+                            type: 'date',
+                            value: dateRange.endDate,
+                            onChange: (e) => setDateRange(prev => ({ ...prev, endDate: e.target.value, period: 'custom' })),
+                            className: 'date-input'
+                        })
                     )
-                ),
-
-                // Custom Date Inputs (shown when toggle is on)
-                useCustomDateRange && h('div', { className: 'custom-date-inputs' },
-                    h('input', {
-                        type: 'date',
-                        value: customStartDate,
-                        onChange: (e) => setCustomStartDate(e.target.value),
-                        className: 'date-input'
-                    }),
-                    h('span', null, 'to'),
-                    h('input', {
-                        type: 'date',
-                        value: customEndDate,
-                        onChange: (e) => setCustomEndDate(e.target.value),
-                        className: 'date-input'
-                    })
                 ),
 
                 // Comparison Toggle
@@ -1188,7 +1173,7 @@
                 h('div', { className: 'summary-card' },
                     h('div', { className: 'summary-label' }, 'Total Revenue'),
                     h('div', { className: 'summary-value' },
-                        `$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        formatCurrency ? formatCurrency(totalRevenue) : `$${totalRevenue.toLocaleString()}`
                     ),
                     comparisonMode && comparisonData && h('div', { className: 'summary-subtitle' },
                         (() => {
@@ -1218,7 +1203,7 @@
                 h('div', { className: 'summary-card' },
                     h('div', { className: 'summary-label' }, 'Avg Price'),
                     h('div', { className: 'summary-value' },
-                        `$${avgPrice.toFixed(2)}`
+                        formatCurrency ? formatCurrency(avgPrice) : `$${avgPrice.toFixed(2)}`
                     )
                 ),
                 // Top Performer
@@ -1228,7 +1213,7 @@
                         topPerformer ? topPerformer.product_name || topPerformer.sku : '—'
                     ),
                     topPerformer && h('div', { className: 'summary-subtitle' },
-                        `$${topPerformer.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        formatCurrency ? formatCurrency(topPerformer.revenue) : `$${topPerformer.revenue.toLocaleString()}`
                     )
                 )
             ),
