@@ -9,21 +9,26 @@
     padding: 24px 16px;
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
     transition: transform var(--transition-fast);
-    
-    /* Sticky positioning */
-    position: sticky;
-    position: -webkit-sticky; /* Safari support */
-    top: var(--nav-height); /* Start below nav */
-    align-self: flex-start; /* Critical for sticky in flexbox */
-    height: calc(100vh - var(--nav-height)); /* Full viewport minus nav */
-    overflow-y: auto; /* Internal scroll if sidebar content overflows */
-    overflow-x: hidden; /* Prevent horizontal scroll */
-    z-index: 50; /* Below nav but above content */
-    
+
+    /* Fixed positioning for full height */
+    position: fixed;
+    top: var(--nav-height);
+    left: 0;
+    bottom: 0;
+    height: auto;
+    overflow-y: auto;
+    /* Internal scroll if sidebar content overflows */
+    overflow-x: hidden;
+    /* Prevent horizontal scroll */
+    z-index: 50;
+    /* Below nav but above content */
+
     /* Performance optimizations */
     will-change: transform;
-    transform: translateZ(0); /* Force GPU layer */
-    contain: layout style paint; /* Improve scroll performance */
+    transform: translateZ(0);
+    /* Force GPU layer */
+    contain: layout style paint;
+    /* Improve scroll performance */
 }
 
 /* Sidebar scrollbar styling */
@@ -143,18 +148,19 @@
         bottom: 0;
         transform: translateX(-100%);
         z-index: 999;
-        height: calc(100vh - var(--nav-height)); /* Override sticky height on mobile */
+        height: calc(100vh - var(--nav-height));
+        /* Override sticky height on mobile */
         box-shadow: var(--shadow-xl);
     }
-    
+
     .sidebar.open {
         transform: translateX(0);
     }
-    
+
     .sidebar-toggle {
         display: flex;
     }
-    
+
     .sidebar-overlay {
         display: none;
         position: fixed;
@@ -166,7 +172,7 @@
         z-index: 998;
         backdrop-filter: blur(2px);
     }
-    
+
     .sidebar-overlay.visible {
         display: block;
     }
