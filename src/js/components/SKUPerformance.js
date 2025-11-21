@@ -7,7 +7,7 @@
     'use strict';
 
     function SKUPerformance(props) {
-        const { useState, useEffect, useMemo, createElement: h } = React;
+        const { useState, useEffect, useMemo, useRef, createElement: h } = React;
 
         const {
             channel,
@@ -29,6 +29,12 @@
         const [searchQuery, setSearchQuery] = useState('');
         const [sortBy, setSortBy] = useState('revenue');
         const [sortOrder, setSortOrder] = useState('desc');
+
+        // Chart refs
+        const topSKUsChartRef = useRef(null);
+        const contributionChartRef = useRef(null);
+        const topSKUsChartInstance = useRef(null);
+        const contributionChartInstance = useRef(null);
 
         // Calculate date range based on view
         const getDateRange = () => {
@@ -158,6 +164,140 @@
             return [...filteredAndSortedData].sort((a, b) => (b.revenue || 0) - (a.revenue || 0))[0];
         }, [filteredAndSortedData]);
 
+        // Prepare chart data
+        const chartData = useMemo(() => {
+            if (filteredAndSortedData.length === 0) return null;
+
+            // Top 10 SKUs by revenue
+            const top10 = [...filteredAndSortedData]
+                .sort((a, b) => (b.revenue || 0) - (a.revenue || 0))
+                .slice(0, 10);
+
+            return { top10 };
+        }, [filteredAndSortedData]);
+
+        // Create charts
+        useEffect(() => {
+            if (!chartData || loading) return;
+
+            const ChartLib = window.Chart || (typeof Chart !== 'undefined' ? Chart : null);
+            if (!ChartLib) {
+                console.warn('Chart.js not available');
+                return;
+            }
+
+            // Destroy existing charts
+            if (topSKUsChartInstance.current) {
+                topSKUsChartInstance.current.destroy();
+                topSKUsChartInstance.current = null;
+            }
+            if (contributionChartInstance.current) {
+                contributionChartInstance.current.destroy();
+                contributionChartInstance.current = null;
+            }
+
+            // Create Top SKUs bar chart
+            if (topSKUsChartRef.current && chartData.top10.length > 0) {
+                const ctx = topSKUsChartRef.current.getContext('2d');
+                topSKUsChartInstance.current = new ChartLib(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: chartData.top10.map(item => item.sku),
+                        datasets: [{
+                            label: 'Revenue',
+                            data: chartData.top10.map(item => item.revenue),
+                            backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                            borderColor: 'rgba(102, 126, 234, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            title: {
+                                display: true,
+                                text: 'Top 10 SKUs by Revenue'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => {
+                                        return `Revenue: $${context.parsed.y.toLocaleString()}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: (value) => `$${value.toLocaleString()}`
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Create Contribution pie chart
+            if (contributionChartRef.current && chartData.top10.length > 0) {
+                const ctx = contributionChartRef.current.getContext('2d');
+                const othersRevenue = totalRevenue - chartData.top10.reduce((sum, item) => sum + item.revenue, 0);
+
+                contributionChartInstance.current = new ChartLib(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: [...chartData.top10.map(item => item.sku), 'Others'],
+                        datasets: [{
+                            data: [...chartData.top10.map(item => item.revenue), othersRevenue],
+                            backgroundColor: [
+                                'rgba(102, 126, 234, 0.8)',
+                                'rgba(118, 75, 162, 0.8)',
+                                'rgba(237, 100, 166, 0.8)',
+                                'rgba(255, 154, 158, 0.8)',
+                                'rgba(250, 208, 196, 0.8)',
+                                'rgba(16, 185, 129, 0.8)',
+                                'rgba(245, 158, 11, 0.8)',
+                                'rgba(239, 68, 68, 0.8)',
+                                'rgba(59, 130, 246, 0.8)',
+                                'rgba(156, 163, 175, 0.8)',
+                                'rgba(209, 213, 219, 0.8)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: { boxWidth: 12 }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Revenue Contribution by SKU'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => {
+                                        const value = context.parsed;
+                                        const percentage = ((value / totalRevenue) * 100).toFixed(1);
+                                        return `${context.label}: $${value.toLocaleString()} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            return () => {
+                if (topSKUsChartInstance.current) topSKUsChartInstance.current.destroy();
+                if (contributionChartInstance.current) contributionChartInstance.current.destroy();
+            };
+        }, [chartData, loading, totalRevenue]);
+
         // Loading state
         if (loading) {
             return h('div', { className: 'sku-performance-container' },
@@ -262,6 +402,16 @@
                     topPerformer && h('div', { className: 'kpi-subtitle' },
                         `$${topPerformer.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                     )
+                )
+            ),
+
+            // Charts Section
+            h('div', { className: 'charts-grid' },
+                h('div', { className: 'chart-card' },
+                    h('canvas', { ref: topSKUsChartRef })
+                ),
+                h('div', { className: 'chart-card' },
+                    h('canvas', { ref: contributionChartRef })
                 )
             ),
 
