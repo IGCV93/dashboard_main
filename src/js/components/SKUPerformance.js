@@ -43,7 +43,12 @@
             const year = parseInt(selectedYear);
             const month = parseInt(selectedMonth);
 
-            if (view === 'quarterly') {
+            if (view === 'annual') {
+                return {
+                    start: `${year}-01-01`,
+                    end: `${year}-12-31`
+                };
+            } else if (view === 'quarterly') {
                 const quarter = selectedPeriod.replace('Q', '');
                 const startMonth = (quarter - 1) * 3 + 1;
                 const endMonth = startMonth + 2;
@@ -90,8 +95,31 @@
                         groupBy: 'sku'
                     };
 
-                    const data = await dataService.loadSKUData(filters);
-                    setSkuData(data || []);
+                    const rawData = await dataService.loadSKUData(filters);
+
+                    // Aggregate data by SKU
+                    const aggregatedMap = (rawData || []).reduce((acc, item) => {
+                        const sku = item.sku || 'Unknown';
+                        if (!acc[sku]) {
+                            acc[sku] = {
+                                ...item,
+                                revenue: 0,
+                                units: 0,
+                                count: 0
+                            };
+                        }
+                        acc[sku].revenue += (Number(item.revenue) || 0);
+                        acc[sku].units += (Number(item.units) || 0);
+                        acc[sku].count += 1;
+                        return acc;
+                    }, {});
+
+                    const aggregatedData = Object.values(aggregatedMap).map(item => ({
+                        ...item,
+                        price: item.units > 0 ? item.revenue / item.units : 0
+                    }));
+
+                    setSkuData(aggregatedData);
                 } catch (err) {
                     console.error('Failed to load SKU data:', err);
                     setError('Failed to load SKU data. Please try again.');
