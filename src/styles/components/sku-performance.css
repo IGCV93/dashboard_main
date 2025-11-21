@@ -61,6 +61,74 @@
     border-radius: 4px;
 }
 
+/* Filter Controls Polish */
+.filter-controls {
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 8px;
+}
+
+.search-input {
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 14px;
+    width: 320px;
+    transition: all 0.2s ease;
+    background: var(--bg-gray-light);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    background: white;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.sort-select {
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 160px;
+}
+
+.sort-select:hover {
+    border-color: var(--text-secondary);
+    background: var(--bg-gray-light);
+}
+
+.sort-order-btn {
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: white;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+}
+
+.sort-order-btn:hover {
+    background: var(--bg-gray);
+    color: var(--text-primary);
+    border-color: var(--border-color-hover);
+    transform: translateY(-1px);
+}
+
 /* Table Styles */
 .data-table-container {
     background: white;
@@ -111,13 +179,21 @@
 
 .sku-table .sku-code {
     font-family: 'Monaco', 'Consolas', monospace;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--accent-primary);
-    background: rgba(102, 126, 234, 0.1);
-    padding: 4px 8px;
-    border-radius: 4px;
+    background: rgba(102, 126, 234, 0.08);
+    padding: 6px 10px;
+    border-radius: 6px;
     font-size: 13px;
     display: inline-block;
+    border: 1px solid rgba(102, 126, 234, 0.1);
+    transition: all 0.2s ease;
+}
+
+.sku-table tbody tr:hover .sku-code {
+    background: rgba(102, 126, 234, 0.15);
+    border-color: rgba(102, 126, 234, 0.2);
+    transform: scale(1.02);
 }
 
 .sku-table .product-name {
@@ -248,67 +324,6 @@
     border: 1px solid var(--border-color);
     min-height: 300px;
     position: relative;
-}
-
-/* Filter Controls Polish */
-.filter-controls {
-    background: white;
-    padding: 20px;
-    border-radius: 16px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    border: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
-}
-
-.search-input {
-    padding: 10px 16px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    font-size: 14px;
-    width: 300px;
-    transition: all 0.2s ease;
-}
-
-.search-input:focus {
-    outline: none;
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.sort-select {
-    padding: 10px 16px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    font-size: 14px;
-    background: white;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.sort-select:hover {
-    border-color: var(--text-secondary);
-}
-
-.sort-order-btn {
-    padding: 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background: white;
-    cursor: pointer;
-    color: var(--text-secondary);
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.sort-order-btn:hover {
-    background: var(--bg-gray);
-    color: var(--text-primary);
-    border-color: var(--border-color-hover);
 }
 
 /* Empty State */

@@ -247,6 +247,13 @@
                                 ticks: {
                                     callback: (value) => `$${value.toLocaleString()}`
                                 }
+                            },
+                            x: {
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    autoSkip: false
+                                }
                             }
                         }
                     }
@@ -285,7 +292,13 @@
                         plugins: {
                             legend: {
                                 position: 'right',
-                                labels: { boxWidth: 12 }
+                                labels: {
+                                    boxWidth: 12,
+                                    padding: 15,
+                                    font: {
+                                        size: 11
+                                    }
+                                }
                             },
                             title: {
                                 display: true,
