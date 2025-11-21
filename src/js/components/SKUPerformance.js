@@ -148,10 +148,10 @@
         }, [skuData, searchQuery, sortBy, sortOrder]);
 
         // Pagination calculations
-        const totalPages = Math.ceil(filteredAndSortedData.length / itemsPerPage);
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const paginatedData = filteredAndSortedData.slice(startIndex, endIndex);
+        const totalPages = useMemo(() => Math.ceil(filteredAndSortedData.length / itemsPerPage), [filteredAndSortedData.length, itemsPerPage]);
+        const startIndex = useMemo(() => (currentPage - 1) * itemsPerPage, [currentPage, itemsPerPage]);
+        const endIndex = useMemo(() => startIndex + itemsPerPage, [startIndex, itemsPerPage]);
+        const paginatedData = useMemo(() => filteredAndSortedData.slice(startIndex, endIndex), [filteredAndSortedData, startIndex, endIndex]);
 
         // Reset to page 1 when filters change
         useEffect(() => {
@@ -443,7 +443,8 @@
                     h('tbody', null,
                         paginatedData.map((item, index) => {
                             const contribution = totalRevenue > 0 ? ((item.revenue / totalRevenue) * 100).toFixed(1) : '0.0';
-                            return h('tr', { key: item.sku || index },
+                            const rowKey = item.sku ? `${item.sku}-${startIndex + index}` : `row-${startIndex + index}`;
+                            return h('tr', { key: rowKey },
                                 h('td', { className: 'sku-code' }, item.sku || '—'),
                                 h('td', null, item.product_name || '—'),
                                 h('td', null, (item.units || 0).toLocaleString()),
