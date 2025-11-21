@@ -709,6 +709,20 @@
             };
         }, [filteredAndSortedData]);
 
+        // Calculate average price
+        const avgPrice = useMemo(() => {
+            if (totalUnits === 0 || totalRevenue === 0) return 0;
+            return totalRevenue / totalUnits;
+        }, [totalRevenue, totalUnits]);
+
+        // Get top performer
+        const topPerformer = useMemo(() => {
+            if (filteredAndSortedData.length === 0) return null;
+            return filteredAndSortedData
+                .slice()
+                .sort((a, b) => (b.revenue || 0) - (a.revenue || 0))[0];
+        }, [filteredAndSortedData]);
+
         // Create charts
         useEffect(() => {
             if (!chartData || loading) return;
@@ -1174,7 +1188,7 @@
                 h('div', { className: 'summary-card' },
                     h('div', { className: 'summary-label' }, 'Total Revenue'),
                     h('div', { className: 'summary-value' },
-                        formatCurrency ? formatCurrency(totalRevenue) : `$${totalRevenue.toLocaleString()}`
+                        `$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                     ),
                     comparisonMode && comparisonData && h('div', { className: 'summary-subtitle' },
                         (() => {
@@ -1204,7 +1218,7 @@
                 h('div', { className: 'summary-card' },
                     h('div', { className: 'summary-label' }, 'Avg Price'),
                     h('div', { className: 'summary-value' },
-                        formatCurrency ? formatCurrency(avgPrice) : `$${avgPrice.toFixed(2)}`
+                        `$${avgPrice.toFixed(2)}`
                     )
                 ),
                 // Top Performer
@@ -1214,7 +1228,7 @@
                         topPerformer ? topPerformer.product_name || topPerformer.sku : '—'
                     ),
                     topPerformer && h('div', { className: 'summary-subtitle' },
-                        formatCurrency ? formatCurrency(topPerformer.revenue) : `$${topPerformer.revenue.toLocaleString()}`
+                        `$${topPerformer.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                     )
                 )
             ),
