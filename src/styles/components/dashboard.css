@@ -131,7 +131,7 @@
     right: -10%;
     width: 50%;
     height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
     animation: float 6s ease-in-out infinite;
 }
 
@@ -458,11 +458,68 @@
         padding: 6px 2px;
     }
 
-    .scenario-amount {
-        font-size: 12px;
-    }
-
     .scenario-type {
         font-size: 9px;
     }
+}
+
+/* Chart Filters - Added to fix layout issues */
+.chart-filters {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+}
+
+.filter-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.filter-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.filter-checkbox:hover {
+    border-color: var(--accent-primary);
+    transform: translateY(-1px);
+}
+
+.filter-checkbox.selected {
+    background: var(--accent-light);
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    font-weight: 500;
+}
+
+.filter-checkbox input {
+    cursor: pointer;
+}
+
+/* Fix for Projection Hover Transparency */
+.projection-hover-content {
+    background: rgba(30, 41, 59, 0.95);
+    /* Darker, more opaque background */
+    backdrop-filter: blur(10px);
+    z-index: 10;
 }
