@@ -49,7 +49,8 @@
                     end: `${year}-12-31`
                 };
             } else if (view === 'quarterly') {
-                const quarter = selectedPeriod.replace('Q', '');
+                const period = selectedPeriod || 'Q1';
+                const quarter = period.toString().replace('Q', '');
                 const startMonth = (quarter - 1) * 3 + 1;
                 const endMonth = startMonth + 2;
                 const endDay = new Date(year, endMonth, 0).getDate();
