@@ -156,6 +156,46 @@
 
 html {
     scroll-behavior: smooth;
+    scroll-padding-top: var(--nav-height);
+    height: auto;
+    overflow-y: visible;
+    overflow-x: hidden;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: var(--font-size-base);
+    line-height: 1.5;
+    color: var(--text-primary);
+    background-color: var(--bg-secondary);
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: auto;
+    min-height: 100vh;
+    position: relative;
+    height: auto;
+    overflow: visible;
+}
+
+.main-content {
+    flex: 1;
+    padding: var(--spacing-xl);
+    background: var(--bg-primary);
+    border-radius: var(--border-radius-lg);
+    margin-top: var(--spacing-md);
+    margin-right: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    margin-left: calc(var(--sidebar-width) + var(--spacing-md));
+    box-shadow: var(--shadow-md);
+    min-height: calc(100vh - var(--nav-height) - var(--spacing-xl));
+    overflow: visible;
+}
+
+/* Global Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
     height: 8px;
 }
 
