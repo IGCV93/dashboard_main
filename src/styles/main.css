@@ -170,20 +170,6 @@ body {
     line-height: 1.5;
     color: var(--text-primary);
     background-color: var(--bg-secondary);
-    overflow-y: auto;
-    overflow-x: hidden;
-    height: auto;
-    min-height: 100vh;
-    position: relative;
-    height: auto;
-    overflow: visible;
-}
-
-.main-content {
-    flex: 1;
-    padding: var(--spacing-xl);
-    background: var(--bg-primary);
-    border-radius: var(--border-radius-lg);
     margin-top: var(--spacing-md);
     margin-right: var(--spacing-md);
     margin-bottom: var(--spacing-md);
