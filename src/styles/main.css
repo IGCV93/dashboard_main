@@ -186,8 +186,8 @@ body {
     position: relative;
     height: auto;
     overflow: visible;
-}
     padding-top: var(--nav-height);
+}
 
 .app-container {
     display: flex;
