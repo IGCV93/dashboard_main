@@ -1,78 +1,3 @@
-/* =========================================
-   SETTINGS COMPONENT STYLES
-   ========================================= */
-
-.settings-container {
-    max-width: 1600px;
-    margin: 0 auto;
-}
-
-.settings-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 32px;
-    padding: 20px 28px;
-    background: var(--white);
-    border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.settings-title {
-    font-size: 28px;
-    font-weight: 800;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.settings-subtitle {
-    font-size: 14px;
-    color: var(--medium-gray);
-    margin-top: 4px;
-}
-
-/* Year Selector */
-.year-selector {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.year-selector label {
-    font-weight: 600;
-    color: var(--medium-gray);
-    font-size: 14px;
-}
-
-/* Brand Table */
-.brand-table {
-    background: var(--white);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    margin-bottom: 24px;
-}
-
-.table-wrapper {
-    overflow-x: auto;
-    max-width: 100%;
-}
-
-.brand-table table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 1400px;
-}
-
-.brand-table th {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-    padding: 14px 12px;
-    text-align: left;
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--dark-gray);
     border-bottom: 2px solid var(--light-gray);
@@ -80,799 +5,820 @@
     top: 0;
     z-index: 10;
     white-space: nowrap;
-}
-
-.brand-table td {
-    padding: 16px 12px;
-    border-bottom: 1px solid var(--light-gray);
-    font-size: 13px;
-}
-
-.brand-table tr:hover {
-    background: var(--bg-gray);
-}
-
-.brand-table tr.editing {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
-}
-
-.brand-name-cell {
-    font-weight: 600;
-    color: var(--dark-gray);
-    position: sticky;
-    left: 0;
-    background: white;
-    z-index: 5;
-}
-
-.brand-table tr:hover .brand-name-cell {
-    background: var(--bg-gray);
-}
-
-.brand-table tr.editing .brand-name-cell {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
-}
-
-/* Add Brand Section */
-.add-brand-section {
-    background: var(--white);
-    border-radius: 16px;
-    padding: 24px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    margin-bottom: 24px;
-}
-
-.add-brand-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.add-brand-title {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--dark-gray);
-}
-
-.add-brand-form {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 16px;
-    margin-top: 20px;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.form-group label {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--medium-gray);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.form-group.full-width {
-    grid-column: 1 / -1;
-}
-
-/* Quarterly Section */
-.quarterly-section {
-    grid-column: span 2;
-    margin-top: 24px;
-    padding-top: 24px;
-    border-top: 2px solid var(--light-gray);
-}
-
-.quarterly-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--dark-gray);
-    margin-bottom: 20px;
-}
-
-.quarterly-inputs {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-}
-
-.quarter-group {
-    margin-bottom: 20px;
-}
-
-.quarter-label {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--dark-gray);
-    margin-bottom: 8px;
-    padding: 8px 12px;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
-    border-radius: 8px;
-}
-
-.channel-inputs {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-top: 8px;
-}
-
-/* Action Buttons */
-.action-buttons {
-    display: flex;
-    gap: 8px;
-    white-space: nowrap;
-}
-
-.action-buttons .btn {
-    padding: 6px 12px;
-    font-size: 12px;
-}
-
-/* Settings Tabs */
-.settings-tabs {
-    display: flex;
-    gap: 4px;
-    background: var(--bg-gray);
-    padding: 4px;
-    border-radius: 12px;
-    margin-bottom: 24px;
-}
-
-.settings-tab {
-    padding: 10px 20px;
-    background: transparent;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--medium-gray);
-    transition: all 0.3s;
-}
-
-.settings-tab:hover {
-    background: rgba(255, 255, 255, 0.5);
-    color: var(--dark-gray);
-}
-
-.settings-tab.active {
-    background: var(--white);
-    color: var(--primary-blue);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Settings Form */
-.settings-form {
-    background: var(--white);
-    border-radius: 16px;
-    padding: 24px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    margin-bottom: 24px;
-}
-
-.settings-form-group {
-    margin-bottom: 20px;
-}
-
-.settings-form-group label {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--dark-gray);
-    margin-bottom: 8px;
-}
-
-.settings-form-group .input-field {
-    width: 100%;
-}
-
-.settings-form-group select.input-field {
-    width: auto;
-    min-width: 200px;
-}
-
-/* Inline Edit Styles */
-.inline-edit-input {
-    width: 100px;
-    padding: 4px 8px;
-    border: 2px solid var(--primary-blue);
-    border-radius: 4px;
-    font-size: 13px;
-    background: var(--white);
-}
-
-.inline-edit-input:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-/* Responsive Settings */
-@media (max-width: 1200px) {
-    .brand-table table {
-        min-width: 1000px;
     }
-}
 
-@media (max-width: 768px) {
-    .settings-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
+    .brand-table td {
+        padding: 16px 12px;
+        border-bottom: 1px solid var(--light-gray);
+        font-size: 13px;
     }
-    
+
+    .brand-table tr:hover {
+        background: var(--bg-gray);
+    }
+
+    .brand-table tr.editing {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+    }
+
+    .brand-name-cell {
+        font-weight: 600;
+        color: var(--dark-gray);
+        position: sticky;
+        left: 0;
+        background: white;
+        z-index: 5;
+    }
+
+    .brand-table tr:hover .brand-name-cell {
+        background: var(--bg-gray);
+    }
+
+    .brand-table tr.editing .brand-name-cell {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+    }
+
+    /* Add Brand Section */
+    .add-brand-section {
+        background: var(--white);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 24px;
+    }
+
+    .add-brand-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .add-brand-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--dark-gray);
+    }
+
     .add-brand-form {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+        margin-top: 20px;
     }
-    
-    .quarterly-inputs,
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .form-group label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--medium-gray);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    /* Quarterly Section */
+    .quarterly-section {
+        grid-column: span 2;
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 2px solid var(--light-gray);
+    }
+
+    .quarterly-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--dark-gray);
+        margin-bottom: 20px;
+    }
+
+    .quarterly-inputs {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+    }
+
+    .quarter-group {
+        margin-bottom: 20px;
+    }
+
+    .quarter-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--dark-gray);
+        margin-bottom: 8px;
+        padding: 8px 12px;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+        border-radius: 8px;
+    }
+
     .channel-inputs {
-        grid-template-columns: repeat(2, 1fr);
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-top: 8px;
     }
-    
-    .brand-table {
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+        white-space: nowrap;
+    }
+
+    .action-buttons .btn {
+        padding: 6px 12px;
         font-size: 12px;
     }
-    
-    .brand-table th,
-    .brand-table td {
-        padding: 8px 6px;
-    }
-}
 
-@media (max-width: 480px) {
-    .settings-title {
-        font-size: 24px;
-    }
-    
-    .quarterly-inputs,
-    .channel-inputs {
-        grid-template-columns: 1fr;
-    }
-    
+    /* Settings Tabs */
     .settings-tabs {
-        flex-direction: column;
+        display: flex;
+        gap: 4px;
+        background: var(--bg-gray);
+        padding: 4px;
+        border-radius: 12px;
+        margin-bottom: 24px;
     }
-    
+
     .settings-tab {
+        padding: 10px 20px;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--medium-gray);
+        transition: all 0.3s;
+    }
+
+    .settings-tab:hover {
+        background: rgba(255, 255, 255, 0.5);
+        color: var(--dark-gray);
+    }
+
+    .settings-tab.active {
+        background: var(--white);
+        color: var(--primary-blue);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Settings Form */
+    .settings-form {
+        background: var(--white);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 24px;
+    }
+
+    .settings-form-group {
+        margin-bottom: 20px;
+    }
+
+    .settings-form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--dark-gray);
+        margin-bottom: 8px;
+    }
+
+    .settings-form-group .input-field {
         width: 100%;
     }
-}
 
-/* Modal Styles for Settings - More specific to avoid conflicts */
-.settings-wrapper .modal-overlay,
-.settings-container ~ .modal-overlay {
-    /* Full viewport overlay */
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    z-index: 10000 !important;
-    background: transparent; /* Background is on backdrop, not overlay */
-}
-
-/* Backdrop - Covers entire viewport */
-.settings-wrapper .modal-backdrop,
-.settings-container ~ .modal-overlay .modal-backdrop {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.4); /* Semi-transparent backdrop */
-    animation: fadeIn 0.3s ease;
-    backdrop-filter: blur(2px); /* Subtle blur effect */
-}
-
-/* Modal wrapper - Centers the modal accounting for sidebar */
-.settings-wrapper .modal-wrapper,
-.settings-container ~ .modal-overlay .modal-wrapper {
-    position: fixed;
-    /* Define the available area accounting for sidebar and nav */
-    left: 280px;    /* Start after sidebar */
-    right: 0;       /* Extend to right edge */
-    top: 72px;      /* Start after nav */
-    bottom: 0;      /* Extend to bottom */
-
-    /* Center within this available area */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px;
-    pointer-events: none; /* Allow clicks to pass through to backdrop */
-    overflow-y: auto;
-}
-
-/* Modal Content - The actual modal box */
-.settings-wrapper .modal-content,
-.settings-container ~ .modal-overlay .modal-content {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-
-    /* Width calculation for available space */
-    width: min(1400px, calc(100vw - 360px)); /* Account for sidebar + padding */
-    max-width: 1400px;
-
-    /* HEIGHT */
-    max-height: 85vh;
-    height: auto;
-
-    display: flex;
-    flex-direction: column;
-    pointer-events: all;
-    position: relative;
-    animation: slideUp 0.3s ease;
-
-    /* Auto margins for centering */
-    margin: auto;
-    overflow: hidden;
-}
-
-/* Modal Header */
-.modal-header {
-    padding: 24px 32px;
-    border-bottom: 1px solid #E5E7EB;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.modal-header h3 {
-    font-size: 24px;
-    font-weight: 700;
-    color: #1A1D23;
-    margin: 0;
-}
-
-.close-btn {
-    background: none;
-    border: none;
-    font-size: 28px;
-    color: #6B7280;
-    cursor: pointer;
-    padding: 0;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    transition: all 0.2s;
-}
-
-.close-btn:hover {
-    background: #F3F4F6;
-    color: #1A1D23;
-}
-
-/* Modal Body */
-.modal-body {
-    flex: 1;
-    overflow-y: auto;  /* Allow scroll if content is too tall */
-    padding: 32px;
-    max-height: calc(85vh - 160px); /* Account for header and footer */
-}
-
-/* Form Layout Inside Modal - Wide Layout */
-.add-brand-form {
-    display: flex;
-    flex-direction: column;
-    gap: 32px;
-}
-
-/* Form Section */
-.form-section {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.section-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: #1A1D23;
-    margin-bottom: 16px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid #E5E7EB;
-}
-
-/* Annual targets grid - 2 rows x 4 columns */
-.annual-targets-grid {
-    display: grid;
-    grid-template-rows: repeat(2, auto);
-    gap: 20px;
-    padding: 24px 0;
-    border-bottom: 1px solid #E5E7EB;
-}
-
-.channel-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-}
-
-/* Each channel group */
-.channel-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.channel-group label {
-    font-size: 12px;
-    font-weight: 600;
-    color: #6B7280;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.channel-group input {
-    padding: 10px 14px;
-    border: 2px solid #E5E7EB;
-    border-radius: 8px;
-    font-size: 14px;
-    width: 100%;
-    transition: all 0.2s;
-}
-
-.channel-group input:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-/* Quarterly section - all quarters side by side */
-.quarterly-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 24px;
-    background: #F9FAFB;
-    padding: 20px;
-    border-radius: 12px;
-}
-
-.quarter-column {
-    background: white;
-    padding: 16px;
-    border-radius: 8px;
-    border: 1px solid #E5E7EB;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.quarter-header {
-    font-size: 16px;
-    font-weight: 700;
-    color: #1A1D23;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #E5E7EB;
-    text-align: center;
-}
-
-/* Channel inputs within each quarter */
-.quarter-inputs {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);  /* 2 columns per quarter */
-    gap: 12px;
-}
-
-.quarter-input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.quarter-input-group input {
-    padding: 8px 10px;
-    border: 1px solid #E5E7EB;
-    border-radius: 6px;
-    font-size: 12px;
-    width: 100%;
-    transition: all 0.2s;
-}
-
-.quarter-input-group input:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
-}
-
-/* Modal Footer */
-.modal-footer {
-    padding: 20px 32px;
-    border-top: 1px solid #E5E7EB;
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    flex-shrink: 0;
-}
-
-.modal-footer button {
-    padding: 10px 24px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-save {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: white;
-    border: none;
-}
-
-.btn-cancel {
-    background: white;
-    color: #6B7280;
-    border: 2px solid #E5E7EB;
-}
-
-/* Animations */
-@keyframes fadeIn {
-    from { 
-        opacity: 0; 
+    .settings-form-group select.input-field {
+        width: auto;
+        min-width: 200px;
     }
-    to { 
-        opacity: 1; 
+
+    /* Inline Edit Styles */
+    .inline-edit-input {
+        width: 100px;
+        padding: 4px 8px;
+        border: 2px solid var(--primary-blue);
+        border-radius: 4px;
+        font-size: 13px;
+        background: var(--white);
     }
-}
 
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
+    .inline-edit-input:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+
+    /* Responsive Settings */
+    @media (max-width: 1200px) {
+        .brand-table table {
+            min-width: 1000px;
+        }
     }
-}
 
-/* Ensure body doesn't scroll when modal is open */
-body.modal-open {
-    overflow: hidden;
-}
+    @media (max-width: 768px) {
+        .settings-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+        }
 
-/* Additional fixes for modal positioning */
-.settings-wrapper {
-    position: relative;
-    z-index: 1;
-}
+        .add-brand-form {
+            grid-template-columns: 1fr;
+        }
 
-/* Ensure modal is not trapped by overflow hidden */
-.main-content {
-    position: relative;
-}
+        .quarterly-inputs,
+        .channel-inputs {
+            grid-template-columns: repeat(2, 1fr);
+        }
 
-/* Target section styles in modal */
-.targets-section {
-    margin-bottom: 32px;
-}
+        .brand-table {
+            font-size: 12px;
+        }
 
-.targets-section h4 {
-    font-size: 18px;
-    font-weight: 700;
-    color: #1A1D23;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #E5E7EB;
-}
+        .brand-table th,
+        .brand-table td {
+            padding: 8px 6px;
+        }
+    }
 
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #E5E7EB;
-}
+    @media (max-width: 480px) {
+        .settings-title {
+            font-size: 24px;
+        }
 
-.section-header h4 {
-    margin: 0;
-    border: none;
-    padding: 0;
-}
+        .quarterly-inputs,
+        .channel-inputs {
+            grid-template-columns: 1fr;
+        }
 
-/* Channel input styles in modal */
-.channel-input {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
+        .settings-tabs {
+            flex-direction: column;
+        }
 
-.channel-input label {
-    font-size: 12px;
-    font-weight: 600;
-    color: #6B7280;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
+        .settings-tab {
+            width: 100%;
+        }
+    }
 
-.channel-input.compact label {
-    font-size: 11px;
-    display: block;
-    margin-bottom: 4px;
-    color: #6B7280;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
+    /* Modal Styles for Settings - More specific to avoid conflicts */
+    .settings-wrapper .modal-overlay,
+    .settings-container~.modal-overlay {
+        /* Full viewport overlay */
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 10000 !important;
+        background: transparent;
+        /* Background is on backdrop, not overlay */
+    }
 
-.input-group {
-    display: flex;
-    align-items: center;
-    position: relative;
-}
+    /* Backdrop - Covers entire viewport */
+    .settings-wrapper .modal-backdrop,
+    .settings-container~.modal-overlay .modal-backdrop {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.4);
+        /* Semi-transparent backdrop */
+        animation: fadeIn 0.3s ease;
+        backdrop-filter: blur(2px);
+        /* Subtle blur effect */
+    }
 
-.input-prefix {
-    position: absolute;
-    left: 12px;
-    color: #6B7280;
-    font-size: 14px;
-    pointer-events: none;
-}
-
-.input-group input {
-    padding: 10px 14px 10px 28px;
-    border: 2px solid #E5E7EB;
-    border-radius: 8px;
-    font-size: 14px;
-    width: 100%;
-    transition: all 0.2s;
-}
-
-.input-group input:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.input-group input:disabled {
-    background: #F3F4F6;
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-/* Quarter section styles */
-.quarter-section {
-    background: white;
-    padding: 16px;
-    border-radius: 8px;
-    border: 1px solid #E5E7EB;
-}
-
-.quarter-section h5 {
-    font-size: 16px;
-    font-weight: 700;
-    color: #1A1D23;
-    margin: 0 0 16px 0;
-    text-align: center;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #E5E7EB;
-}
-
-.channel-inputs {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-/* Compact input styling for quarterly fields */
-.channel-input.compact {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.channel-input.compact label {
-    flex: 0 0 100px;
-    font-size: 10px;
-    text-align: right;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.channel-input.compact .input-group {
-    flex: 1;
-}
-
-.channel-input.compact .input-group input {
-    padding: 6px 8px 6px 24px;
-    font-size: 12px;
-}
-
-/* Alert banner in modal */
-.alert-banner.warning {
-    background: #FEF3C7;
-    border: 1px solid #F59E0B;
-    color: #92400E;
-    padding: 12px 16px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.alert-content {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.alert-icon {
-    font-size: 20px;
-}
-
-/* Responsive adjustments */
-@media (max-width: 1400px) {
+    /* Modal wrapper - Centers the modal accounting for sidebar */
     .settings-wrapper .modal-wrapper,
-    .settings-container ~ .modal-overlay .modal-wrapper {
-        left: 200px; /* Reduced sidebar space on smaller screens */
+    .settings-container~.modal-overlay .modal-wrapper {
+        position: fixed;
+        /* Define the available area accounting for sidebar and nav */
+        left: 280px;
+        /* Start after sidebar */
+        right: 0;
+        /* Extend to right edge */
+        top: 72px;
+        /* Start after nav */
+        bottom: 0;
+        /* Extend to bottom */
+
+        /* Center within this available area */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        pointer-events: none;
+        /* Allow clicks to pass through to backdrop */
+        overflow-y: auto;
     }
 
-    .modal-content {
-        width: calc(100vw - 260px); /* Adjust for smaller sidebar */
-        min-width: auto;
+    /* Modal Content - The actual modal box */
+    .settings-wrapper .modal-content,
+    .settings-container~.modal-overlay .modal-content {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+
+        /* Width calculation for available space */
+        width: min(1400px, calc(100vw - 360px));
+        /* Account for sidebar + padding */
+        max-width: 1400px;
+
+        /* HEIGHT */
+        max-height: 85vh;
+        height: auto;
+
+        display: flex;
+        flex-direction: column;
+        pointer-events: all;
+        position: relative;
+        animation: slideUp 0.3s ease;
+
+        /* Auto margins for centering */
+        margin: auto;
+        overflow: hidden;
+    }
+
+    /* Modal Header */
+    .modal-header {
+        padding: 24px 32px;
+        border-bottom: 1px solid #E5E7EB;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .modal-header h3 {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1A1D23;
+        margin: 0;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: #6B7280;
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+
+    .close-btn:hover {
+        background: #F3F4F6;
+        color: #1A1D23;
+    }
+
+    /* Modal Body */
+    .modal-body {
+        flex: 1;
+        overflow-y: auto;
+        /* Allow scroll if content is too tall */
+        padding: 32px;
+        max-height: calc(85vh - 160px);
+        /* Account for header and footer */
+    }
+
+    /* Form Layout Inside Modal - Wide Layout */
+    .add-brand-form {
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+    }
+
+    /* Form Section */
+    .form-section {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1A1D23;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #E5E7EB;
+    }
+
+    /* Annual targets grid - 2 rows x 4 columns */
+    .annual-targets-grid {
+        display: grid;
+        grid-template-rows: repeat(2, auto);
+        gap: 20px;
+        padding: 24px 0;
+        border-bottom: 1px solid #E5E7EB;
     }
 
     .channel-row {
-        grid-template-columns: repeat(2, 1fr);
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
     }
 
+    /* Each channel group */
+    .channel-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .channel-group label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #6B7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .channel-group input {
+        padding: 10px 14px;
+        border: 2px solid #E5E7EB;
+        border-radius: 8px;
+        font-size: 14px;
+        width: 100%;
+        transition: all 0.2s;
+    }
+
+    .channel-group input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Quarterly section - all quarters side by side */
     .quarterly-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+        background: #F9FAFB;
+        padding: 20px;
+        border-radius: 12px;
+    }
+
+    .quarter-column {
+        background: white;
+        padding: 16px;
+        border-radius: 8px;
+        border: 1px solid #E5E7EB;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .quarter-header {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1A1D23;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #E5E7EB;
+        text-align: center;
+    }
+
+    /* Channel inputs within each quarter */
+    .quarter-inputs {
+        display: grid;
         grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (max-width: 1024px) {
-    .settings-wrapper .modal-wrapper,
-    .settings-container ~ .modal-overlay .modal-wrapper {
-        left: 0; /* No sidebar on tablet */
-        top: 60px; /* Smaller nav on tablet */
+        /* 2 columns per quarter */
+        gap: 12px;
     }
 
-    .modal-content {
-        width: 90vw;
-    }
-}
-
-@media (max-width: 768px) {
-    .settings-wrapper .modal-wrapper,
-    .settings-container ~ .modal-overlay .modal-wrapper {
-        left: 0;
-        top: 0;
-        padding: 20px;
+    .quarter-input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
     }
 
-    .modal-content {
-        max-width: calc(100vw - 40px);
-        width: calc(100vw - 40px);
+    .quarter-input-group input {
+        padding: 8px 10px;
+        border: 1px solid #E5E7EB;
+        border-radius: 6px;
+        font-size: 12px;
+        width: 100%;
+        transition: all 0.2s;
     }
-    
-    .modal-header {
-        padding: 20px;
+
+    .quarter-input-group input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
     }
-    
-    .modal-body {
-        padding: 20px;
-    }
-    
+
+    /* Modal Footer */
     .modal-footer {
-        padding: 16px 20px;
+        padding: 20px 32px;
+        border-top: 1px solid #E5E7EB;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        flex-shrink: 0;
     }
-}
+
+    .modal-footer button {
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-save {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+    }
+
+    .btn-cancel {
+        background: white;
+        color: #6B7280;
+        border: 2px solid #E5E7EB;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Ensure body doesn't scroll when modal is open */
+    body.modal-open {
+        overflow: hidden;
+    }
+
+    /* Additional fixes for modal positioning */
+    .settings-wrapper {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Ensure modal is not trapped by overflow hidden */
+    .main-content {
+        position: relative;
+    }
+
+    /* Target section styles in modal */
+    .targets-section {
+        margin-bottom: 32px;
+    }
+
+    .targets-section h4 {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1A1D23;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #E5E7EB;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #E5E7EB;
+    }
+
+    .section-header h4 {
+        margin: 0;
+        border: none;
+        padding: 0;
+    }
+
+    /* Channel input styles in modal */
+    .channel-input {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .channel-input label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #6B7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .channel-input.compact label {
+        font-size: 11px;
+        display: block;
+        margin-bottom: 4px;
+        color: #6B7280;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .input-group {
+        display: flex;
+        align-items: center;
+        position: relative;
+    }
+
+    .input-prefix {
+        position: absolute;
+        left: 12px;
+        color: #6B7280;
+        font-size: 14px;
+        pointer-events: none;
+    }
+
+    .input-group input {
+        padding: 10px 14px 10px 28px;
+        border: 2px solid #E5E7EB;
+        border-radius: 8px;
+        font-size: 14px;
+        width: 100%;
+        transition: all 0.2s;
+    }
+
+    .input-group input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .input-group input:disabled {
+        background: #F3F4F6;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    /* Quarter section styles */
+    .quarter-section {
+        background: white;
+        padding: 16px;
+        border-radius: 8px;
+        border: 1px solid #E5E7EB;
+    }
+
+    .quarter-section h5 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1A1D23;
+        margin: 0 0 16px 0;
+        text-align: center;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #E5E7EB;
+    }
+
+    .channel-inputs {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* Compact input styling for quarterly fields */
+    .channel-input.compact {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .channel-input.compact label {
+        flex: 0 0 100px;
+        font-size: 10px;
+        text-align: right;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .channel-input.compact .input-group {
+        flex: 1;
+    }
+
+    .channel-input.compact .input-group input {
+        padding: 6px 8px 6px 24px;
+        font-size: 12px;
+    }
+
+    /* Alert banner in modal */
+    .alert-banner.warning {
+        background: #FEF3C7;
+        border: 1px solid #F59E0B;
+        color: #92400E;
+        padding: 12px 16px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .alert-content {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .alert-icon {
+        font-size: 20px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1400px) {
+
+        .settings-wrapper .modal-wrapper,
+        .settings-container~.modal-overlay .modal-wrapper {
+            left: 200px;
+            /* Reduced sidebar space on smaller screens */
+        }
+
+        .modal-content {
+            width: calc(100vw - 260px);
+            /* Adjust for smaller sidebar */
+            min-width: auto;
+        }
+
+        .channel-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .quarterly-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 1024px) {
+
+        .settings-wrapper .modal-wrapper,
+        .settings-container~.modal-overlay .modal-wrapper {
+            left: 0;
+            /* No sidebar on tablet */
+            top: 60px;
+            /* Smaller nav on tablet */
+        }
+
+        .modal-content {
+            width: 90vw;
+        }
+    }
+
+    @media (max-width: 768px) {
+
+        .settings-wrapper .modal-wrapper,
+        .settings-container~.modal-overlay .modal-wrapper {
+            left: 0;
+            top: 0;
+            padding: 20px;
+        }
+
+        .modal-content {
+            max-width: calc(100vw - 40px);
+            width: calc(100vw - 40px);
+        }
+
+        .modal-header {
+            padding: 20px;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 16px 20px;
+        }
+    }
