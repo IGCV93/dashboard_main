@@ -174,23 +174,6 @@ body {
     overflow-x: hidden;
     height: auto;
     min-height: 100vh;
-    text-rendering: optimizeSpeed;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-/* Layout Wrappers */
-.app-wrapper {
-    background: var(--bg-secondary);
-    min-height: 100vh;
-    position: relative;
-    height: auto;
-    overflow: visible;
-}
-
-.app-container {
-    display: flex;
-    min-height: calc(100vh - var(--nav-height));
     position: relative;
     height: auto;
     overflow: visible;

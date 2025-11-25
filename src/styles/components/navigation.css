@@ -10,8 +10,11 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
     z-index: 100;
     box-shadow: var(--shadow-sm);
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
@@ -287,39 +290,39 @@
         min-height: var(--nav-height);
         flex-wrap: wrap;
     }
-    
+
     .nav-left {
         gap: 16px;
         flex-wrap: wrap;
         width: 100%;
         padding: 12px 0;
     }
-    
+
     .logo-image {
         height: 32px;
     }
-    
+
     .logo-placeholder {
         width: 32px;
         height: 32px;
         font-size: 14px;
     }
-    
+
     .logo-text {
         font-size: 20px;
     }
-    
+
     .period-selector {
         flex-wrap: wrap;
         width: 100%;
         justify-content: flex-start;
     }
-    
+
     .period-selector select {
         margin-top: 8px !important;
         width: 100%;
     }
-    
+
     .brand-selector {
         width: 100%;
         margin-left: 0 !important;
@@ -329,17 +332,17 @@
         padding-top: 12px;
         border-top: 1px solid var(--border-color);
     }
-    
+
     .nav-right {
         position: absolute;
         top: 16px;
         right: 16px;
     }
-    
+
     .user-name {
         display: none;
     }
-    
+
     .mobile-menu-toggle {
         display: block;
     }
@@ -349,17 +352,17 @@
     .top-nav {
         padding: 0 12px;
     }
-    
+
     .nav-left {
         gap: 12px;
     }
-    
+
     .period-selector {
         padding: 2px;
         background: transparent;
         border: none;
     }
-    
+
     .period-btn {
         padding: 6px 10px;
         font-size: 12px;
@@ -367,7 +370,7 @@
         background: var(--bg-primary);
         margin-right: 4px;
     }
-    
+
     .brand-dropdown {
         width: 100%;
         min-width: unset;
