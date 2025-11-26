@@ -86,6 +86,155 @@
 }
 
 .section-header h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Table Styles - Cloned from SKU Performance */
+.settings-table-container {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    margin-bottom: 40px;
+    width: 100%;
+}
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.settings-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.settings-table thead {
+    background: var(--bg-gray);
+    /* Matches SKU table header bg */
+}
+
+.settings-table th {
+    padding: 16px 24px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.settings-table td {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-primary);
+    font-size: 14px;
+    vertical-align: middle;
+    transition: background-color 0.15s ease;
+}
+
+.settings-table tbody tr:hover td {
+    background-color: var(--bg-gray-light);
+}
+
+.settings-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Brand Name Pill Style - Cloned from .sku-code */
+.brand-pill {
+    font-family: 'Monaco', 'Consolas', monospace;
+    /* Optional: keep monospace if desired, or remove */
+    font-weight: 700;
+    color: var(--accent-primary);
+    background: rgba(102, 126, 234, 0.12);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    display: inline-block;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(102, 126, 234, 0.05);
+}
+
+.settings-table tbody tr:hover .brand-pill {
+    background: rgba(102, 126, 234, 0.2);
+    border-color: rgba(102, 126, 234, 0.3);
+    transform: scale(1.02);
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.1);
+}
+
+/* Total Column Highlight - Subtle */
+.settings-table td:nth-last-child(2),
+.settings-table th:nth-last-child(2) {
+    background-color: #F8FAFC;
+    color: #0F172A;
+    font-weight: 600;
+    border-left: 1px solid var(--border-light);
+}
+
+/* Actions Column */
+.settings-table td:last-child,
+.settings-table th:last-child {
+    text-align: center;
+    width: 100px;
+    border-left: 1px solid var(--border-light);
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.action-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-edit {
+    background: white;
+    color: #374151;
+    border: 1px solid #D1D5DB;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-edit:hover {
+    background: #F3F4F6;
+    border-color: #9CA3AF;
+}
+
+.btn-delete {
+    background: #FEF2F2;
+    color: #DC2626;
+    border: 1px solid #FECACA;
+}
+
+.btn-delete:hover {
+    background: #FEE2E2;
+    border-color: #FCA5A5;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
     left: 0;
     right: 0;
     bottom: 0;
