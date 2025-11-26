@@ -86,6 +86,18 @@
 }
 
 .section-header h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Table Styles */
+.settings-table-container {
+    background: var(--bg-primary);
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border-color);
     overflow: hidden;
     margin-bottom: 40px;
     position: relative;
@@ -133,211 +145,249 @@
     letter-spacing: 0.5px;
     border-bottom: 1px solid var(--border-color);
     white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    /* Higher than row sticky */
+}
 
-    /* Sticky First Column (Brand Name) */
-    .settings-table th:first-child,
-    .settings-table td:first-child {
-        position: sticky;
-        left: 0;
-        z-index: 10;
-        background-color: var(--bg-primary);
-        /* Match row bg */
-        border-right: 2px solid var(--border-color);
-        /* Separation line */
+.settings-table td {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* Brand Name Pill Style */
+.brand-pill {
+    display: inline-block;
+    padding: 6px 12px;
+    background-color: #EEF2FF;
+    /* Indigo-50 */
+    color: #4F46E5;
+    /* Indigo-600 */
+    border-radius: 9999px;
+    font-weight: 600;
+    font-size: 13px;
+    border: 1px solid #E0E7FF;
+}
+
+/* Zebra Striping */
+.settings-table tr:nth-child(even) td {
+    background-color: #F9FAFB;
+}
+
+.settings-table tr:hover td {
+    background-color: #F3F4F6;
+}
+
+/* Sticky First Column (Brand Name) */
+.settings-table th:first-child,
+.settings-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background-color: var(--bg-primary);
+    /* Match row bg */
+    border-right: 2px solid var(--border-color);
+    /* Separation line */
+}
+
+/* Fix sticky bg on hover/zebra */
+.settings-table tr:nth-child(even) td:first-child {
+    background-color: #F9FAFB;
+}
+
+.settings-table tr:hover td:first-child {
+    background-color: #F3F4F6;
+}
+
+/* Sticky Header First Cell needs higher z-index */
+.settings-table th:first-child {
+    z-index: 30;
+    background-color: #F9FAFB;
+}
+
+/* Total Column Highlight */
+.settings-table td:nth-last-child(2),
+.settings-table th:nth-last-child(2) {
+    background-color: #F0F9FF;
+    /* Light blue tint */
+    font-weight: 700;
+    color: #1E40AF;
+    /* Dark blue text */
+    border-left: 1px solid #BFDBFE;
+}
+
+/* Actions Column Sticky Right (Optional, good for wide tables) */
+.settings-table th:last-child,
+.settings-table td:last-child {
+    position: sticky;
+    right: 0;
+    background-color: var(--bg-primary);
+    border-left: 2px solid var(--border-color);
+    z-index: 10;
+    text-align: center;
+}
+
+.settings-table th:last-child {
+    z-index: 30;
+    background-color: #F9FAFB;
+}
+
+.settings-table tr:nth-child(even) td:last-child {
+    background-color: #F9FAFB;
+}
+
+.settings-table tr:hover td:last-child {
+    background-color: #F3F4F6;
+}
+
+.settings-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.action-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 32px;
+}
+
+.btn-edit {
+    background: white;
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-edit:hover {
+    background: #F9FAFB;
+    border-color: #D1D5DB;
+    transform: translateY(-1px);
+}
+
+.btn-delete {
+    background: #FEF2F2;
+    color: #DC2626;
+    border-color: #FECACA;
+}
+
+.btn-delete:hover {
+    background: #FEE2E2;
+    border-color: #FCA5A5;
+    transform: translateY(-1px);
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-content {
+    background: var(--bg-primary);
+    border-radius: var(--border-radius-xl);
+    width: 100%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-xl);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
     }
 
-    /* Fix sticky bg on hover/zebra */
-    .settings-table tr:nth-child(even) td:first-child {
-        background-color: #F9FAFB;
+    to {
+        transform: translateY(0);
+        opacity: 1;
     }
+}
 
-    .settings-table tr:hover td:first-child {
-        background-color: #F3F4F6;
-    }
+/* Form Styles */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
 
-    /* Sticky Header First Cell needs higher z-index */
-    .settings-table th:first-child {
-        z-index: 30;
-        background-color: #F9FAFB;
-    }
+.form-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
 
-    /* Total Column Highlight */
-    .settings-table td:nth-last-child(2),
-    .settings-table th:nth-last-child(2) {
-        background-color: #F0F9FF;
-        /* Light blue tint */
-        font-weight: 700;
-        color: #1E40AF;
-        /* Dark blue text */
-        border-left: 1px solid #BFDBFE;
-    }
+.input-field {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 14px;
+    transition: border-color var(--transition-fast);
+}
 
-    /* Actions Column Sticky Right (Optional, good for wide tables) */
-    .settings-table th:last-child,
-    .settings-table td:last-child {
-        position: sticky;
-        right: 0;
-        background-color: var(--bg-primary);
-        border-left: 2px solid var(--border-color);
-        z-index: 10;
-        text-align: center;
-    }
+.input-field:focus {
+    border-color: var(--accent-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
 
-    .settings-table th:last-child {
-        z-index: 30;
-        background-color: #F9FAFB;
-    }
+.btn {
+    padding: 10px 20px;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: none;
+}
 
-    .settings-table tr:nth-child(even) td:last-child {
-        background-color: #F9FAFB;
-    }
+.btn-primary {
+    background: var(--accent-primary);
+    color: white;
+}
 
-    .settings-table tr:hover td:last-child {
-        background-color: #F3F4F6;
-    }
+.btn-primary:hover {
+    background: var(--accent-secondary);
+    transform: translateY(-1px);
+}
 
-    .settings-table tr:last-child td {
-        border-bottom: none;
-    }
+.btn-secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
 
-    /* Action Buttons */
-    .action-buttons {
-        display: flex;
-        gap: 8px;
-        justify-content: center;
-    }
-
-    .action-btn {
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 12px;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-        border: 1px solid transparent;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        height: 32px;
-    }
-
-    .btn-edit {
-        background: white;
-        color: var(--text-primary);
-        border-color: var(--border-color);
-        box-shadow: var(--shadow-sm);
-    }
-
-    .btn-edit:hover {
-        background: #F9FAFB;
-        border-color: #D1D5DB;
-        transform: translateY(-1px);
-    }
-
-    .btn-delete {
-        background: #FEF2F2;
-        color: #DC2626;
-        border-color: #FECACA;
-    }
-
-    .btn-delete:hover {
-        background: #FEE2E2;
-        border-color: #FCA5A5;
-        transform: translateY(-1px);
-    }
-
-    /* Modal Styles */
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(4px);
-        z-index: 1000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-    }
-
-    .modal-content {
-        background: var(--bg-primary);
-        border-radius: var(--border-radius-xl);
-        width: 100%;
-        max-width: 800px;
-        max-height: 90vh;
-        overflow-y: auto;
-        box-shadow: var(--shadow-xl);
-        animation: modalSlideIn 0.3s ease-out;
-    }
-
-    @keyframes modalSlideIn {
-        from {
-            transform: translateY(20px);
-            opacity: 0;
-        }
-
-        to {
-            transform: translateY(0);
-            opacity: 1;
-        }
-    }
-
-    /* Form Styles */
-    .form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .form-group label {
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--text-primary);
-    }
-
-    .input-field {
-        padding: 10px 12px;
-        border: 1px solid var(--border-color);
-        border-radius: var(--border-radius);
-        font-size: 14px;
-        transition: border-color var(--transition-fast);
-    }
-
-    .input-field:focus {
-        border-color: var(--accent-primary);
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    .btn {
-        padding: 10px 20px;
-        border-radius: var(--border-radius);
-        font-weight: 600;
-        font-size: 14px;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-        border: none;
-    }
-
-    .btn-primary {
-        background: var(--accent-primary);
-        color: white;
-    }
-
-    .btn-primary:hover {
-        background: var(--accent-secondary);
-        transform: translateY(-1px);
-    }
-
-    .btn-secondary {
-        background: var(--bg-secondary);
-        color: var(--text-primary);
-        border: 1px solid var(--border-color);
-    }
-
-    .btn-secondary:hover {
-        background: var(--bg-hover);
-    }
+.btn-secondary:hover {
+    background: var(--bg-hover);
+}
