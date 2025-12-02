@@ -51,22 +51,29 @@
         };
 
         const handleLogout = async () => {
+            console.log('🔍 handleLogout called');
+
             // Confirmation dialog to prevent accidental logouts
             if (!confirm('Are you sure you want to sign out?')) {
+                console.log('🔍 User cancelled logout');
                 return;
             }
 
+            console.log('🔍 User confirmed logout, proceeding...');
             setShowMenu(false);
 
             try {
                 // Get Supabase client
                 const config = window.CONFIG || window.ChaiVision?.CONFIG;
+                console.log('🔍 Config:', config);
+
                 if (config?.SUPABASE?.URL && window.supabase) {
                     const supabase = window.supabase.createClient(
                         config.SUPABASE.URL,
                         config.SUPABASE.ANON_KEY
                     );
 
+                    console.log('🔍 Logging to audit_logs...');
                     // Log the logout
                     await supabase
                         .from('audit_logs')
@@ -81,10 +88,12 @@
                             reference_id: `LOGOUT_${Date.now()}`
                         });
 
+                    console.log('🔍 Signing out from Supabase...');
                     // Sign out from Supabase
                     await supabase.auth.signOut();
                 }
 
+                console.log('🔍 Calling onLogout callback:', typeof onLogout);
                 // Call parent logout handler first (this will handle the main logout logic)
                 if (onLogout) {
                     onLogout();
