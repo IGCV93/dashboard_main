@@ -1,13 +1,13 @@
- /**
- * Charts Component - Data visualization charts with performance optimizations
- */
+/**
+* Charts Component - Data visualization charts with performance optimizations
+*/
 
-(function() {
+(function () {
     'use strict';
-    
+
     function Charts(props) {
         const { useState, useEffect, useMemo, useRef, useCallback, createElement: h } = React;
-        
+
         const {
             kpis,
             selectedChannels,
@@ -17,22 +17,22 @@
             selectedMonth,
             selectedYear
         } = props;
-        
+
         const lineChartRef = useRef(null);
         const barChartRef = useRef(null);
         const pieChartRef = useRef(null);
         const lineChartInstance = useRef(null);
         const barChartInstance = useRef(null);
         const pieChartInstance = useRef(null);
-        
+
         // Performance optimizations
         const [isChartsVisible, setIsChartsVisible] = useState(true);
         const [chartData, setChartData] = useState(null);
         const chartUpdateTimeout = useRef(null);
-        
+
         // Get formatters from window
         const { formatCurrency } = window.formatters || {};
-        
+
         // Get data from window
         const INITIAL_DATA = window.ChaiVision?.INITIAL_DATA || {};
         const ALL_CHANNELS = INITIAL_DATA.channels || [
@@ -49,14 +49,14 @@
             'Wholesale': '#14B8A6',
             'Omnichannel': '#EC4899'
         };
-        
+
         // Ensure default channel selection so charts are populated
         useEffect(() => {
             if (Array.isArray(selectedChannels) && selectedChannels.length === 0 && typeof setSelectedChannels === 'function') {
                 setSelectedChannels(ALL_CHANNELS);
             }
         }, [ALL_CHANNELS, selectedChannels, setSelectedChannels]);
-        
+
         // Get display title helper
         const getDisplayTitle = useCallback(() => {
             let periodText = '';
@@ -65,35 +65,35 @@
             } else if (view === 'quarterly') {
                 periodText = `${selectedPeriod} ${selectedYear}`;
             } else if (view === 'monthly') {
-                const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 
-                                  'July', 'August', 'September', 'October', 'November', 'December'];
+                const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'];
                 periodText = `${monthNames[selectedMonth]} ${selectedYear}`;
             }
             return periodText;
         }, [view, selectedPeriod, selectedMonth, selectedYear]);
-        
+
         // Optimized data processing with memoization
         const processedChartData = useMemo(() => {
             if (!kpis || !kpis.filteredData) {
                 return null;
             }
-            
+
             const filteredSalesData = kpis.filteredData;
             // Use explicitly available channels from kpis when provided (permission-filtered), otherwise fallback
             const availableFromKpis = Array.isArray(kpis.availableChannels) && kpis.availableChannels.length > 0
                 ? kpis.availableChannels
                 : ALL_CHANNELS;
             const displayChannels = availableFromKpis.filter(ch => selectedChannels.includes(ch));
-            
+
             // Prepare trend data based on view
             let trendLabels = [];
             let trendData = [];
-            
+
             if (view === 'annual') {
                 // Show monthly trends for the year
                 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                 trendLabels = monthNames;
-                
+
                 for (let month = 1; month <= 12; month++) {
                     const monthStr = month.toString().padStart(2, '0');
                     const monthData = filteredSalesData.filter(d => {
@@ -112,10 +112,10 @@
                     'Q3': [{ num: '07', name: 'July' }, { num: '08', name: 'August' }, { num: '09', name: 'September' }],
                     'Q4': [{ num: '10', name: 'October' }, { num: '11', name: 'November' }, { num: '12', name: 'December' }]
                 };
-                
+
                 const months = quarterMonths[selectedPeriod] || [];
                 trendLabels = months.map(m => m.name);
-                
+
                 months.forEach(month => {
                     const monthData = filteredSalesData.filter(d => {
                         if (!d.date) return false;
@@ -128,8 +128,8 @@
             } else if (view === 'monthly') {
                 // Show daily trends within the month
                 const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
-                trendLabels = Array.from({length: daysInMonth}, (_, i) => (i + 1).toString());
-                
+                trendLabels = Array.from({ length: daysInMonth }, (_, i) => (i + 1).toString());
+
                 for (let day = 1; day <= daysInMonth; day++) {
                     const dayStr = day.toString().padStart(2, '0');
                     const monthStr = selectedMonth.toString().padStart(2, '0');
@@ -142,7 +142,7 @@
                     trendData.push(dayRevenue);
                 }
             }
-            
+
             // Prepare channel breakdown data using normalized matching
             const normalizeKey = (value) => String(value || '')
                 .trim()
@@ -159,7 +159,7 @@
                     color: CHANNEL_COLORS[channel] || '#6B7280'
                 };
             }).sort((a, b) => b.revenue - a.revenue);
-            
+
             // Build 85% target series per label for the selected view (daily/monthly target)
             const totalTarget85 = kpis?.totalTarget85 || 0;
             const pointsCount = trendLabels.length || 1;
@@ -180,34 +180,34 @@
                 channelTargets,
                 totalRevenue: trendData.reduce((sum, val) => sum + val, 0)
             };
-            
+
             return result;
         }, [kpis, selectedChannels, view, selectedPeriod, selectedMonth, selectedYear, ALL_CHANNELS, CHANNEL_COLORS]);
-        
+
         // Debounced chart update
         const updateCharts = useCallback(() => {
-//             console.log('🔍 Charts: updateCharts called');
-            
+            //             console.log('🔍 Charts: updateCharts called');
+
             if (chartUpdateTimeout.current) {
                 clearTimeout(chartUpdateTimeout.current);
             }
-            
+
             chartUpdateTimeout.current = setTimeout(() => {
                 if (!processedChartData) {
-//                     console.log('🔍 Charts: updateCharts - no processedChartData, returning');
+                    //                     console.log('🔍 Charts: updateCharts - no processedChartData, returning');
                     return;
                 }
-                
-//                 console.log('🔍 Charts: updateCharts - calling createBarChart with:', processedChartData);
-//                 console.log('🔍 Charts: updateCharts - processedChartData.channelData:', processedChartData.channelData);
+
+                //                 console.log('🔍 Charts: updateCharts - calling createBarChart with:', processedChartData);
+                //                 console.log('🔍 Charts: updateCharts - processedChartData.channelData:', processedChartData.channelData);
                 // Update chart data state
                 setChartData(processedChartData);
-                
+
                 // Create/Update charts
                 createCharts(processedChartData);
             }, 100);
         }, [processedChartData]);
-        
+
         // Destroy charts to prevent memory leaks
         const destroyCharts = useCallback(() => {
             if (lineChartInstance.current) {
@@ -223,7 +223,7 @@
                 pieChartInstance.current = null;
             }
         }, []);
-        
+
         // Create charts with performance optimizations
         const createCharts = useCallback((data) => {
             const refsReady = !!(lineChartRef.current && barChartRef.current && pieChartRef.current);
@@ -241,31 +241,39 @@
                         console.error('Charts: Refs still not ready. Skipping chart creation.');
                         return;
                     }
-                    destroyCharts();
-//                     console.log('🔍 Charts: createCharts - calling createBarChart with data:', data);
-//                     console.log('🔍 Charts: createCharts - data.channelData:', data.channelData);
+                    //                     console.log('🔍 Charts: createCharts - calling createBarChart with data:', data);
+                    //                     console.log('🔍 Charts: createCharts - data.channelData:', data.channelData);
                     createLineChart(data);
                     createBarChart(data); // Pass processed data
                     createPieChart(data);
                 }, 50);
                 return;
             }
-            
-            // Destroy existing charts to prevent memory leaks
-            destroyCharts();
-            
+
+            // Individual chart functions now handle updates internally
+            // No need to destroy charts here - they will update if they exist
+
             // Create new charts
             createLineChart(data);
             createBarChart(data); // Pass processed data
             createPieChart(data);
         }, []);
-        
+
         // Create line chart
         const createLineChart = useCallback((data) => {
             if (!lineChartRef.current || !data.trendLabels || !data.trendData) return;
-            
+
+            // If chart already exists, update it instead of recreating
+            if (lineChartInstance.current) {
+                lineChartInstance.current.data.labels = data.trendLabels;
+                lineChartInstance.current.data.datasets[0].data = data.trendData;
+                lineChartInstance.current.data.datasets[1].data = data.target85Series || [];
+                lineChartInstance.current.update('none'); // Update without animation for smooth UX
+                return;
+            }
+
             const ctx = lineChartRef.current.getContext('2d');
-            
+
             lineChartInstance.current = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -311,7 +319,7 @@
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                callback: function(value) {
+                                callback: function (value) {
                                     return formatCurrency ? formatCurrency(value) : `$${value.toLocaleString()}`;
                                 }
                             }
@@ -327,32 +335,41 @@
                 }
             });
         }, [getDisplayTitle, formatCurrency]);
-        
+
         // Create bar chart
         const createBarChart = useCallback((data) => {
             if (!barChartRef.current) return;
-            
+
             // DEBUG: Check if we have valid data
-//             console.log('🔍 Charts: createBarChart called with data');
-            
+            //             console.log('🔍 Charts: createBarChart called with data');
+
             if (!data || !data.channelData || data.channelData.length === 0) {
-//                 console.log('🔍 Charts: Skipping bar chart creation - no valid channel data');
+                //                 console.log('🔍 Charts: Skipping bar chart creation - no valid channel data');
                 return;
             }
-            
-            const ctx = barChartRef.current.getContext('2d');
-            
-            // DEBUG: Log what we're working with
-//             console.log('🔍 Charts: Channel data for bar chart');
-            
+
             // Extract channel names and revenues from channelData
             const channelNames = data.channelData.map(ch => ch.channel);
             const actualData = data.channelData.map(ch => ch.revenue);
-            
+
             // Get target data from the data parameter
             const target85Data = channelNames.map(ch => Number(data.channelTargets?.[ch] || 0));
-            
-//             console.log('🔍 Charts: Bar chart data prepared');
+
+            // If chart already exists, update it instead of recreating
+            if (barChartInstance.current) {
+                barChartInstance.current.data.labels = channelNames;
+                barChartInstance.current.data.datasets[0].data = actualData;
+                barChartInstance.current.data.datasets[1].data = target85Data;
+                barChartInstance.current.update('none'); // Update without animation for smooth UX
+                return;
+            }
+
+            const ctx = barChartRef.current.getContext('2d');
+
+            // DEBUG: Log what we're working with
+            //             console.log('🔍 Charts: Channel data for bar chart');
+
+            //             console.log('🔍 Charts: Bar chart data prepared');
             barChartInstance.current = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -391,7 +408,7 @@
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                callback: function(value) {
+                                callback: function (value) {
                                     return formatCurrency ? formatCurrency(value) : `$${value.toLocaleString()}`;
                                 }
                             }
@@ -403,13 +420,22 @@
                 }
             });
         }, [getDisplayTitle, formatCurrency]);
-        
+
         // Create pie chart
         const createPieChart = useCallback((data) => {
             if (!pieChartRef.current || !data.channelData) return;
-            
+
+            // If chart already exists, update it instead of recreating
+            if (pieChartInstance.current) {
+                pieChartInstance.current.data.labels = data.channelData.map(d => d.channel);
+                pieChartInstance.current.data.datasets[0].data = data.channelData.map(d => d.revenue);
+                pieChartInstance.current.data.datasets[0].backgroundColor = data.channelData.map(d => d.color);
+                pieChartInstance.current.update('none'); // Update without animation for smooth UX
+                return;
+            }
+
             const ctx = pieChartRef.current.getContext('2d');
-            
+
             pieChartInstance.current = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
@@ -434,7 +460,7 @@
                         },
                         tooltip: {
                             callbacks: {
-                                label: function(context) {
+                                label: function (context) {
                                     const value = context.parsed;
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const percentage = ((value / total) * 100).toFixed(1);
@@ -449,7 +475,7 @@
                 }
             });
         }, [getDisplayTitle, formatCurrency]);
-        
+
         // Intersection Observer for lazy loading
         useEffect(() => {
             const observer = new IntersectionObserver(
@@ -463,24 +489,24 @@
                 },
                 { threshold: 0.1 }
             );
-            
+
             const chartsContainer = document.querySelector('.charts-container');
             if (chartsContainer) {
                 observer.observe(chartsContainer);
             }
-            
+
             return () => observer.disconnect();
         }, []);
-        
+
         // Update charts when data changes
         useEffect(() => {
-//             console.log('🔍 Charts: useEffect triggered');
-            
+            //             console.log('🔍 Charts: useEffect triggered');
+
             if (isChartsVisible && processedChartData) {
                 updateCharts();
             }
         }, [isChartsVisible, processedChartData, updateCharts]);
-        
+
         // Cleanup on unmount
         useEffect(() => {
             return () => {
@@ -490,7 +516,7 @@
                 }
             };
         }, [destroyCharts]);
-        
+
         // Channel selection handler with debouncing
         const handleChannelToggle = useCallback((channel) => {
             setSelectedChannels(prev => {
@@ -501,7 +527,7 @@
                 }
             });
         }, [setSelectedChannels]);
-        
+
         if (!isChartsVisible) {
             return h('div', { className: 'charts-container' },
                 h('div', { className: 'charts-loading' },
@@ -510,7 +536,7 @@
                 )
             );
         }
-        
+
         return h('div', { className: 'charts-container' },
             // Combined Analysis Card (Bar + Pie with filter chips)
             h('div', { className: 'chart-card' },
@@ -521,7 +547,7 @@
                 h('div', { className: 'chart-filters' },
                     h('span', { className: 'filter-label' }, 'Show Channels:'),
                     h('div', { className: 'filter-buttons' },
-                        ALL_CHANNELS.map(channel => 
+                        ALL_CHANNELS.map(channel =>
                             h('div', {
                                 key: channel,
                                 className: `filter-checkbox ${selectedChannels.includes(channel) ? 'selected' : ''}`,
@@ -530,7 +556,7 @@
                                 h('input', {
                                     type: 'checkbox',
                                     checked: selectedChannels.includes(channel),
-                                    onChange: () => {}
+                                    onChange: () => { }
                                 }),
                                 h('label', null, channel)
                             )
@@ -552,7 +578,7 @@
                     )
                 )
             ),
-            
+
             // Revenue Trend Card (Line)
             h('div', { className: 'chart-card' },
                 h('div', { className: 'chart-header' },
@@ -565,14 +591,14 @@
             )
         );
     }
-    
+
     // Make available globally
     window.Charts = Charts;
-    
+
     // Also add to ChaiVision namespace
     window.ChaiVision = window.ChaiVision || {};
     window.ChaiVision.components = window.ChaiVision.components || {};
     window.ChaiVision.components.Charts = Charts;
-    
-//     console.log('✅ Charts component loaded with performance optimizations');
+
+    //     console.log('✅ Charts component loaded with performance optimizations');
 })();

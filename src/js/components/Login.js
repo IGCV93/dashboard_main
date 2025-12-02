@@ -2,12 +2,12 @@
  * Login Component - Authentication page
  */
 
-(function() {
+(function () {
     'use strict';
-    
+
     function Login({ onLogin }) {
         const { useState, useEffect, createElement: h } = React;
-        
+
         const [email, setEmail] = useState('');
         const [password, setPassword] = useState('');
         const [loading, setLoading] = useState(false);
@@ -17,14 +17,14 @@
         const [showResetPassword, setShowResetPassword] = useState(false);
         const [resetEmail, setResetEmail] = useState('');
         const [resetSent, setResetSent] = useState(false);
-        
+
         // Demo credentials for easy access
         const demoCredentials = [
             { email: 'demo-admin@chaivision.com', password: 'demo123', role: 'Admin' },
             { email: 'demo-manager@chaivision.com', password: 'demo123', role: 'Manager' },
             { email: 'demo-user@chaivision.com', password: 'demo123', role: 'User' }
         ];
-        
+
         // Get Supabase client
         const getSupabaseClient = () => {
             const config = window.CONFIG || window.ChaiVision?.CONFIG;
@@ -36,14 +36,14 @@
             }
             return null;
         };
-        
+
         const handleLogin = async (e) => {
             e?.preventDefault();
             setError('');
             setLoading(true);
-            
+
             const supabase = getSupabaseClient();
-            
+
             if (!supabase) {
                 // Demo mode fallback
                 const demoUser = demoCredentials.find(d => d.email === email && d.password === password);
@@ -65,58 +65,58 @@
                 }
                 return;
             }
-            
+
             try {
                 // Supabase authentication
                 // Attempting login for user
-                
+
                 const { data, error: authError } = await supabase.auth.signInWithPassword({
                     email,
                     password
                 });
-                
+
                 if (authError) throw authError;
-                
+
                 // Authentication successful, fetching profile
-                
+
                 // Get user profile
                 const { data: profile, error: profileError } = await supabase
                     .from('profiles')
                     .select('*')
                     .eq('id', data.user.id)
                     .single();
-                
+
                 if (profileError) throw profileError;
-                
+
                 // Profile fetched successfully
-                
+
                 // Check if user is active
                 if (profile.status !== 'active') {
                     await supabase.auth.signOut();
                     throw new Error('Your account is inactive. Please contact an administrator.');
                 }
-                
+
                 // Update last login
                 try {
                     const { error: updateError } = await supabase
                         .from('profiles')
-                        .update({ 
+                        .update({
                             last_login: new Date().toISOString(),
                             login_count: (profile.login_count || 0) + 1
                         })
                         .eq('id', data.user.id);
-                    
+
                     if (updateError) {
                         // Failed to update last login
                     }
                 } catch (updateErr) {
                     // Could not update last login
                 }
-                
+
                 // Log the login to audit_logs with better error handling
                 try {
                     // Creating audit log entry
-                    
+
                     const auditEntry = {
                         user_id: data.user.id,
                         user_email: email,
@@ -130,14 +130,14 @@
                         },
                         reference_id: `LOGIN_${Date.now()}_${data.user.id.substring(0, 8)}`
                     };
-                    
+
                     // Audit entry prepared
-                    
+
                     const { data: auditData, error: auditError } = await supabase
                         .from('audit_logs')
                         .insert(auditEntry)
                         .select();
-                    
+
                     if (auditError) {
                         // Audit log error occurred
                         const errorDetails = {
@@ -153,23 +153,23 @@
                     // Failed to create audit log
                     // Don't fail the login just because audit failed
                 }
-                
+
                 // Set session persistence
                 if (rememberMe) {
                     localStorage.setItem('chai_vision_remember', 'true');
                 } else {
                     sessionStorage.setItem('chai_vision_session', 'true');
                 }
-                
+
                 // Call parent login handler with full user data
                 const userData = {
                     ...data.user,
                     ...profile
                 };
-                
+
                 // Login complete, calling onLogin handler
                 onLogin(userData);
-                
+
             } catch (err) {
                 // Login error occurred
                 setError(err.message || 'Failed to login. Please try again.');
@@ -177,29 +177,29 @@
                 setLoading(false);
             }
         };
-        
+
         const handleResetPassword = async () => {
             if (!resetEmail) {
                 setError('Please enter your email address');
                 return;
             }
-            
+
             const supabase = getSupabaseClient();
             if (!supabase) {
                 setError('Password reset not available in demo mode');
                 return;
             }
-            
+
             setLoading(true);
             setError('');
-            
+
             try {
                 const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
                     redirectTo: `${window.location.origin}/reset-password`,
                 });
-                
+
                 if (error) throw error;
-                
+
                 // Log password reset request
                 try {
                     await supabase
@@ -216,7 +216,7 @@
                 } catch (auditErr) {
                     // Failed to log password reset
                 }
-                
+
                 setResetSent(true);
                 setError('');
             } catch (err) {
@@ -225,13 +225,13 @@
                 setLoading(false);
             }
         };
-        
+
         const fillDemoCredentials = (demo) => {
             setEmail(demo.email);
             setPassword(demo.password);
             setError('');
         };
-        
+
         // Check Supabase connection on mount
         useEffect(() => {
             const checkSupabase = async () => {
@@ -247,7 +247,7 @@
             };
             checkSupabase();
         }, []);
-        
+
         if (showResetPassword) {
             return h('div', { className: 'login-container' },
                 h('div', { className: 'login-card' },
@@ -256,7 +256,7 @@
                         h('h1', null, 'Chai Vision'),
                         h('p', { className: 'login-subtitle' }, 'Reset Password')
                     ),
-                    
+
                     resetSent ? h('div', { className: 'reset-success' },
                         h('div', { className: 'success-icon' }, '✅'),
                         h('h3', null, 'Check Your Email'),
@@ -270,11 +270,11 @@
                             }
                         }, 'Back to Login')
                     ) : h('div', { className: 'reset-form' },
-                        h('p', { className: 'reset-instructions' }, 
+                        h('p', { className: 'reset-instructions' },
                             'Enter your email address and we\'ll send you a link to reset your password.'),
-                        
+
                         error && h('div', { className: 'login-error' }, error),
-                        
+
                         h('div', { className: 'form-group' },
                             h('input', {
                                 type: 'email',
@@ -285,13 +285,13 @@
                                 disabled: loading
                             })
                         ),
-                        
+
                         h('button', {
                             className: 'btn btn-primary',
                             onClick: handleResetPassword,
                             disabled: loading || !resetEmail
                         }, loading ? 'Sending...' : 'Send Reset Link'),
-                        
+
                         h('button', {
                             className: 'btn btn-link',
                             onClick: () => {
@@ -303,7 +303,7 @@
                 )
             );
         }
-        
+
         return h('div', { className: 'login-container' },
             h('div', { className: 'login-card' },
                 h('div', { className: 'login-logo' },
@@ -311,10 +311,10 @@
                     h('h1', null, 'Chai Vision'),
                     h('p', { className: 'login-subtitle' }, 'Sales Performance Dashboard')
                 ),
-                
+
                 h('form', { className: 'login-form', onSubmit: handleLogin },
                     error && h('div', { className: 'login-error' }, error),
-                    
+
                     h('div', { className: 'form-group' },
                         h('input', {
                             type: 'email',
@@ -326,7 +326,7 @@
                             disabled: loading
                         })
                     ),
-                    
+
                     h('div', { className: 'form-group' },
                         h('div', { className: 'password-input-wrapper' },
                             h('input', {
@@ -346,7 +346,7 @@
                             }, showPassword ? '👁️' : '👁️‍🗨️')
                         )
                     ),
-                    
+
                     h('div', { className: 'form-options' },
                         h('label', { className: 'checkbox-label' },
                             h('input', {
@@ -366,14 +366,16 @@
                             }
                         }, 'Forgot password?')
                     ),
-                    
+
                     h('button', {
                         type: 'submit',
                         className: 'btn btn-primary btn-login',
                         disabled: loading
                     }, loading ? 'Signing in...' : 'Sign in')
                 ),
-                
+
+                // Only show demo credentials in development mode
+                (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') &&
                 h('div', { className: 'demo-credentials' },
                     h('p', { className: 'demo-title' }, 'Demo Credentials:'),
                     h('div', { className: 'demo-buttons' },
@@ -386,9 +388,9 @@
                                 title: `${demo.email} / ${demo.password}`
                             },
                                 h('span', { className: 'demo-role' }, demo.role),
-                                h('span', { className: 'demo-icon' }, 
-                                    demo.role === 'Admin' ? '👑' : 
-                                    demo.role === 'Manager' ? '📊' : '👤'
+                                h('span', { className: 'demo-icon' },
+                                    demo.role === 'Admin' ? '👑' :
+                                        demo.role === 'Manager' ? '📊' : '👤'
                                 )
                             )
                         )
@@ -397,7 +399,7 @@
             )
         );
     }
-    
+
     // Make Login available globally
     window.Login = Login;
     window.ChaiVision = window.ChaiVision || {};
