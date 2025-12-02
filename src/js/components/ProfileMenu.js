@@ -231,7 +231,11 @@
                 // Sign Out
                 h('button', {
                     className: 'dropdown-item dropdown-signout',
-                    onClick: handleLogout
+                    onClick: () => {
+                        console.log('🚨 SIGN OUT BUTTON CLICKED!');
+                        console.log('🚨 handleLogout type:', typeof handleLogout);
+                        handleLogout();
+                    }
                 },
                     h('span', { className: 'dropdown-icon' }, '🚪'),
                     h('span', null, 'Sign Out')
