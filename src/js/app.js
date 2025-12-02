@@ -4,9 +4,9 @@
  * ENHANCED WITH AUTHENTICATION, PERMISSIONS, AND PHASE 5 FEATURES
  */
 
-(function() {
+(function () {
     'use strict';
-    
+
     // Global state
     let APP_STATE = {
         initialized: false,
@@ -27,13 +27,13 @@
     function initializeApp(config) {
         // Use global CONFIG if not passed
         config = config || window.CONFIG || window.ChaiVision?.CONFIG;
-        
+
         if (!config) {
             console.error('Configuration not found!');
             showErrorMessage('Failed to load configuration. Please refresh the page.');
             return;
         }
-        
+
         try {
             // Validate configuration
             const validateConfig = window.validateConfig || window.ChaiVision?.validateConfig;
@@ -43,26 +43,26 @@
                     // Configuration warnings detected but not logged
                 }
             }
-            
+
             // Check for remember me
             APP_STATE.rememberMe = localStorage.getItem('chai_vision_remember') === 'true';
-            
+
             // Initialize Supabase if configured
             const initSupabase = window.initSupabase || window.ChaiVision?.initSupabase;
             if (config.FEATURES.ENABLE_SUPABASE && initSupabase) {
                 APP_STATE.supabaseClient = initSupabase();
-                
+
                 // Set up auth listener with multi-tab sync
                 if (APP_STATE.supabaseClient) {
                     APP_STATE.supabaseClient.auth.onAuthStateChange((event, session) => {
                         // Auth state changed: event
-                        
+
                         // Broadcast auth changes to other tabs
                         if (window.BroadcastChannel) {
                             const channel = new BroadcastChannel('chai_vision_auth');
                             channel.postMessage({ event, session });
                         }
-                        
+
                         if (event === 'SIGNED_OUT') {
                             handleSignOut();
                         } else if (event === 'SIGNED_IN' && session) {
@@ -70,7 +70,7 @@
                             localStorage.setItem('chai_vision_session', JSON.stringify(session));
                         }
                     });
-                    
+
                     // Listen for auth changes from other tabs - DISABLED to prevent loops
                     // if (window.BroadcastChannel) {
                     //     const channel = new BroadcastChannel('chai_vision_auth');
@@ -84,7 +84,7 @@
                     // }
                 }
             }
-            
+
             // Get DataService class
             const DataService = window.DataService || window.ChaiVision?.services?.DataService;
             if (DataService) {
@@ -93,21 +93,21 @@
                 // DataService not found, using fallback
                 APP_STATE.dataService = createFallbackDataService(config);
             }
-            
+
             // Save preferences periodically
             setInterval(saveUserPreferences, 30000); // Every 30 seconds
-            
+
             // Initialize React components
             initializeReactApp(config);
-            
+
             // Set up event listeners
             setupEventListeners();
-            
+
             // Mark as initialized
             APP_STATE.initialized = true;
-            
+
             // Dashboard initialized successfully
-            
+
         } catch (error) {
             console.error('❌ Failed to initialize application:', error);
             if (window.showErrorMessage) {
@@ -115,19 +115,19 @@
             }
         }
     }
-    
+
     /**
      * Save user preferences
      */
     async function saveUserPreferences() {
         if (!APP_STATE.currentUser || !APP_STATE.preferences) return;
-        
+
         const supabase = APP_STATE.supabaseClient;
         if (!supabase) {
             localStorage.setItem('chai_vision_preferences', JSON.stringify(APP_STATE.preferences));
             return;
         }
-        
+
         try {
             await supabase
                 .from('user_preferences')
@@ -160,7 +160,7 @@
             }
         }
     }
-    
+
     /**
      * Load user preferences
      */
@@ -170,21 +170,21 @@
             const saved = localStorage.getItem('chai_vision_preferences');
             return saved ? JSON.parse(saved) : {};
         }
-        
+
         try {
             const { data } = await supabase
                 .from('user_preferences')
                 .select('last_selected_brand, last_selected_period, last_selected_year, last_selected_view, theme, compact_mode, notifications_enabled, refresh_interval, show_tutorials, auto_save')
                 .eq('user_id', userId)
                 .single();
-            
+
             return data || {};
         } catch (error) {
             console.error('Failed to load preferences:', error);
             return {};
         }
     }
-    
+
     /**
      * Apply user preferences to the application
      */
@@ -193,43 +193,43 @@
         if (prefs.theme) {
             applyTheme(prefs.theme);
         }
-        
+
         // Apply compact mode
         if (prefs.compact_mode !== undefined) {
             applyCompactMode(prefs.compact_mode);
         }
-        
+
         // Apply notifications
         if (prefs.notifications_enabled !== undefined) {
             applyNotifications(prefs.notifications_enabled);
         }
-        
+
         // Apply refresh interval
         if (prefs.refresh_interval && prefs.auto_save) {
             applyRefreshInterval(prefs.refresh_interval);
         }
-        
+
         // Apply tutorials
         if (prefs.show_tutorials !== undefined) {
             applyTutorials(prefs.show_tutorials);
         }
     }
-    
+
     /**
      * Apply theme to the application
      */
     function applyTheme(theme) {
         const root = document.documentElement;
         const body = document.body;
-        
+
         // Remove existing theme classes
         root.classList.remove('theme-light', 'theme-dark');
         body.classList.remove('theme-light', 'theme-dark');
-        
+
         // Add new theme class
         root.classList.add(`theme-${theme}`);
         body.classList.add(`theme-${theme}`);
-        
+
         // Update CSS custom properties
         if (theme === 'dark') {
             root.style.setProperty('--bg-primary', '#1f2937');
@@ -244,16 +244,16 @@
             root.style.setProperty('--text-secondary', '#6b7280');
             root.style.setProperty('--border-color', '#e5e7eb');
         }
-        
+
         // Theme applied: ${theme}
     }
-    
+
     /**
      * Apply compact mode
      */
     function applyCompactMode(enabled) {
         const root = document.documentElement;
-        
+
         if (enabled) {
             root.classList.add('compact-mode');
             root.style.setProperty('--spacing-base', '0.75rem');
@@ -263,10 +263,10 @@
             root.style.setProperty('--spacing-base', '1rem');
             root.style.setProperty('--font-size-base', '1rem');
         }
-        
+
         // Compact mode: ${enabled ? 'enabled' : 'disabled'}
     }
-    
+
     /**
      * Apply notifications setting
      */
@@ -284,7 +284,7 @@
             // Notifications disabled
         }
     }
-    
+
     /**
      * Apply refresh interval
      */
@@ -293,7 +293,7 @@
         if (window.chaiVisionRefreshInterval) {
             clearInterval(window.chaiVisionRefreshInterval);
         }
-        
+
         // Set new refresh interval if auto-save is enabled
         if (interval > 0) {
             window.chaiVisionRefreshInterval = setInterval(() => {
@@ -306,11 +306,11 @@
                     }
                 }
             }, interval * 1000);
-            
+
             // Refresh interval set to ${interval} seconds
         }
     }
-    
+
     /**
      * Apply tutorials setting
      */
@@ -326,34 +326,34 @@
             document.body.classList.remove('show-tutorials');
         }
     }
-    
+
     /**
      * Handle sign out
      */
     function handleSignOut() {
         // Handling sign out
-        
+
         // Clear all local storage
         Object.keys(localStorage).forEach(key => {
             if (key.startsWith('chai_vision_')) {
                 localStorage.removeItem(key);
             }
         });
-        
+
         // Clear session storage
         sessionStorage.clear();
-        
+
         // Clear app state
         APP_STATE.currentUser = null;
         APP_STATE.userPermissions = { brands: [], channels: [] };
         APP_STATE.preferences = {};
-        
+
         // Notify other tabs (but don't reload this tab)
         if (window.BroadcastChannel) {
             const channel = new BroadcastChannel('chai_vision_auth');
             channel.postMessage({ event: 'SIGNED_OUT' });
         }
-        
+
         // Force a page reload to reset React state completely
         // Sign out completed - reloading page
         window.location.reload();
@@ -371,19 +371,19 @@
                 }
                 return [];
             },
-            
+
             async saveSalesData(data) {
                 const existing = await this.loadSalesData();
                 const updated = [...existing, ...data];
                 localStorage.setItem('chai_vision_sales_data', JSON.stringify(updated));
                 return true;
             },
-            
+
             async updateSettings(settings) {
                 localStorage.setItem('chai_vision_settings', JSON.stringify(settings));
                 return true;
             },
-            
+
             async loadUserPermissions(userId) {
                 // Demo mode permissions
                 return {
@@ -393,7 +393,7 @@
             }
         };
     }
-    
+
     /**
      * Setup event listeners
      */
@@ -405,7 +405,7 @@
                 window.showErrorMessage('An error occurred. Please try again.');
             }
         });
-        
+
         // Handle unhandled promise rejections
         window.addEventListener('unhandledrejection', (event) => {
             console.error('Unhandled promise rejection:', event.reason);
@@ -413,13 +413,13 @@
                 window.showWarningMessage('Something went wrong. Please refresh if issues persist.');
             }
         });
-        
+
         // Save preferences before unload
         window.addEventListener('beforeunload', () => {
             saveUserPreferences();
         });
     }
-    
+
     /**
      * Show error message (fallback if notifications not loaded)
      */
@@ -439,11 +439,11 @@
             `;
         }
     }
-    
+
     /**
      * Show success message (fallback)
      */
-    window.showSuccessMessage = window.showSuccessMessage || function(message) {
+    window.showSuccessMessage = window.showSuccessMessage || function (message) {
         // Success: message
     };
 
@@ -452,21 +452,21 @@
      */
     function initializeReactApp(config) {
         const { useState, useEffect, useMemo, useRef, createElement: h } = React;
-        
+
         // Helper functions
         const getCurrentQuarter = () => {
             const month = new Date().getMonth();
             return `Q${Math.floor(month / 3) + 1}`;
         };
-        
+
         const getCurrentMonth = () => {
             return new Date().getMonth() + 1;
         };
-        
+
         const getCurrentYear = () => {
             return new Date().getFullYear().toString();
         };
-        
+
         // Main App Component
         function App() {
             // Authentication state
@@ -475,14 +475,14 @@
             const [userPermissions, setUserPermissions] = useState({ brands: [], channels: [] });
             const [showProfileMenu, setShowProfileMenu] = useState(false);
             const [checkingAuth, setCheckingAuth] = useState(true);
-            
+
             // Dashboard state - Initialize with saved preferences or defaults
             const [view, setView] = useState(APP_STATE.preferences.last_selected_view || 'quarterly');
             const [selectedPeriod, setSelectedPeriod] = useState(APP_STATE.preferences.last_selected_period || getCurrentQuarter());
             const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
             const [selectedYear, setSelectedYear] = useState(APP_STATE.preferences.last_selected_year || getCurrentYear());
             const [selectedBrand, setSelectedBrand] = useState(APP_STATE.preferences.last_selected_brand || 'All Brands');
-            
+
             // Initialize activeSection from URL if present
             const getInitialSection = () => {
                 const routing = window.ChaiVision?.routing;
@@ -498,15 +498,15 @@
             const [loading, setLoading] = useState(true);
             const [error, setError] = useState(null);
             const initialBrandSetRef = useRef(false);
-            
+
             // Get initial data
             const INITIAL_DATA = window.ChaiVision?.INITIAL_DATA || {};
             const channels = INITIAL_DATA.channels || ['Amazon', 'TikTok', 'DTC-Shopify', 'Retail'];
-            
+
             // Brand and target state
             const [dynamicBrands, setDynamicBrands] = useState(INITIAL_DATA.brands || ['LifePro', 'PetCove']);
             const [dynamicTargets, setDynamicTargets] = useState(INITIAL_DATA.targets || {});
-            
+
             // Save preferences when they change
             useEffect(() => {
                 APP_STATE.preferences = {
@@ -516,44 +516,44 @@
                     last_selected_brand: selectedBrand
                 };
             }, [view, selectedPeriod, selectedYear, selectedBrand]);
-            
+
             // Listen for URL changes and update activeSection
             useEffect(() => {
                 const handleURLChange = () => {
                     const routing = window.ChaiVision?.routing;
-                    const section = routing && routing.getSectionFromURL 
+                    const section = routing && routing.getSectionFromURL
                         ? routing.getSectionFromURL()
                         : (() => {
                             const url = new URL(window.location);
                             return url.searchParams.get('section') || 'dashboard';
                         })();
-                    
+
                     if (section && section !== activeSection) {
                         setActiveSection(section);
                     }
                 };
-                
+
                 // Check initial URL
                 handleURLChange();
-                
+
                 // Listen for popstate (browser back/forward)
                 window.addEventListener('popstate', handleURLChange);
-                
+
                 // Listen for custom navigation events
                 window.addEventListener('hashchange', handleURLChange);
-                
+
                 return () => {
                     window.removeEventListener('popstate', handleURLChange);
                     window.removeEventListener('hashchange', handleURLChange);
                 };
             }, [activeSection]);
-            
+
             // Check for saved session with remember me
             useEffect(() => {
                 const checkAuth = async () => {
                     // Starting authentication check
                     setCheckingAuth(true);
-                    
+
                     // Add timeout to prevent infinite loading
                     const authTimeout = setTimeout(() => {
                         // Auth check timeout - proceeding without authentication
@@ -561,11 +561,11 @@
                         setLoading(false);
                         setIsAuthenticated(false); // Force to login screen
                     }, 5000); // Reduced to 5 seconds
-                    
+
                     try {
                         if (APP_STATE.supabaseClient && config.FEATURES.ENABLE_SUPABASE) {
                             const { data: { session } } = await APP_STATE.supabaseClient.auth.getSession();
-                            
+
                             if (session) {
                                 // Get user profile
                                 const { data: profile } = await APP_STATE.supabaseClient
@@ -573,7 +573,7 @@
                                     .select('*')
                                     .eq('id', session.user.id)
                                     .single();
-                                
+
                                 if (profile?.status !== 'active') {
                                     await APP_STATE.supabaseClient.auth.signOut();
                                     if (window.showErrorMessage) {
@@ -583,49 +583,49 @@
                                     setCheckingAuth(false);
                                     return;
                                 }
-                                
+
                                 // Get user permissions
                                 const { data: brandPerms } = await APP_STATE.supabaseClient
                                     .from('user_brand_permissions')
                                     .select('brand')
                                     .eq('user_id', session.user.id);
-                                
+
                                 const { data: channelPerms } = await APP_STATE.supabaseClient
                                     .from('user_channel_permissions')
                                     .select('channel')
                                     .eq('user_id', session.user.id);
-                                
+
                                 const user = {
                                     ...session.user,
                                     ...profile
                                 };
-                                
+
                                 const permissions = {
-                                    brands: profile?.role === 'Admin' ? ['All Brands'] : 
-                                           brandPerms?.map(p => p.brand) || [],
-                                    channels: profile?.role === 'Admin' ? ['All Channels'] : 
-                                             channelPerms?.map(p => p.channel) || []
+                                    brands: profile?.role === 'Admin' ? ['All Brands'] :
+                                        brandPerms?.map(p => p.brand) || [],
+                                    channels: profile?.role === 'Admin' ? ['All Channels'] :
+                                        channelPerms?.map(p => p.channel) || []
                                 };
-                                
-                                                                 // Load user preferences
-                                 const prefs = await loadUserPreferences(user.id);
-                                 if (prefs) {
-                                     if (prefs.last_selected_view) setView(prefs.last_selected_view);
-                                     if (prefs.last_selected_period) setSelectedPeriod(prefs.last_selected_period);
-                                     if (prefs.last_selected_year) setSelectedYear(prefs.last_selected_year);
-                                     if (prefs.last_selected_brand) setSelectedBrand(prefs.last_selected_brand);
-                                     APP_STATE.preferences = prefs;
-                                     
-                                     // Apply preferences to the application
-                                     applyUserPreferences(prefs);
-                                 }
-                                
+
+                                // Load user preferences
+                                const prefs = await loadUserPreferences(user.id);
+                                if (prefs) {
+                                    if (prefs.last_selected_view) setView(prefs.last_selected_view);
+                                    if (prefs.last_selected_period) setSelectedPeriod(prefs.last_selected_period);
+                                    if (prefs.last_selected_year) setSelectedYear(prefs.last_selected_year);
+                                    if (prefs.last_selected_brand) setSelectedBrand(prefs.last_selected_brand);
+                                    APP_STATE.preferences = prefs;
+
+                                    // Apply preferences to the application
+                                    applyUserPreferences(prefs);
+                                }
+
                                 setCurrentUser(user);
                                 setUserPermissions(permissions);
                                 setIsAuthenticated(true);
                                 APP_STATE.currentUser = user;
                                 APP_STATE.userPermissions = permissions;
-                                
+
                                 if (window.showSuccessMessage) {
                                     window.showSuccessMessage(`Welcome back, ${user.full_name || user.email}!`);
                                 }
@@ -669,10 +669,10 @@
                         setLoading(false);
                     }
                 };
-                
+
                 checkAuth();
             }, []);
-            
+
             // Load brands from database on authentication
             useEffect(() => {
                 const loadBrandsFromDB = async () => {
@@ -687,34 +687,34 @@
                         }
                     }
                 };
-                
+
                 if (isAuthenticated) {
                     loadBrandsFromDB();
                 }
             }, [isAuthenticated]);
-            
+
             // Filter brands based on user permissions
             const availableBrands = useMemo(() => {
                 if (!currentUser || !userPermissions.brands) return [];
-                
+
                 if (userPermissions.brands.includes('All Brands') || currentUser.role === 'Admin') {
                     return dynamicBrands;
                 }
-                
+
                 return dynamicBrands.filter(brand => userPermissions.brands.includes(brand));
             }, [dynamicBrands, userPermissions, currentUser]);
-            
+
             // Filter channels based on user permissions
             const availableChannels = useMemo(() => {
                 if (!currentUser || !userPermissions.channels) return [];
-                
+
                 if (userPermissions.channels.includes('All Channels') || currentUser.role === 'Admin') {
                     return channels;
                 }
-                
+
                 return channels.filter(channel => userPermissions.channels.includes(channel));
             }, [channels, userPermissions, currentUser]);
-            
+
             // Set default brand on permission change
             useEffect(() => {
                 if (availableBrands.length === 0) {
@@ -749,7 +749,7 @@
                     initialBrandSetRef.current = true;
                     return;
                 }
-                
+
                 // User doesn't have all brands access, set to "All My Brands" if not already set
                 if (selectedBrand !== 'All My Brands' && selectedBrand !== 'All Brands') {
                     // Check if current selection is still valid
@@ -767,28 +767,28 @@
 
                 initialBrandSetRef.current = true;
             }, [isAuthenticated, currentUser, userPermissions, selectedBrand]);
-            
+
             // Handle login
             const handleLogin = async (user) => {
                 let permissions = { brands: [], channels: [] };
-                
+
                 if (config.FEATURES.ENABLE_SUPABASE && APP_STATE.supabaseClient) {
                     // Fetch from database
                     const { data: brandPerms } = await APP_STATE.supabaseClient
                         .from('user_brand_permissions')
                         .select('brand')
                         .eq('user_id', user.id);
-                    
+
                     const { data: channelPerms } = await APP_STATE.supabaseClient
                         .from('user_channel_permissions')
                         .select('channel')
                         .eq('user_id', user.id);
-                    
+
                     permissions = {
-                        brands: user.role === 'Admin' ? ['All Brands'] : 
-                               brandPerms?.map(p => p.brand) || [],
-                        channels: user.role === 'Admin' ? ['All Channels'] : 
-                                 channelPerms?.map(p => p.channel) || []
+                        brands: user.role === 'Admin' ? ['All Brands'] :
+                            brandPerms?.map(p => p.brand) || [],
+                        channels: user.role === 'Admin' ? ['All Channels'] :
+                            channelPerms?.map(p => p.channel) || []
                     };
                 } else {
                     // Demo mode permissions
@@ -800,48 +800,53 @@
                         permissions = { brands: ['LifePro'], channels: ['Amazon', 'TikTok'] };
                     }
                 }
-                
+
                 const fullUser = { ...user, permissions };
-                
+
                 setCurrentUser(fullUser);
                 setUserPermissions(permissions);
                 setIsAuthenticated(true);
                 APP_STATE.currentUser = fullUser;
                 APP_STATE.userPermissions = permissions;
-                
+
                 // Save session for demo mode
                 if (!config.FEATURES.ENABLE_SUPABASE) {
                     localStorage.setItem('chai_vision_user_session', JSON.stringify(fullUser));
                 }
-                
+
                 // Save remember me preference
                 if (APP_STATE.rememberMe) {
                     localStorage.setItem('chai_vision_remember', 'true');
                 }
-                
+
                 // Set default brand if user only has access to specific brands
                 if (permissions.brands.length > 0 && !permissions.brands.includes('All Brands')) {
                     setSelectedBrand(permissions.brands[0]);
                 }
-                
+
                 loadInitialData();
             };
-            
+
             // Handle logout
             const handleLogout = async () => {
-                if (APP_STATE.supabaseClient && config.FEATURES.ENABLE_SUPABASE) {
-                    await APP_STATE.supabaseClient.auth.signOut();
+                try {
+                    if (APP_STATE.supabaseClient && config.FEATURES.ENABLE_SUPABASE) {
+                        await APP_STATE.supabaseClient.auth.signOut();
+                    }
+                } catch (error) {
+                    console.error('Logout error in App:', error);
+                } finally {
+                    handleSignOut();
                 }
-                handleSignOut();
             };
-            
+
             // Load initial data
             async function loadInitialData() {
                 try {
                     // Loading initial data
                     setLoading(true);
                     setError(null);
-                    
+
                     if (APP_STATE.dataService) {
                         // Build filters based on current selections
                         const filters = {
@@ -851,26 +856,26 @@
                             channel: 'All Channels', // Load all channels, filter in UI
                             view
                         };
-                        
+
                         const data = await APP_STATE.dataService.loadSalesData(filters);
                         console.log(`📊 Data loaded: ${data?.length || 0} records`);
-                        
+
                         // Only filter if we have valid permissions
                         let filteredData = data;
-                        if (userPermissions.brands && userPermissions.brands.length > 0 && 
+                        if (userPermissions.brands && userPermissions.brands.length > 0 &&
                             userPermissions.channels && userPermissions.channels.length > 0) {
                             filteredData = data.filter(d => {
-                                const brandAllowed = userPermissions.brands.includes('All Brands') || 
-                                                    userPermissions.brands.includes(d.brand);
-                                const channelAllowed = userPermissions.channels.includes('All Channels') || 
-                                                      userPermissions.channels.includes(d.channel);
+                                const brandAllowed = userPermissions.brands.includes('All Brands') ||
+                                    userPermissions.brands.includes(d.brand);
+                                const channelAllowed = userPermissions.channels.includes('All Channels') ||
+                                    userPermissions.channels.includes(d.channel);
                                 return brandAllowed && channelAllowed;
                             });
                             console.log(`🔍 Filtered data: ${filteredData?.length || 0} records`);
                         } else {
                             console.log('📋 No permissions set, using all data');
                         }
-                        
+
                         setSalesData(filteredData || []);
                     } else {
                         // No data service available
@@ -883,7 +888,7 @@
                     setLoading(false);
                 }
             }
-            
+
             // Helper functions for date range calculation
             function getDateRangeStart(view, period, year, month) {
                 if (view === 'annual') {
@@ -896,7 +901,7 @@
                 }
                 return null;
             }
-            
+
             function getDateRangeEnd(view, period, year, month) {
                 if (view === 'annual') {
                     return `${year}-12-31`;
@@ -909,7 +914,7 @@
                 }
                 return null;
             }
-            
+
             // Refresh data when filters change (with debouncing)
             useEffect(() => {
                 if (isAuthenticated && APP_STATE.dataService) {
@@ -917,35 +922,35 @@
                     const timeoutId = setTimeout(() => {
                         loadInitialData();
                     }, 300); // 300ms delay
-                    
+
                     return () => clearTimeout(timeoutId);
                 }
             }, [view, selectedPeriod, selectedYear, selectedMonth, selectedBrand]);
-            
+
             // Regenerate sample data only in demo mode (Supabase disabled)
             useEffect(() => {
                 if (!config.FEATURES.ENABLE_SUPABASE && isAuthenticated && availableBrands.length > 0) {
                     regenerateSampleData();
                 }
             }, [availableBrands, availableChannels]);
-            
+
             function regenerateSampleData() {
                 const data = [];
                 const startDate = new Date('2025-01-01');
                 const endDate = new Date();
                 endDate.setDate(endDate.getDate() - 2);
-                
+
                 for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
                     const dayOfWeek = d.getDay();
                     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-                    
+
                     availableBrands.forEach(brand => {
                         availableChannels.forEach(channel => {
                             let baseRevenue = 0;
-                            const brandMultiplier = brand === 'LifePro' ? 1 : 
-                                                   brand === 'PetCove' ? 0.12 : 0.08;
-                            
-                            switch(channel) {
+                            const brandMultiplier = brand === 'LifePro' ? 1 :
+                                brand === 'PetCove' ? 0.12 : 0.08;
+
+                            switch (channel) {
                                 case 'Amazon':
                                     baseRevenue = 250000 * brandMultiplier;
                                     break;
@@ -971,10 +976,10 @@
                                     baseRevenue = 8200 * brandMultiplier;
                                     break;
                             }
-                            
+
                             const weekendMultiplier = isWeekend ? 1.3 : 1;
                             const variance = (Math.random() - 0.5) * baseRevenue * 0.3;
-                            
+
                             if (Math.random() > 0.3) {
                                 data.push({
                                     date: d.toISOString().split('T')[0],
@@ -987,20 +992,20 @@
                         });
                     });
                 }
-                
+
                 setSalesData(data);
             }
-            
+
             const handleDeleteBrand = async ({ brand, brands, targets, reassignTo }) => {
                 if (!brand) {
                     return;
                 }
-                
+
                 try {
                     if (APP_STATE.dataService?.deleteBrand) {
                         await APP_STATE.dataService.deleteBrand(brand, reassignTo || null);
                     }
-                    
+
                     // Reload brands from database after deletion
                     if (APP_STATE.dataService?.loadBrands) {
                         const dbBrands = await APP_STATE.dataService.loadBrands();
@@ -1012,26 +1017,26 @@
                     } else if (Array.isArray(brands)) {
                         setDynamicBrands(brands);
                     }
-                    
+
                     if (targets) {
                         setDynamicTargets(targets);
                     }
-                    
+
                     setUserPermissions((prev) => {
                         if (!prev || !Array.isArray(prev.brands)) {
                             return prev;
                         }
-                        
+
                         if (prev.brands.includes('All Brands') || !prev.brands.includes(brand)) {
                             return prev;
                         }
-                        
+
                         const updatedBrands = prev.brands.filter(b => b !== brand);
                         const updatedPermissions = { ...prev, brands: updatedBrands };
                         APP_STATE.userPermissions = updatedPermissions;
                         return updatedPermissions;
                     });
-                    
+
                     if (selectedBrand === brand) {
                         if (userPermissions?.brands?.includes('All Brands') || currentUser?.role === 'Admin') {
                             setSelectedBrand('All Brands');
@@ -1039,21 +1044,21 @@
                             setSelectedBrand(brands[0]);
                         } else {
                             // User doesn't have all brands access, use "All My Brands"
-                            const hasAllBrandsAccess = currentUser?.role === 'Admin' || 
+                            const hasAllBrandsAccess = currentUser?.role === 'Admin' ||
                                 userPermissions?.brands?.includes('All Brands');
                             setSelectedBrand(hasAllBrandsAccess ? 'All Brands' : 'All My Brands');
                         }
                     }
-                    
+
                     if (APP_STATE.preferences?.last_selected_brand === brand) {
-                        const hasAllBrandsAccess = currentUser?.role === 'Admin' || 
+                        const hasAllBrandsAccess = currentUser?.role === 'Admin' ||
                             userPermissions?.brands?.includes('All Brands');
                         APP_STATE.preferences.last_selected_brand = hasAllBrandsAccess ? 'All Brands' : 'All My Brands';
                     }
-                    
+
                     if (window.showSuccessMessage) {
-                        const actionText = reassignTo 
-                            ? `reassigned to "${reassignTo}"` 
+                        const actionText = reassignTo
+                            ? `reassigned to "${reassignTo}"`
                             : 'deleted';
                         window.showSuccessMessage(`Brand "${brand}" ${actionText} successfully`);
                     }
@@ -1066,7 +1071,7 @@
                     throw err;
                 }
             };
-            
+
             // Handle settings update
             const handleSettingsUpdate = async (updatedData) => {
                 try {
@@ -1076,11 +1081,11 @@
                     if (updatedData.targets) {
                         setDynamicTargets(updatedData.targets);
                     }
-                    
+
                     if (APP_STATE.dataService) {
                         await APP_STATE.dataService.updateSettings(updatedData);
                     }
-                    
+
                     if (window.showSuccessMessage) {
                         window.showSuccessMessage('Settings updated successfully');
                     }
@@ -1091,7 +1096,7 @@
                     }
                 }
             };
-            
+
             // Handle upload complete
             const handleUploadComplete = React.useCallback(async (uploadResult) => {
                 try {
@@ -1099,11 +1104,11 @@
                     const uploadedData = uploadResult.originalData || uploadResult;
                     const actualSaved = uploadResult.actualSaved || uploadedData.length;
                     const failedRows = uploadResult.failedRows || 0;
-                    
+
                     // Refresh data from database instead of merging with cached data
                     // Access dataService from APP_STATE
                     const dataServiceInstance = APP_STATE?.dataService;
-                    
+
                     if (dataServiceInstance) {
                         console.log('🔄 Refreshing data from database after upload...');
                         // Clear cache to ensure fresh data
@@ -1118,7 +1123,7 @@
                         const mergedData = [...salesData, ...uploadedData];
                         setSalesData(mergedData);
                     }
-                    
+
                     if (window.showSuccessMessage) {
                         if (failedRows > 0) {
                             window.showSuccessMessage(`Upload completed: ${actualSaved} records saved, ${failedRows} records failed`);
@@ -1132,7 +1137,7 @@
                     console.warn('Upload succeeded but cache refresh failed - data is in database');
                 }
             }, [salesData]);
-            
+
             // Handle navigation back from SKU Performance page
             const handleNavigateBack = React.useCallback(() => {
                 // Restore dashboard state from sessionStorage if available
@@ -1149,10 +1154,10 @@
                         console.error('Failed to restore dashboard state:', e);
                     }
                 }
-                
+
                 // Navigate back to dashboard
                 setActiveSection('dashboard');
-                
+
                 // Update URL to remove sku-performance section
                 const url = new URL(window.location);
                 url.searchParams.delete('section');
@@ -1164,7 +1169,7 @@
                 url.searchParams.delete('month');
                 window.history.pushState({ section: 'dashboard' }, '', url);
             }, []);
-            
+
             // Click outside handler for profile menu
             useEffect(() => {
                 const handleClickOutside = (event) => {
@@ -1172,17 +1177,17 @@
                         setShowProfileMenu(false);
                     }
                 };
-                
+
                 document.addEventListener('click', handleClickOutside);
                 return () => document.removeEventListener('click', handleClickOutside);
             }, [showProfileMenu]);
-            
+
             // Parse SKU performance route parameters (memoized at top level)
             const skuParams = React.useMemo(() => {
                 if (activeSection !== 'sku-performance') return null;
-                
+
                 const routing = window.ChaiVision?.routing;
-                return routing && routing.parseSKUPerformanceRoute 
+                return routing && routing.parseSKUPerformanceRoute
                     ? routing.parseSKUPerformanceRoute()
                     : (() => {
                         const url = new URL(window.location);
@@ -1196,18 +1201,18 @@
                         };
                     })();
             }, [activeSection]); // Only re-parse if activeSection changes
-            
+
             // Calculate channel target for SKU performance (memoized at top level)
             const channelTarget85 = React.useMemo(() => {
                 if (activeSection !== 'sku-performance' || !skuParams || !skuParams.channel) return 0;
                 if (!dynamicTargets) return 0;
-                
+
                 const isCompanyTotal = skuParams.brand === null || skuParams.brand === 'All Brands' || skuParams.brand === 'All My Brands';
                 const brandsToCalculate = isCompanyTotal ? availableBrands : [skuParams.brand];
                 const year = skuParams.year || new Date().getFullYear().toString();
-                
+
                 let channelTarget = 0;
-                
+
                 brandsToCalculate.forEach(brandName => {
                     const brandData = dynamicTargets?.[year]?.brands?.[brandName];
                     if (brandData) {
@@ -1234,10 +1239,10 @@
                         }
                     }
                 });
-                
+
                 return channelTarget * 0.85; // Return 85% target
             }, [activeSection, skuParams, dynamicTargets, availableBrands]);
-            
+
             // Get components from window
             const Login = window.Login || window.ChaiVision?.components?.Login;
             const Navigation = window.Navigation || window.ChaiVision?.components?.Navigation;
@@ -1251,9 +1256,9 @@
             const ProfileSettings = window.ProfileSettings || window.ChaiVision?.components?.ProfileSettings;
             const Preferences = window.Preferences || window.ChaiVision?.components?.Preferences;
             const SKUPerformance = window.SKUPerformance || window.ChaiVision?.components?.SKUPerformance;
-            
+
             // Component loading verified
-            
+
             // If checking auth, show loading
             if (checkingAuth) {
                 return h('div', { className: 'loading-container' },
@@ -1261,27 +1266,27 @@
                     h('div', { className: 'loading-text' }, 'Checking authentication...')
                 );
             }
-            
+
             // If not authenticated, show login
             if (!isAuthenticated) {
                 // User not authenticated, showing login
                 if (Login) {
-                    return h(Login, { 
+                    return h(Login, {
                         onLogin: handleLogin,
                         rememberMe: APP_STATE.rememberMe,
                         setRememberMe: (value) => { APP_STATE.rememberMe = value; }
                     });
                 } else {
                     console.error('❌ Login component not found!');
-                    return h('div', { 
-                        style: { 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
+                    return h('div', {
+                        style: {
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                             minHeight: '100vh',
                             flexDirection: 'column',
                             gap: '20px'
-                        } 
+                        }
                     },
                         h('h2', null, 'Login Component Not Found'),
                         h('p', null, 'Please refresh the page or contact support.'),
@@ -1299,9 +1304,9 @@
                     );
                 }
             }
-            
+
             // State verified and ready
-            
+
             // Render navigation
             const navigation = Navigation ? h(Navigation, {
                 view,
@@ -1325,14 +1330,14 @@
                 setActiveSection,
                 ProfileMenu
             }) : null;
-            
+
             // Render sidebar
             const sidebar = Sidebar ? h(Sidebar, {
                 activeSection,
                 setActiveSection,
                 userRole: currentUser?.role
             }) : null;
-            
+
             // Render main content based on active section and permissions
             const renderContent = () => {
                 if (loading) {
@@ -1341,7 +1346,7 @@
                         h('div', { className: 'loading-text' }, 'Loading dashboard...')
                     );
                 }
-                
+
                 if (error) {
                     return h('div', { className: 'error-container' },
                         h('h2', null, 'Error'),
@@ -1352,7 +1357,7 @@
                         }, 'Retry')
                     );
                 }
-                
+
                 switch (activeSection) {
                     case 'dashboard':
                         return Dashboard ? h(Dashboard, {
@@ -1374,7 +1379,7 @@
                             userRole: currentUser?.role,
                             userPermissions
                         }) : h('div', null, 'Dashboard component not found');
-                        
+
                     case 'settings':
                         // Only Admin and Manager can access settings
                         if (currentUser?.role === 'User') {
@@ -1393,7 +1398,7 @@
                             userPermissions,
                             currentUser
                         }) : h('div', null, 'Settings component not found');
-                        
+
                     case 'upload':
                         // Only Admin and Manager can upload
                         if (currentUser?.role === 'User') {
@@ -1412,7 +1417,7 @@
                             userPermissions,
                             currentUser
                         }) : h('div', null, 'Upload component not found');
-                        
+
                     case 'users':
                         // Only Admin can access user management
                         if (currentUser?.role !== 'Admin') {
@@ -1427,7 +1432,7 @@
                             brands: dynamicBrands,
                             channels
                         }) : h('div', null, 'User Management component not found');
-                        
+
                     case 'audit':
                         // Only Admin can access audit logs
                         if (currentUser?.role !== 'Admin') {
@@ -1439,7 +1444,7 @@
                         return AuditLogs ? h(AuditLogs, {
                             currentUser
                         }) : h('div', null, 'Audit Logs component not found');
-                        
+
                     case 'profile':
                         // All authenticated users can access profile settings
                         return ProfileSettings ? h(ProfileSettings, {
@@ -1451,7 +1456,7 @@
                                 setCurrentUser(updatedUser);
                             }
                         }) : h('div', null, 'Profile Settings component not found');
-                        
+
                     case 'preferences':
                         // All authenticated users can access preferences
                         return Preferences ? h(Preferences, {
@@ -1466,7 +1471,7 @@
                                 if (updatedPreferences.last_selected_brand) setSelectedBrand(updatedPreferences.last_selected_brand);
                             }
                         }) : h('div', null, 'Preferences component not found');
-                        
+
                     case 'sku-performance':
                         // Validate required channel parameter
                         if (!skuParams || !skuParams.channel) {
@@ -1479,7 +1484,7 @@
                                 }, 'Back to Dashboard')
                             );
                         }
-                        
+
                         return SKUPerformance ? h(SKUPerformance, {
                             channel: skuParams.channel,
                             brand: skuParams.brand,
@@ -1492,12 +1497,12 @@
                             channelTarget85,
                             onNavigateBack: handleNavigateBack
                         }) : h('div', null, 'SKU Performance component not found');
-                        
+
                     default:
                         return h('div', null, 'Section not found');
                 }
             };
-            
+
             // Main render
             return h('div', { className: 'app-wrapper' },
                 navigation,
@@ -1509,7 +1514,7 @@
                 )
             );
         }
-        
+
         // Render the app
         ReactDOM.render(React.createElement(App), document.getElementById('root'));
     }
@@ -1526,16 +1531,16 @@
     window.applyNotifications = applyNotifications;
     window.applyRefreshInterval = applyRefreshInterval;
     window.applyTutorials = applyTutorials;
-    
+
     // Global refresh function for preferences
-    window.refreshDashboardData = function() {
+    window.refreshDashboardData = function () {
         if (window.APP_STATE && window.APP_STATE.dataService) {
             // Refreshing dashboard data
             // This would trigger a data refresh in the dashboard
             // The actual implementation would depend on how the dashboard handles data updates
         }
     };
-    
+
     // Also add to ChaiVision namespace
     window.ChaiVision = window.ChaiVision || {};
     window.ChaiVision.APP_STATE = APP_STATE;
