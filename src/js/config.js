@@ -3,9 +3,9 @@
  * Central configuration for all application settings with performance optimizations
  */
 
-(function() {
+(function () {
     'use strict';
-    
+
     // Environment configuration
     const ENV = {
         PRODUCTION: window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1',
@@ -19,13 +19,13 @@
             console.log(`🔧 Loaded ${key} from window.__ENV__`);
             return window.__ENV__[key];
         }
-        
+
         // Priority 2: Process environment variables (Node.js/Server-side)
         if (typeof process !== 'undefined' && process.env && process.env[key]) {
             console.log(`🔧 Loaded ${key} from process.env`);
             return process.env[key];
         }
-        
+
         // Priority 3: localStorage for development overrides
         if (ENV.DEVELOPMENT) {
             const stored = localStorage.getItem(`CHAI_VISION_${key}`);
@@ -34,7 +34,7 @@
                 return stored;
             }
         }
-        
+
         // Priority 4: Default fallback values
         console.warn(`⚠️  ${key} not found in any source, using default`);
         return defaultValue;
@@ -55,12 +55,12 @@
         BRANDING: {
             // Add your logo URL here
             LOGO_URL: getEnvVar('LOGO_URL', ''), // e.g., 'https://i.imgur.com/YOUR_IMAGE.png'
-            
+
             // Fallback logo URLs (if main fails)
             FALLBACK_LOGOS: [
                 // Add backup logo URLs here
             ],
-            
+
             // Company colors (override CSS variables if needed)
             COLORS: {
                 PRIMARY: '#667eea',
@@ -78,32 +78,32 @@
             URL: getEnvVar('SUPABASE_URL', ''),
             ANON_KEY: getEnvVar('SUPABASE_ANON_KEY', ''),
             ENABLED: getEnvVar('SUPABASE_URL', '') !== '' && getEnvVar('SUPABASE_ANON_KEY', '') !== '',
-            
+
             // Service Key - NEVER expose in client-side code!
             // Only use for server-side operations or admin scripts
             SERVICE_KEY: getEnvVar('SUPABASE_SERVICE_KEY', ''), // Empty by default for security
-            
+
             // Table names (matching our schema)
             TABLES: {
                 // Core tables
                 SALES_DATA: 'sales_data',
                 BRANDS: 'brands',
                 CHANNELS: 'channels',
-                
+
                 // KPI tables
                 TARGETS: 'kpi_targets',
                 TARGETS_HISTORY: 'kpi_targets_history',
-                
+
                 // User tables
                 USERS: 'profiles',
                 BRAND_PERMISSIONS: 'user_brand_permissions',
                 CHANNEL_PERMISSIONS: 'user_channel_permissions',
-                
+
                 // System tables
                 AUDIT_LOGS: 'audit_logs',
                 USER_PREFERENCES: 'user_preferences'
             },
-            
+
             // Auth settings
             AUTH: {
                 PERSIST_SESSION: true,
@@ -118,7 +118,7 @@
                     sameSite: 'lax'
                 }
             },
-            
+
             // Performance settings for Supabase
             PERFORMANCE: {
                 CONNECTION_POOL_SIZE: 10,
@@ -127,6 +127,79 @@
                 RETRY_DELAY: 1000,
                 BATCH_SIZE: 1000,
                 CACHE_DURATION: 5 * 60 * 1000 // 5 minutes
+            }
+        },
+
+        // Centralized Channel Configuration
+        CHANNELS: {
+            LIST: [
+                'Amazon',
+                'TikTok',
+                'DTC-Shopify',
+                'Retail',
+                'CA International',
+                'UK International',
+                'Wholesale',
+                'Omnichannel'
+            ],
+            MAPPINGS: {
+                'shopify': 'DTC-Shopify',
+                'retailsale': 'Retail',
+                'retail sale': 'Retail',
+                'amazon seller central': 'Amazon',
+                'amazon vendor central': 'Amazon',
+                'tiktok shop': 'TikTok'
+            }
+        },
+
+        // Centralized Color Configuration
+        COLORS: {
+            // Brand Colors
+            BRAND: {
+                PRIMARY: '#667eea',
+                SECONDARY: '#764ba2',
+                ACCENT: '#10B981',
+                WARNING: '#F59E0B',
+                DANGER: '#EF4444',
+                INFO: '#3B82F6'
+            },
+
+            // Chart Colors
+            CHARTS: {
+                PRIMARY: 'rgba(102, 126, 234, 1)',
+                PRIMARY_BG: 'rgba(102, 126, 234, 0.2)',
+                SECONDARY: 'rgba(118, 75, 162, 1)',
+                SECONDARY_BG: 'rgba(118, 75, 162, 0.2)',
+                TARGET: 'rgba(255, 99, 132, 1)',
+                TARGET_BG: 'rgba(255, 99, 132, 0.2)',
+                GRID: 'rgba(0, 0, 0, 0.05)'
+            },
+
+            // Role Colors (Gradients)
+            ROLES: {
+                ADMIN: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                MANAGER: 'linear-gradient(135deg, #3b82f6 0%, #2dd4bf 100%)',
+                USER: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
+                DEFAULT: 'linear-gradient(135deg, #6b7280 0%, #374151 100%)'
+            },
+
+            // Status Colors
+            STATUS: {
+                ACTIVE: '#10B981',
+                INACTIVE: '#EF4444',
+                PENDING: '#F59E0B'
+            },
+
+            // Channel Colors
+            CHANNELS: {
+                'Amazon': '#FF9900',
+                'TikTok': '#000000',
+                'DTC-Shopify': '#96bf48',
+                'Retail': '#8B5CF6',
+                'CA International': '#DC2626',
+                'UK International': '#1E40AF',
+                'Wholesale': '#14B8A6',
+                'Omnichannel': '#EC4899'
             }
         },
 
@@ -181,7 +254,7 @@
             VIRTUALIZATION_THRESHOLD: 1000,
             MAX_DATA_POINTS: 365,
             REDUCE_MOTION: true,
-            
+
             // Chart.js global defaults
             DEFAULTS: {
                 font: {
@@ -195,7 +268,7 @@
                 },
                 responsiveAnimationDuration: 500
             },
-            
+
             // Performance settings
             PERFORMANCE: {
                 ENABLE_LAZY_LOADING: true,
@@ -228,52 +301,52 @@
             THROTTLE_DELAY: 100,
             SEARCH_DEBOUNCE: 500,
             SCROLL_THROTTLE: 16, // ~60fps
-            
+
             // Lazy loading
             LAZY_LOAD: true,
             LAZY_LOAD_THRESHOLD: 0.1,
             LAZY_LOAD_ROOT_MARGIN: '50px',
-            
+
             // Virtualization
             VIRTUAL_SCROLL_THRESHOLD: 100,
             VIRTUAL_SCROLL_ITEM_HEIGHT: 50,
-            
+
             // Data management
             MAX_CHART_DATA_POINTS: 365,
             MAX_TABLE_ROWS: 1000,
             BATCH_SIZE: 100,
-            
+
             // Caching
             CACHE_DURATION: 5 * 60 * 1000, // 5 minutes
             MEMORY_CACHE_SIZE: 100,
             DISK_CACHE_SIZE: 50 * 1024 * 1024, // 50MB
-            
+
             // Real-time updates
             REALTIME_UPDATE_INTERVAL: 30000, // 30 seconds for real-time updates
             MAX_CONCURRENT_REQUESTS: 5,
             REQUEST_QUEUE_SIZE: 10,
-            
+
             // Rendering optimizations
             ENABLE_VIRTUAL_DOM: true,
             ENABLE_MEMOIZATION: true,
             ENABLE_DEBOUNCING: true,
             ENABLE_THROTTLING: true,
-            
+
             // Memory management
             GARBAGE_COLLECTION_INTERVAL: 60000, // 1 minute
             MAX_MEMORY_USAGE: 100 * 1024 * 1024, // 100MB
             MEMORY_WARNING_THRESHOLD: 80 * 1024 * 1024, // 80MB
-            
+
             // Network optimizations
             ENABLE_REQUEST_CACHING: true,
             ENABLE_RESPONSE_COMPRESSION: true,
             ENABLE_CONNECTION_POOLING: true,
-            
+
             // UI optimizations
             ENABLE_SMOOTH_SCROLLING: true,
             ENABLE_HARDWARE_ACCELERATION: true,
             ENABLE_REDUCED_MOTION: true,
-            
+
             // Monitoring
             ENABLE_PERFORMANCE_MONITORING: true,
             PERFORMANCE_LOG_INTERVAL: 30000, // 30 seconds
@@ -320,14 +393,14 @@
                     currencyCode: 'lines->charges->currency->code'
                 }
             },
-            
+
             // External APIs Configuration
             EXTERNAL_APIS: {
                 ENABLED: false, // Set to true when configured
                 TIMEOUT: 30000, // 30 seconds
                 RETRY_ATTEMPTS: 3,
                 RETRY_DELAY: 1000, // 1 second
-                
+
                 // Sales API
                 SALES_API: {
                     name: 'sales_api',
@@ -344,7 +417,7 @@
                         offset: 0
                     }
                 },
-                
+
                 // Shopify API
                 SHOPIFY_API: {
                     name: 'shopify_api',
@@ -362,7 +435,7 @@
                         customers: '/customers.json'
                     }
                 },
-                
+
                 // Amazon API
                 AMAZON_API: {
                     name: 'amazon_api',
@@ -379,7 +452,7 @@
                         reports: '/reports/2021-06-30/reports'
                     }
                 },
-                
+
                 // TikTok Shop API
                 TIKTOK_API: {
                     name: 'tiktok_api',
@@ -397,7 +470,7 @@
                     }
                 }
             },
-            
+
             // Database Sources
             DATABASES: {
                 // Supabase (already configured above)
@@ -406,7 +479,7 @@
                     refreshInterval: 60 * 60 * 1000, // 1 hour
                     tables: ['sales_data', 'products', 'customers', 'orders', 'inventory']
                 },
-                
+
                 // MySQL Database
                 MYSQL: {
                     enabled: false,
@@ -418,7 +491,7 @@
                     refreshInterval: 30 * 60 * 1000, // 30 minutes
                     tables: ['sales', 'products', 'customers']
                 },
-                
+
                 // PostgreSQL Database
                 POSTGRESQL: {
                     enabled: false,
@@ -430,7 +503,7 @@
                     refreshInterval: 30 * 60 * 1000, // 30 minutes
                     tables: ['sales', 'products', 'customers']
                 },
-                
+
                 // SQL Server Database
                 SQLSERVER: {
                     enabled: false,
@@ -443,7 +516,7 @@
                     tables: ['sales', 'products', 'customers']
                 }
             },
-            
+
             // File-based Sources
             FILES: {
                 // CSV Files
@@ -458,7 +531,7 @@
                     delimiter: ',',
                     hasHeader: true
                 },
-                
+
                 // Excel Files
                 EXCEL: {
                     enabled: false,
@@ -471,7 +544,7 @@
                     sheets: ['Sheet1', 'Data', 'Sales']
                 }
             },
-            
+
             // Local Storage
             LOCAL_STORAGE: {
                 enabled: true,
@@ -484,13 +557,13 @@
                 ],
                 refreshInterval: 60 * 60 * 1000 // 1 hour
             },
-            
+
             // Scheduling Configuration
             SCHEDULING: {
                 // Daily sync at 2 AM
                 DAILY_SYNC_TIME: '02:00',
                 DAILY_SYNC_ENABLED: true,
-                
+
                 // Individual source sync intervals
                 SOURCE_SYNC_INTERVALS: {
                     google_sheets: 24 * 60 * 60 * 1000, // 24 hours
@@ -499,7 +572,7 @@
                     local_storage: 60 * 60 * 1000, // 1 hour
                     files: 24 * 60 * 60 * 1000 // 24 hours
                 },
-                
+
                 // Retry configuration
                 RETRY: {
                     attempts: 3,
@@ -508,7 +581,7 @@
                     maxDelay: 60000 // 1 minute
                 }
             },
-            
+
             // Data Transformation Rules
             TRANSFORMATIONS: {
                 // Field mapping for different sources
@@ -535,7 +608,7 @@
                         product: 'product'
                     }
                 },
-                
+
                 // Data validation rules
                 VALIDATION: {
                     required_fields: ['date', 'revenue', 'brand', 'channel'],
@@ -543,7 +616,7 @@
                     revenue_min: 0,
                     revenue_max: 1000000
                 },
-                
+
                 // Data cleaning rules
                 CLEANING: {
                     remove_duplicates: true,
@@ -754,7 +827,7 @@
     // Validate configuration on load
     const validateConfig = () => {
         const errors = [];
-        
+
         // Check Supabase configuration if enabled
         if (CONFIG.FEATURES.ENABLE_SUPABASE) {
             if (!CONFIG.SUPABASE.URL || CONFIG.SUPABASE.URL === '') {
@@ -764,26 +837,26 @@
                 errors.push('Supabase ANON_KEY not configured - please set SUPABASE_ANON_KEY environment variable');
             }
         }
-        
+
         // Check if auth is properly configured
         if (CONFIG.FEATURES.ENABLE_AUTH && !CONFIG.FEATURES.ENABLE_SUPABASE) {
             console.warn('Authentication is enabled but Supabase is disabled. Auth will use demo mode.');
         }
-        
+
         // Check logo configuration
         if (!CONFIG.BRANDING.LOGO_URL && CONFIG.BRANDING.FALLBACK_LOGOS.length === 0) {
             console.info('No logo configured. Using default CV design.');
         }
-        
+
         // Performance validation
         if (CONFIG.PERFORMANCE.CACHE_DURATION < 60000) {
             console.warn('Cache duration is very short. Consider increasing for better performance.');
         }
-        
+
         if (CONFIG.PERFORMANCE.MAX_CONCURRENT_REQUESTS > 10) {
             console.warn('High concurrent request limit may impact performance.');
         }
-        
+
         // Log configuration status
         if (CONFIG.DEV.ENABLE_LOGGING) {
             console.log('🔧 Configuration loaded:', {
@@ -800,7 +873,7 @@
                 }
             });
         }
-        
+
         return errors;
     };
 
@@ -810,14 +883,14 @@
             console.log('Supabase is disabled in configuration');
             return null;
         }
-        
+
         try {
-            if (window.supabase && 
-                CONFIG.SUPABASE.URL && 
+            if (window.supabase &&
+                CONFIG.SUPABASE.URL &&
                 CONFIG.SUPABASE.ANON_KEY &&
-                CONFIG.SUPABASE.URL !== '' && 
+                CONFIG.SUPABASE.URL !== '' &&
                 CONFIG.SUPABASE.ANON_KEY !== '') {
-                
+
                 const client = window.supabase.createClient(
                     CONFIG.SUPABASE.URL,
                     CONFIG.SUPABASE.ANON_KEY,
@@ -833,7 +906,7 @@
                         }
                     }
                 );
-                
+
                 console.log('✅ Supabase client initialized with environment variables');
                 return client;
             } else {
@@ -862,7 +935,7 @@
             console.log(`⏱️ ${name} took ${(end - start).toFixed(2)}ms`);
             return result;
         },
-        
+
         // Debounce function
         debounce: (func, wait) => {
             let timeout;
@@ -875,11 +948,11 @@
                 timeout = setTimeout(later, wait);
             };
         },
-        
+
         // Throttle function
         throttle: (func, limit) => {
             let inThrottle;
-            return function() {
+            return function () {
                 const args = arguments;
                 const context = this;
                 if (!inThrottle) {
@@ -889,7 +962,7 @@
                 }
             };
         },
-        
+
         // Memory usage monitoring
         getMemoryUsage: () => {
             if ('memory' in performance) {
@@ -901,7 +974,7 @@
             }
             return null;
         },
-        
+
         // Check if memory usage is high
         isMemoryUsageHigh: () => {
             const memory = performanceUtils.getMemoryUsage();
@@ -919,7 +992,7 @@
     window.initSupabase = initSupabase;
     window.hasPermission = hasPermission;
     window.performanceUtils = performanceUtils;
-    
+
     // Also add to ChaiVision namespace
     window.ChaiVision = window.ChaiVision || {};
     window.ChaiVision.CONFIG = CONFIG;
@@ -927,19 +1000,19 @@
     window.ChaiVision.initSupabase = initSupabase;
     window.ChaiVision.hasPermission = hasPermission;
     window.ChaiVision.performanceUtils = performanceUtils;
-    
+
     // Run validation on load
     const configErrors = validateConfig();
     if (configErrors.length > 0 && CONFIG.DEV.ENABLE_LOGGING) {
         console.warn('⚠️ Configuration issues detected:', configErrors);
     }
-    
+
     // Initialize performance monitoring
     if (CONFIG.PERFORMANCE.ENABLE_PERFORMANCE_MONITORING) {
         setInterval(() => {
             performanceUtils.isMemoryUsageHigh();
         }, CONFIG.PERFORMANCE.PERFORMANCE_LOG_INTERVAL);
     }
-    
+
     console.log('✅ Configuration module loaded with performance optimizations');
 })();

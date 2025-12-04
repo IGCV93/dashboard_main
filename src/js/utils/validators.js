@@ -3,9 +3,9 @@
  * Functions for validating data, forms, and uploads
  */
 
-(function() {
+(function () {
     'use strict';
-    
+
     // Get dependencies from window
     const ALL_CHANNELS = window.ALL_CHANNELS || ['Amazon', 'TikTok', 'DTC-Shopify', 'Retail', 'CA International', 'UK International', 'Wholesale', 'Omnichannel'];
     const DEFAULT_BRANDS = window.DEFAULT_BRANDS || ['LifePro', 'PetCove', 'Joyberri', 'Oaktiv', 'Loft & Ivy', 'New Brands'];
@@ -16,32 +16,32 @@
 
     function validateSalesRecord(record) {
         const errors = [];
-        
+
         // Check required fields
         if (!record.date) {
             errors.push('Date is required');
         } else if (!isValidDate(record.date)) {
             errors.push('Invalid date format. Use YYYY-MM-DD');
         }
-        
+
         if (!record.channel) {
             errors.push('Channel is required');
         } else if (!isValidChannel(record.channel)) {
             errors.push(`Invalid channel: ${record.channel}`);
         }
-        
+
         if (!record.brand) {
             errors.push('Brand is required');
         } else if (!isValidBrand(record.brand)) {
             errors.push(`Invalid brand: ${record.brand}`);
         }
-        
+
         if (record.revenue === undefined || record.revenue === null) {
             errors.push('Revenue is required');
         } else if (!isValidRevenue(record.revenue)) {
             errors.push('Revenue must be a positive number');
         }
-        
+
         return {
             isValid: errors.length === 0,
             errors
@@ -52,7 +52,7 @@
         const errors = [];
         const validRecords = [];
         const invalidRecords = [];
-        
+
         if (!Array.isArray(records)) {
             return {
                 isValid: false,
@@ -61,10 +61,10 @@
                 invalidRecords: []
             };
         }
-        
+
         records.forEach((record, index) => {
             const validation = validateSalesRecord(record);
-            
+
             if (validation.isValid) {
                 validRecords.push(record);
             } else {
@@ -74,7 +74,7 @@
                 });
             }
         });
-        
+
         return {
             isValid: errors.length === 0,
             errors,
@@ -94,17 +94,17 @@
 
     function isValidDate(dateString) {
         if (!dateString) return false;
-        
+
         const regex = /^\d{4}-\d{2}-\d{2}$/;
         if (!regex.test(dateString)) return false;
-        
+
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return false;
-        
+
         // Check if date is within reasonable range (2020-2030)
         const minDate = new Date('2020-01-01');
         const maxDate = new Date('2030-12-31');
-        
+
         return date >= minDate && date <= maxDate;
     }
 
@@ -122,15 +122,36 @@
     function isValidRevenue(revenue) {
         const value = parseFloat(revenue);
         if (isNaN(value)) return false;
-        
+
         // Revenue should be between 0 and 10 billion
         return value >= 0 && value <= 10000000000;
     }
 
     function isValidEmail(email) {
         if (!email) return false;
-        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return regex.test(email);
+
+        // More robust email validation regex
+        // Checks for:
+        // - Valid characters before @
+        // - @ symbol
+        // - Valid domain name
+        // - Valid TLD (at least 2 characters)
+        const regex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+
+        // Additional checks
+        if (!regex.test(email)) return false;
+
+        // Check for common invalid patterns
+        if (email.includes('..')) return false; // No consecutive dots
+        if (email.startsWith('.') || email.endsWith('.')) return false; // No leading/trailing dots
+        if (email.split('@').length !== 2) return false; // Exactly one @
+
+        const [localPart, domain] = email.split('@');
+        if (localPart.length > 64) return false; // Local part max 64 chars
+        if (domain.length > 255) return false; // Domain max 255 chars
+        if (!domain.includes('.')) return false; // Domain must have at least one dot
+
+        return true;
     }
 
     function isValidYear(year) {
@@ -155,7 +176,7 @@
 
     function validateFile(file, options = {}) {
         const errors = [];
-        
+
         const {
             maxSize = 10 * 1024 * 1024, // 10MB default
             allowedTypes = ['.csv', '.xlsx', '.xls'],
@@ -165,33 +186,33 @@
                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             ]
         } = options;
-        
+
         if (!file) {
             errors.push('No file provided');
             return { isValid: false, errors };
         }
-        
+
         // Check file size
         if (file.size > maxSize) {
             const sizeMB = (maxSize / (1024 * 1024)).toFixed(1);
             errors.push(`File size exceeds ${sizeMB}MB limit`);
         }
-        
+
         // Check file extension
         const fileName = file.name.toLowerCase();
         const hasValidExtension = allowedTypes.some(type => fileName.endsWith(type));
-        
+
         if (!hasValidExtension) {
             errors.push(`Invalid file type. Allowed: ${allowedTypes.join(', ')}`);
         }
-        
+
         // Check MIME type if available
         if (file.type && allowedMimeTypes.length > 0) {
             if (!allowedMimeTypes.includes(file.type)) {
                 errors.push(`Invalid file format`);
             }
         }
-        
+
         return {
             isValid: errors.length === 0,
             errors
@@ -205,13 +226,13 @@
     function validateCSVHeaders(headers, requiredHeaders = ['Date', 'Channel', 'Brand', 'Revenue']) {
         const errors = [];
         const normalizedHeaders = headers.map(h => h.trim());
-        
+
         requiredHeaders.forEach(required => {
             if (!normalizedHeaders.includes(required)) {
                 errors.push(`Missing required column: ${required}`);
             }
         });
-        
+
         return {
             isValid: errors.length === 0,
             errors,
@@ -221,32 +242,32 @@
 
     function validateCSVStructure(data) {
         const errors = [];
-        
+
         if (!Array.isArray(data)) {
             errors.push('Invalid data format');
             return { isValid: false, errors };
         }
-        
+
         if (data.length === 0) {
             errors.push('File is empty');
             return { isValid: false, errors };
         }
-        
+
         // Check if all rows have the same number of columns
         const firstRowKeys = Object.keys(data[0]);
         const inconsistentRows = [];
-        
+
         data.forEach((row, index) => {
             const rowKeys = Object.keys(row);
             if (rowKeys.length !== firstRowKeys.length) {
                 inconsistentRows.push(index + 2);
             }
         });
-        
+
         if (inconsistentRows.length > 0) {
             errors.push(`Inconsistent columns in rows: ${inconsistentRows.slice(0, 5).join(', ')}${inconsistentRows.length > 5 ? '...' : ''}`);
         }
-        
+
         return {
             isValid: errors.length === 0,
             errors,
@@ -261,12 +282,12 @@
 
     function validateTargets(targets) {
         const errors = [];
-        
+
         if (!targets || typeof targets !== 'object') {
             errors.push('Invalid target configuration');
             return { isValid: false, errors };
         }
-        
+
         // Check annual targets
         if (!targets.annual || typeof targets.annual !== 'object') {
             errors.push('Annual targets are required');
@@ -280,7 +301,7 @@
                 }
             });
         }
-        
+
         // Check quarterly targets
         ['Q1', 'Q2', 'Q3', 'Q4'].forEach(quarter => {
             if (!targets[quarter] || typeof targets[quarter] !== 'object') {
@@ -295,24 +316,24 @@
                 });
             }
         });
-        
+
         // Validate quarterly totals match annual
         if (errors.length === 0) {
             ALL_CHANNELS.forEach(channel => {
                 const quarterlySum = ['Q1', 'Q2', 'Q3', 'Q4'].reduce((sum, quarter) => {
                     return sum + (parseFloat(targets[quarter][channel]) || 0);
                 }, 0);
-                
+
                 const annual = parseFloat(targets.annual[channel]) || 0;
                 const difference = Math.abs(annual - quarterlySum);
-                
+
                 // Allow small rounding differences
                 if (difference > 1) {
                     errors.push(`Quarterly totals for ${channel} (${quarterlySum.toFixed(2)}) don't match annual target (${annual.toFixed(2)})`);
                 }
             });
         }
-        
+
         return {
             isValid: errors.length === 0,
             errors
@@ -325,7 +346,7 @@
 
     function validateBrandForm(formData) {
         const errors = {};
-        
+
         // Validate brand name
         if (!formData.name) {
             errors.name = 'Brand name is required';
@@ -336,7 +357,7 @@
         } else if (!/^[a-zA-Z0-9\s&-]+$/.test(formData.name)) {
             errors.name = 'Brand name contains invalid characters';
         }
-        
+
         // Validate targets if provided
         if (formData.annual || formData.Q1 || formData.Q2 || formData.Q3 || formData.Q4) {
             const targetValidation = validateTargets({
@@ -346,12 +367,12 @@
                 Q3: formData.Q3 || {},
                 Q4: formData.Q4 || {}
             });
-            
+
             if (!targetValidation.isValid) {
                 errors.targets = targetValidation.errors;
             }
         }
-        
+
         return {
             isValid: Object.keys(errors).length === 0,
             errors
@@ -364,34 +385,34 @@
 
     function validateDateRange(startDate, endDate) {
         const errors = [];
-        
+
         if (!startDate) {
             errors.push('Start date is required');
         } else if (!isValidDate(startDate)) {
             errors.push('Invalid start date format');
         }
-        
+
         if (!endDate) {
             errors.push('End date is required');
         } else if (!isValidDate(endDate)) {
             errors.push('Invalid end date format');
         }
-        
+
         if (errors.length === 0) {
             const start = new Date(startDate);
             const end = new Date(endDate);
-            
+
             if (start > end) {
                 errors.push('Start date must be before end date');
             }
-            
+
             // Check if range is reasonable (not more than 5 years)
             const daysDiff = (end - start) / (1000 * 60 * 60 * 24);
             if (daysDiff > 1825) {
                 errors.push('Date range cannot exceed 5 years');
             }
         }
-        
+
         return {
             isValid: errors.length === 0,
             errors
@@ -404,36 +425,36 @@
 
     function sanitizeInput(input) {
         if (typeof input !== 'string') return input;
-        
+
         // Remove any HTML tags
         let sanitized = input.replace(/<[^>]*>/g, '');
-        
+
         // Trim whitespace
         sanitized = sanitized.trim();
-        
+
         // Remove any script tags or javascript: protocols
         sanitized = sanitized.replace(/javascript:/gi, '');
         sanitized = sanitized.replace(/on\w+\s*=/gi, '');
-        
+
         return sanitized;
     }
 
     function sanitizeFileName(fileName) {
         if (!fileName) return 'file';
-        
+
         // Remove path components
         fileName = fileName.split('/').pop().split('\\').pop();
-        
+
         // Remove special characters except dots and hyphens
         fileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
-        
+
         // Limit length
         if (fileName.length > 255) {
             const extension = fileName.split('.').pop();
             const name = fileName.substring(0, 250 - extension.length);
             fileName = `${name}.${extension}`;
         }
-        
+
         return fileName;
     }
 
@@ -458,7 +479,7 @@
         sanitizeInput,
         sanitizeFileName
     };
-    
+
     // Also add to ChaiVision namespace
     window.ChaiVision = window.ChaiVision || {};
     window.ChaiVision.validators = window.validators;

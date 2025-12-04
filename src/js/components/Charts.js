@@ -34,12 +34,19 @@
         const { formatCurrency } = window.formatters || {};
 
         // Get data from window
+        // Get config from window
+        const CONFIG = window.CONFIG || window.ChaiVision?.CONFIG || {};
+
+        // Get data from window
         const INITIAL_DATA = window.ChaiVision?.INITIAL_DATA || {};
-        const ALL_CHANNELS = INITIAL_DATA.channels || [
+
+        // Use centralized config with fallbacks
+        const ALL_CHANNELS = CONFIG.CHANNELS?.LIST || INITIAL_DATA.channels || [
             'Amazon', 'TikTok', 'DTC-Shopify', 'Retail',
             'CA International', 'UK International', 'Wholesale', 'Omnichannel'
         ];
-        const CHANNEL_COLORS = INITIAL_DATA.channelColors || {
+
+        const CHANNEL_COLORS = CONFIG.COLORS?.CHANNELS || INITIAL_DATA.channelColors || {
             'Amazon': '#FF9900',
             'TikTok': '#000000',
             'DTC-Shopify': '#96bf48',

@@ -38,34 +38,33 @@
             return name.substring(0, 2).toUpperCase();
         };
 
+        // Get config from window
+        const CONFIG = window.CONFIG || window.ChaiVision?.CONFIG || {};
+
         // Get role color
         const getRoleColor = (role) => {
+            const roles = CONFIG.COLORS?.ROLES || {};
             switch (role) {
                 case 'Admin':
-                    return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                    return roles.ADMIN || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
                 case 'Manager':
-                    return 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+                    return roles.MANAGER || 'linear-gradient(135deg, #3b82f6 0%, #2dd4bf 100%)';
                 default:
-                    return 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)';
+                    return roles.USER || roles.DEFAULT || 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)';
             }
         };
 
         const handleLogout = async () => {
-            console.log('🔍 handleLogout called');
-
             // Confirmation dialog to prevent accidental logouts
             if (!confirm('Are you sure you want to sign out?')) {
-                console.log('🔍 User cancelled logout');
                 return;
             }
 
-            console.log('🔍 User confirmed logout, proceeding...');
             setShowMenu(false);
 
             try {
                 // Get Supabase client
                 const config = window.CONFIG || window.ChaiVision?.CONFIG;
-                console.log('🔍 Config:', config);
 
                 if (config?.SUPABASE?.URL && window.supabase) {
                     const supabase = window.supabase.createClient(
@@ -73,9 +72,9 @@
                         config.SUPABASE.ANON_KEY
                     );
 
-                    console.log('🔍 Logging to audit_logs...');
-                    // Log the logout
-                    await supabase
+                    // Log the logout event
+                    // We don't await this to prevent blocking the logout if it fails/hangs
+                    supabase
                         .from('audit_logs')
                         .insert({
                             user_id: currentUser.id,
@@ -86,20 +85,16 @@
                                 timestamp: new Date().toISOString()
                             },
                             reference_id: `LOGOUT_${Date.now()}`
-                        });
-
-                    console.log('🔍 Signing out from Supabase...');
-                    // Sign out from Supabase
-                    await supabase.auth.signOut();
+                        })
+                        .then(() => console.log('Logout logged'))
+                        .catch(err => console.error('Failed to log logout:', err));
                 }
 
-                console.log('🔍 Calling onLogout callback:', typeof onLogout);
-                // Call parent logout handler first (this will handle the main logout logic)
+                // Call parent logout handler (this handles the actual auth signout and redirect)
                 if (onLogout) {
                     onLogout();
                 } else {
                     // Fallback if no parent handler
-                    console.log('No parent logout handler, using fallback');
                     localStorage.removeItem('chai_vision_remember');
                     sessionStorage.clear();
                     window.location.reload();

@@ -21,9 +21,12 @@
             salesData = [] // Add sales data for year detection
         } = props;
 
+        // Get config from window
+        const CONFIG = window.CONFIG || window.ChaiVision?.CONFIG || {};
+
         // Get initial data from window
         const INITIAL_DATA = window.ChaiVision?.INITIAL_DATA || {};
-        const ALL_CHANNELS = channels || INITIAL_DATA.channels || [];
+        const ALL_CHANNELS = channels || CONFIG.CHANNELS?.LIST || INITIAL_DATA.channels || [];
 
         // Get formatters and services from window
         const { formatCurrency } = window.formatters || {};
