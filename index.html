@@ -21,8 +21,8 @@
     <meta property="og:title" content="Chai Vision Sales Dashboard">
     <meta property="og:description" content="Real-time sales performance tracking across all channels">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://your-domain.com">
-    <meta property="og:image" content="https://your-domain.com/preview.png">
+    <meta property="og:url" content="https://dashboard-test-six-red.vercel.app">
+    <meta property="og:image" content="https://dashboard-test-six-red.vercel.app/preview.png">
 
     <!-- Performance Optimizations -->
     <link rel="dns-prefetch" href="//unpkg.com">
@@ -203,7 +203,7 @@
 
         // Configuration
         const APP_CONFIG = {
-            DEBUG_MODE: true, // Set to false in production
+            DEBUG_MODE: window.__ENV__.DEBUG_MODE === 'true' || false, // Read from environment, default to false
             AUTO_INIT: true, // Auto-initialize on load
             PERFORMANCE_MODE: true // Enable performance optimizations
         };
@@ -240,13 +240,24 @@
                 }
             });
 
+            // Polyfill for Safari (requestIdleCallback)
+            if (!('requestIdleCallback' in window)) {
+                window.requestIdleCallback = function (cb) {
+                    const start = Date.now();
+                    return setTimeout(function () {
+                        cb({
+                            didTimeout: false,
+                            timeRemaining: function () {
+                                return Math.max(0, 50 - (Date.now() - start));
+                            }
+                        });
+                    }, 1);
+                };
+            }
+
             // Initialize the app
             if (APP_CONFIG.AUTO_INIT) {
-                if ('requestIdleCallback' in window) {
-                    requestIdleCallback(() => initializeApplication());
-                } else {
-                    setTimeout(initializeApplication, 0);
-                }
+                requestIdleCallback(() => initializeApplication());
             }
         });
 
